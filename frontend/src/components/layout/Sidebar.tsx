@@ -1,40 +1,61 @@
 import {
-  LayoutDashboard,
-  Wand2,
-  FolderOpen,
-  Calendar,
   BarChart3,
-  Settings,
+  Calendar,
   CreditCard,
+  FolderOpen,
+  LayoutDashboard,
   LogOut,
-  User,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
+  User,
+  Wand2,
 } from "lucide-react";
 
-interface SidebarProps {
+type SidebarProps = {
   activeView: string;
   onViewChange: (view: string) => void;
   isOpen: boolean;
   onToggle: () => void;
-}
+};
 
-const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'generate', label: 'Generate Content', icon: Wand2 },
-  { id: 'library', label: 'Content Library', icon: FolderOpen },
-  { id: 'scheduler', label: 'Scheduler', icon: Calendar },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'brand', label: 'Brand Settings', icon: Settings },
-  { id: 'billing', label: 'Billing', icon: CreditCard },
+type MenuItem = {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const menuItems: MenuItem[] = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "generate", label: "Generate Content", icon: Wand2 },
+  { id: "library", label: "Content Library", icon: FolderOpen },
+  { id: "scheduler", label: "Scheduler", icon: Calendar },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "brand", label: "Brand Settings", icon: Settings },
+  { id: "billing", label: "Billing", icon: CreditCard },
 ];
 
-export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({
+  activeView,
+  onViewChange,
+  isOpen,
+  onToggle,
+}: SidebarProps) {
+  const asideClassName = [
+    "w-64 bg-black border-r border-gray-800 h-screen flex flex-col fixed left-0 top-0",
+    "z-30 md:z-10 transform transition-transform duration-200",
+    isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+  ].join(" ");
+
+  const activeItemClassName = "bg-gray-900 text-white";
+  const inactiveItemClassName =
+    "text-gray-400 hover:text-white hover:bg-gray-900/50";
+
   return (
     <>
-      {/* Mobile open button */}
       {!isOpen && (
         <button
+          type="button"
           onClick={onToggle}
           className="fixed top-4 left-4 z-30 p-2 rounded-lg bg-black border border-gray-800 text-gray-300 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
           aria-label="Open sidebar"
@@ -44,7 +65,6 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
         </button>
       )}
 
-      {/* Overlay for mobile when open */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-20 md:hidden"
@@ -52,11 +72,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
         />
       )}
 
-      <aside
-        className={`w-64 bg-black border-r border-gray-800 h-screen flex flex-col fixed left-0 top-0 z-30 transform transition-transform duration-200 ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } md:z-10`}
-      >
+      <aside className={asideClassName}>
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
@@ -65,7 +81,9 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
               </div>
               <h1 className="text-xl font-bold text-white">ContentOS</h1>
             </div>
+
             <button
+              type="button"
               onClick={onToggle}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
               aria-label="Close sidebar"
@@ -80,15 +98,17 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
+            const itemClassName = [
+              "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+              isActive ? activeItemClassName : inactiveItemClassName,
+            ].join(" ");
+
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => onViewChange(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-900/50"
-                }`}
+                className={itemClassName}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-sm font-medium">{item.label}</span>
@@ -107,7 +127,11 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
               <p className="text-xs text-gray-500">john@example.com</p>
             </div>
           </div>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900/50 transition-colors">
+
+          <button
+            type="button"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900/50 transition-colors"
+          >
             <LogOut className="w-5 h-5" />
             <span className="text-sm font-medium">Logout</span>
           </button>
