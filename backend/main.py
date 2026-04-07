@@ -11,9 +11,21 @@ from agents.content_agent import (
 
 app = FastAPI()
 
+allowed_origins = [
+    # Vercel frontend (production)
+    "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
+    # Local development
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -9,9 +9,7 @@ import Analytics from "./components/views/Analytics";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_URL?.toString().replace(/\/$/, "") ||
-  "http://127.0.0.1:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 const sanitizePostText = (value: unknown): string => {
   if (typeof value !== "string") return "";
@@ -59,25 +57,29 @@ function App() {
     setError(null);
 
     try {
+      if (!API_BASE_URL) {
+        throw new Error(
+          "Backend URL is not configured. Set VITE_API_URL in your Vercel Environment Variables.",
+        );
+      }
+
       const res = await fetch(
         `${API_BASE_URL}/generate?topic=${encodeURIComponent(
           topic,
         )}&platform=${encodeURIComponent(platform)}&count=${count}`,
+        { method: "GET", mode: "cors" },
       );
 
       if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
+        const body = await res.text().catch(() => "");
+        throw new Error(
+          `API error ${res.status} ${res.statusText}${
+            body ? ` — ${body}` : ""
+          }`,
+        );
       }
 
-      const rawText = await res.text();
-      console.log("RAW RESPONSE:", rawText);
-
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error("Invalid JSON from backend");
-      }
+      const data = (await res.json().catch(() => null)) as any;
 
       if (!data || typeof data !== "object") {
         throw new Error("Invalid response format");
@@ -92,10 +94,13 @@ function App() {
         youtube: sanitizePostText(data.youtube),
       });
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ ERROR:", err);
 
-      const msg = err.message || "Error generating content";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Network error. Please check your backend URL and CORS settings.";
       setContent(null);
       setError(msg);
     }
