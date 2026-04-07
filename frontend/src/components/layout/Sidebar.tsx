@@ -1,4 +1,16 @@
-import { LayoutDashboard, Wand2, FolderOpen, Calendar, BarChart3, Settings, CreditCard, LogOut, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Wand2,
+  FolderOpen,
+  Calendar,
+  BarChart3,
+  Settings,
+  CreditCard,
+  LogOut,
+  User,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 
 interface SidebarProps {
   activeView: string;
@@ -100,7 +112,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
             <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
-    </aside>
+      </aside>
     </>
   );
 }
