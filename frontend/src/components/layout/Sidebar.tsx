@@ -44,7 +44,7 @@ export default function Sidebar({
   const asideClassName = [
     "w-64 bg-black border-r border-gray-800 h-screen flex flex-col fixed left-0 top-0",
     "z-30 md:z-10 transform transition-transform duration-200",
-    isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+    isOpen ? "translate-x-0" : "-translate-x-full",
   ].join(" ");
 
   const activeItemClassName = "bg-gray-900 text-white";
@@ -57,7 +57,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={onToggle}
-          className="fixed top-4 left-4 z-30 p-2 rounded-lg bg-black border border-gray-800 text-gray-300 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
+          className="fixed top-4 left-4 z-30 p-2 rounded-lg bg-black border border-gray-800 text-gray-300 hover:text-white hover:bg-gray-900 transition-colors"
           aria-label="Open sidebar"
           title="Open sidebar"
         >
@@ -85,7 +85,7 @@ export default function Sidebar({
             <button
               type="button"
               onClick={onToggle}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors"
               aria-label="Close sidebar"
               title="Close sidebar"
             >
