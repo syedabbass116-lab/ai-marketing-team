@@ -45,61 +45,61 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } md:z-10`}
       >
-      <div className="p-6 border-b border-gray-800">
-        <div className="flex items-center gap-2 justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Wand2 className="w-5 h-5 text-black" />
+        <div className="p-6 border-b border-gray-800">
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Wand2 className="w-5 h-5 text-black" />
+              </div>
+              <h1 className="text-xl font-bold text-white">ContentOS</h1>
             </div>
-            <h1 className="text-xl font-bold text-white">ContentOS</h1>
+            <button
+              onClick={onToggle}
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
+              aria-label="Close sidebar"
+              title="Close sidebar"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onToggle}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors md:hidden"
-            aria-label="Close sidebar"
-            title="Close sidebar"
-          >
-            <PanelLeftClose className="w-5 h-5" />
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-900/50"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-gray-800">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer mb-2">
+            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">John Doe</p>
+              <p className="text-xs text-gray-500">john@example.com</p>
+            </div>
+          </div>
+          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900/50 transition-colors">
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-900/50'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer mb-2">
-          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">John Doe</p>
-            <p className="text-xs text-gray-500">john@example.com</p>
-          </div>
-        </div>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900/50 transition-colors">
-          <LogOut className="w-5 h-5" />
-          <span className="text-sm font-medium">Logout</span>
-        </button>
-      </div>
     </aside>
     </>
   );
