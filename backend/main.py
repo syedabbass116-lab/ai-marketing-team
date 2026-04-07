@@ -1,3 +1,4 @@
+import os
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from agents.content_agent import (
 )
 
 app = FastAPI()
+
+print("PORT ENV:", os.getenv("PORT"))
 
 allowed_origins = [
     # Vercel frontend (production)
