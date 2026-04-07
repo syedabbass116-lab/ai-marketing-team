@@ -9,6 +9,10 @@ import Analytics from "./components/views/Analytics";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 
+const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_URL?.toString().replace(/\/$/, "") ||
+  "http://127.0.0.1:8000";
+
 const sanitizePostText = (value: unknown): string => {
   if (typeof value !== "string") return "";
   return value.replace(/\*\*/g, "").replace(/__/g, "").trim();
@@ -56,7 +60,7 @@ function App() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/generate?topic=${encodeURIComponent(
+        `${API_BASE_URL}/generate?topic=${encodeURIComponent(
           topic,
         )}&platform=${encodeURIComponent(platform)}&count=${count}`,
       );

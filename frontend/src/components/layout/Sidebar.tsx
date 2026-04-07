@@ -101,5 +101,6 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle }: 
         </button>
       </div>
     </aside>
+    </>
   );
 }
