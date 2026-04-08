@@ -14,6 +14,10 @@ app = FastAPI()
 
 print("PORT ENV:", os.getenv("PORT"))
 
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
 allowed_origins = [
     # Vercel frontend (production)
     "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
@@ -62,11 +66,6 @@ def save_content(content: str):
 @app.get("/content")
 def get_content():
     return {"data": database}
-
-
-@app.get("/")
-def home():
-    return {"message": "Running 🚀"}
 
 
 @app.get("/generate")
