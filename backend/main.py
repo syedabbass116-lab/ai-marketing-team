@@ -22,6 +22,10 @@ def root():
 def health():
     return {"status": "ok"}
 
+@app.get("/health/")
+def health_trailing_slash():
+    return {"status": "ok"}
+
 allowed_origins = [
     # Vercel frontend (production)
     "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
@@ -36,7 +40,8 @@ allowed_origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
