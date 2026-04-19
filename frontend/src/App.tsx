@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
-import Dashboard from "./components/views/Dashboard";
+import Dashboard, {
+  type CarouselSlide,
+  type ChatLine,
+} from "./components/views/Dashboard";
 import Home from "./components/views/Home";
 import ContentLibrary from "./components/views/ContentLibrary";
 import Scheduler from "./components/views/Scheduler";
@@ -16,102 +19,207 @@ const sanitizePostText = (value: unknown): string => {
   return value.replace(/\*\*/g, "").replace(/__/g, "").trim();
 };
 
-const getRequestedCount = (value: string): number => {
-  const lower = value.toLowerCase();
-  const patterns = [
-    /\bgive\s+(me\s+)?(\d{1,2})\s+(posts?|tweets?|threads?|ideas?)\b/,
-    /\b(\d{1,2})\s+(posts?|tweets?|threads?|ideas?)\b/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = lower.match(pattern);
-    if (match) {
-      const numStr = match[2] ?? match[1];
-      const n = parseInt(numStr, 10);
-      if (!Number.isNaN(n)) {
-        return Math.max(1, Math.min(n, 10));
-      }
-    }
-  }
-
-  return 1;
-};
+const emptyContentRecord = () => ({
+  linkedin: "",
+  twitter: "",
+  instagram: "",
+  facebook: "",
+  tiktok: "",
+  youtube: "",
+});
 
 function App() {
   const [activeView, setActiveView] = useState("dashboard");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const [library, setLibrary] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [draftTopic, setDraftTopic] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [genChatMessages, setGenChatMessages] = useState<ChatLine[]>([]);
+  const [genChatStep, setGenChatStep] = useState("start");
+  const [genChatInput, setGenChatInput] = useState("");
 
-  // 🚀 GENERATE CONTENT (FIXED)
-  const generateContent = async (topic: string, platform: string = "all") => {
-    if (!topic.trim()) return;
-
-    const count = getRequestedCount(topic);
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (!API_BASE_URL) {
-        throw new Error(
-          "Backend URL is not configured. Set VITE_API_URL in your Vercel Environment Variables.",
-        );
-      }
-
-      const res = await fetch(
-        `${API_BASE_URL}/generate?topic=${encodeURIComponent(
-          topic,
-        )}&platform=${encodeURIComponent(platform)}&count=${count}`,
-        { method: "GET", mode: "cors" },
-      );
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(
-          `API error ${res.status} ${res.statusText}${
-            body ? ` — ${body}` : ""
-          }`,
-        );
-      }
-
-      const data = (await res.json().catch(() => null)) as any;
-
-      if (!data || typeof data !== "object") {
-        throw new Error("Invalid response format");
-      }
-
-      setContent({
-        linkedin: sanitizePostText(data.linkedin),
-        twitter: sanitizePostText(data.twitter),
-        instagram: sanitizePostText(data.instagram),
-        facebook: sanitizePostText(data.facebook),
-        tiktok: sanitizePostText(data.tiktok),
-        youtube: sanitizePostText(data.youtube),
-      });
-      setError(null);
-    } catch (err: unknown) {
-      console.error("❌ ERROR:", err);
-
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Network error. Please check your backend URL and CORS settings.";
-      setContent(null);
-      setError(msg);
-    }
-
-    setLoading(false);
-  };
-
-  // 💾 SAVE
   const saveContent = (platform: string, text: string) => {
     setLibrary((prev) => [...prev, { platform, text }]);
   };
+
+  const applySessionDrafts = useCallback((data: Record<string, unknown>) => {
+    const raw = data.drafts;
+    if (!raw || typeof raw !== "object") return;
+    const cleaned: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof v === "string") cleaned[k] = sanitizePostText(v);
+    }
+    setContent((prev) => ({
+      ...emptyContentRecord(),
+      ...(prev || {}),
+      ...cleaned,
+    }));
+  }, []);
+
+  const parseApiError = (
+    res: Response,
+    data: Record<string, unknown> | null,
+  ): string => {
+    let detail = `${res.status} ${res.statusText}`;
+    if (data && typeof data === "object" && "detail" in data) {
+      const d = (data as { detail: unknown }).detail;
+      if (Array.isArray(d)) {
+        detail = d
+          .map((item) =>
+            typeof item === "object" && item && "msg" in item
+              ? String((item as { msg: unknown }).msg)
+              : String(item),
+          )
+          .join(" ");
+      } else {
+        detail = String(d);
+      }
+    }
+    return detail;
+  };
+
+  const runChatCommand = useCallback(
+    async (
+      message: string,
+      platform?: string,
+      clientDrafts?: Record<string, string> | null,
+    ) => {
+      if (!API_BASE_URL) {
+        throw new Error(
+          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
+        );
+      }
+      const body: Record<string, unknown> = { message };
+      if (platform) body.platform = platform;
+      if (clientDrafts) body.client_drafts = clientDrafts;
+      const res = await fetch(`${API_BASE_URL}/chat`, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      if (!res.ok) {
+        throw new Error(parseApiError(res, data));
+      }
+      if (!data) {
+        throw new Error("Invalid response from server");
+      }
+      applySessionDrafts(data);
+      return data;
+    },
+    [applySessionDrafts],
+  );
+
+  const runGenerateImage = useCallback(
+    async (prompt: string, options?: { rawPrompt?: boolean }) => {
+      if (!API_BASE_URL) {
+        throw new Error(
+          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
+        );
+      }
+      const body: Record<string, unknown> = {
+        prompt,
+        style_suffix: options?.rawPrompt ? "" : null,
+      };
+      const res = await fetch(`${API_BASE_URL}/generate-image`, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      if (!res.ok) {
+        throw new Error(parseApiError(res, data));
+      }
+      if (!data || typeof data.image_url !== "string") {
+        throw new Error("Invalid response from image API");
+      }
+      return data as { image_url: string; prompt_used?: string };
+    },
+    [],
+  );
+
+  const runGenerateCarousel = useCallback(
+    async (idea: string, slides: number) => {
+      if (!API_BASE_URL) {
+        throw new Error(
+          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
+        );
+      }
+      const res = await fetch(`${API_BASE_URL}/generate-carousel`, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea, slides }),
+      });
+      const data = (await res.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      if (!res.ok) {
+        throw new Error(parseApiError(res, data));
+      }
+      const raw = data?.carousel;
+      if (!Array.isArray(raw)) {
+        throw new Error("Invalid carousel response");
+      }
+      const carousel: CarouselSlide[] = raw.map((row) => {
+        const o = row as Record<string, unknown>;
+        return {
+          title: String(o.title ?? ""),
+          content: String(o.content ?? ""),
+          image_url: String(o.image_url ?? ""),
+        };
+      });
+      if (carousel.length === 0 || carousel.some((s) => !s.image_url)) {
+        throw new Error("Invalid carousel slide payload");
+      }
+      return { carousel };
+    },
+    [],
+  );
+
+  const runPostAction = useCallback(
+    async (
+      action: "approve" | "regenerate" | "edit",
+      editContent?: string,
+    ) => {
+      if (!API_BASE_URL) {
+        throw new Error(
+          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
+        );
+      }
+      const body: { action: string; content?: string } = { action };
+      if (action === "edit" && editContent !== undefined) {
+        body.content = editContent;
+      }
+      const res = await fetch(`${API_BASE_URL}/action`, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      if (!res.ok) {
+        throw new Error(parseApiError(res, data));
+      }
+      if (!data) {
+        throw new Error("Invalid response from server");
+      }
+      applySessionDrafts(data);
+      return data;
+    },
+    [applySessionDrafts],
+  );
 
   const renderView = () => {
     switch (activeView) {
@@ -127,14 +235,17 @@ function App() {
         return (
           <Dashboard
             content={content}
-            loading={loading}
-            error={error}
-            topic={draftTopic}
-            onTopicChange={setDraftTopic}
-            platform={selectedPlatform}
-            onPlatformChange={setSelectedPlatform}
-            onGenerate={generateContent}
             onSave={saveContent}
+            onChatCommand={runChatCommand}
+            onPostAction={runPostAction}
+            onGenerateImage={runGenerateImage}
+            onGenerateCarousel={runGenerateCarousel}
+            chatMessages={genChatMessages}
+            setChatMessages={setGenChatMessages}
+            chatStep={genChatStep}
+            setChatStep={setGenChatStep}
+            chatInput={genChatInput}
+            setChatInput={setGenChatInput}
           />
         );
       case "library":
