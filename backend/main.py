@@ -160,6 +160,21 @@ def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
             + "\n\nCurrent draft the user may want revised:\n"
             + conversation_state["content"].strip()
         )
+
+    brand = conversation_state.get("brand_settings")
+    if brand:
+        system += (
+            f"\n\n--- BRAND SETTINGS ---\n"
+            f"Brand Name: {brand.get('brandName', '')}\n"
+            f"Voice: {brand.get('brandVoice', '')}\n"
+            f"Tone: {brand.get('tone', '')}\n"
+            f"Target Audience: {brand.get('targetAudience', '')}\n"
+            f"Writing Style/Examples: {brand.get('writingStyle', '')}\n"
+            f"Key Topics: {brand.get('keyTopics', '')}\n"
+            "Adopt this brand voice, tone, and style for all content generated.\n"
+            "----------------------"
+        )
+
     messages = [{"role": "system", "content": system}] + history
     raw = complete_chat(messages)
     if not raw:
@@ -257,6 +272,8 @@ class ChatRequest(BaseModel):
     message: str = ""
     platform: str | None = None
     client_drafts: dict[str, str] | None = None
+    brand_settings: dict | None = None
+    user_name: str | None = None
 
 
 class ActionRequest(BaseModel):
@@ -551,35 +568,42 @@ def chat(payload: ChatRequest):
     hist: list = conversation_state.setdefault("chat_history", [])
     plat_in = _normalize_platform(payload.platform) if payload.platform else None
 
+    if payload.brand_settings:
+        conversation_state["brand_settings"] = payload.brand_settings
+
     if lowered not in {"start over", "reset", "restart"} and current_step != "start":
         _apply_client_drafts(payload.client_drafts)
 
     if lowered in {"start over", "reset", "restart"}:
+        user_name = payload.user_name or "there"
+        dynamic_greet = f"Hii {user_name}, What do you want to post today?"
         _reset_conversation_state()
         conversation_state["step"] = "idea"
-        hist.append({"role": "assistant", "content": GREET_MESSAGE})
+        hist.append({"role": "assistant", "content": dynamic_greet})
         if plat_in:
             _switch_platform(plat_in)
         return _with_session_meta(
             {
                 "step": "idea",
                 "action": "greet",
-                "message": GREET_MESSAGE,
+                "message": dynamic_greet,
                 "content": "",
             }
         )
 
     if current_step == "start":
+        user_name = payload.user_name or "there"
+        dynamic_greet = f"Hii {user_name}, What do you want to post today?"
         conversation_state["step"] = "idea"
         hist.clear()
-        hist.append({"role": "assistant", "content": GREET_MESSAGE})
+        hist.append({"role": "assistant", "content": dynamic_greet})
         if plat_in:
             _switch_platform(plat_in)
         return _with_session_meta(
             {
                 "step": "idea",
                 "action": "greet",
-                "message": GREET_MESSAGE,
+                "message": dynamic_greet,
                 "content": "",
             }
         )

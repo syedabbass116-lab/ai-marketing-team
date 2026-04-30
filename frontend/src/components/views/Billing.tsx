@@ -1,6 +1,7 @@
 import { Check, CreditCard, Download } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { useUsageLimit } from '../../hooks/useUsageLimit';
 
 interface PlanCardProps {
   name: string;
@@ -13,19 +14,31 @@ interface PlanCardProps {
 
 function PlanCard({ name, price, period, features, current, popular }: PlanCardProps) {
   return (
-    <Card className={popular ? 'border-white' : ''}>
+    <Card className={popular ? 'border-white/30' : ''}>
       {popular && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <span className="bg-white text-black text-xs font-bold px-3 py-1 rounded-full">
+          <span
+            style={{ fontFamily: 'var(--font-heading)' }}
+            className="bg-white text-black text-[10px] font-black px-3 py-1 rounded-full tracking-widest"
+          >
             POPULAR
           </span>
         </div>
       )}
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-white mb-2">{name}</h3>
-        <div className="mb-4">
-          <span className="text-4xl font-bold text-white">{price}</span>
-          <span className="text-gray-400">/{period}</span>
+        <h3
+          style={{ fontFamily: 'var(--font-heading)' }}
+          className="text-base font-bold text-white mb-1 tracking-tight"
+        >
+          {name}
+        </h3>
+        <div className="mb-4 mt-3">
+          <span
+            className="text-4xl font-black text-white"
+          >
+            {price}
+          </span>
+          <span className="text-xs text-white/30 ml-1">/{period}</span>
         </div>
         <Button
           variant={current ? 'secondary' : 'primary'}
@@ -35,10 +48,10 @@ function PlanCard({ name, price, period, features, current, popular }: PlanCardP
           {current ? 'Current Plan' : 'Upgrade'}
         </Button>
       </div>
-      <ul className="space-y-3">
+      <ul className="space-y-2.5">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
-            <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+          <li key={index} className="flex items-start gap-2 text-xs text-white/50">
+            <Check className="w-3.5 h-3.5 text-white/60 flex-shrink-0 mt-0.5" />
             <span>{feature}</span>
           </li>
         ))}
@@ -48,11 +61,22 @@ function PlanCard({ name, price, period, features, current, popular }: PlanCardP
 }
 
 export default function Billing() {
+  const { usage, trialDaysLeft, hasTrialExpired } = useUsageLimit();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Billing & Plans</h1>
-        <p className="text-gray-400">Choose the plan that fits your content needs</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">Billing & Plans</h1>
+          <p className="text-sm text-white/40">Choose the plan that fits your content needs</p>
+        </div>
+        {!usage?.is_pro && (
+          <div className="text-right">
+            <span className={`text-[10px] px-2 py-1 rounded tracking-widest uppercase font-bold ${hasTrialExpired ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/60'}`}>
+              {hasTrialExpired ? 'Trial Expired' : `Trial: ${trialDaysLeft} days left`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
@@ -101,28 +125,32 @@ export default function Billing() {
         />
       </div>
 
+      {/* Payment Method */}
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Payment Method</h3>
-        <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg mb-4">
+        <h3 className="text-sm font-semibold text-white/80 uppercase tracking-widest mb-4">
+          Payment Method
+        </h3>
+        <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-gray-400" />
+            <div className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-white/40" />
             </div>
             <div>
               <p className="text-sm font-medium text-white">Visa ending in 4242</p>
-              <p className="text-xs text-gray-400">Expires 12/2025</p>
+              <p className="text-xs text-white/30">Expires 12/2025</p>
             </div>
           </div>
           <Button variant="ghost" size="sm">Update</Button>
         </div>
-        <Button variant="secondary" size="sm">
-          Add Payment Method
-        </Button>
+        <Button variant="secondary" size="sm">Add Payment Method</Button>
       </Card>
 
+      {/* Billing History */}
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Billing History</h3>
-        <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-white/80 uppercase tracking-widest mb-4">
+          Billing History
+        </h3>
+        <div className="space-y-2">
           {[
             { date: 'Mar 1, 2024', amount: '$79.00', status: 'Paid' },
             { date: 'Feb 1, 2024', amount: '$79.00', status: 'Paid' },
@@ -130,19 +158,19 @@ export default function Billing() {
           ].map((invoice, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg hover:bg-white/[0.05] transition-colors"
             >
               <div>
                 <p className="text-sm font-medium text-white">{invoice.date}</p>
-                <p className="text-xs text-gray-400">Professional Plan</p>
+                <p className="text-xs text-white/30">Professional Plan</p>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-white font-medium">{invoice.amount}</span>
-                <span className="text-xs px-2 py-1 bg-green-600/20 text-green-400 rounded">
+                <span className="text-sm font-semibold text-white">{invoice.amount}</span>
+                <span className="text-[10px] px-2 py-1 bg-white/10 text-white/60 rounded tracking-widest uppercase">
                   {invoice.status}
                 </span>
                 <Button variant="ghost" size="sm" icon={<Download className="w-3 h-3" />}>
-                  Download
+                  PDF
                 </Button>
               </div>
             </div>

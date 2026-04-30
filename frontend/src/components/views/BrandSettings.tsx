@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Sparkles } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -23,6 +23,7 @@ const toneOptions = [
 
 export default function BrandSettings() {
   const [brandName, setBrandName] = useState('');
+  const [brandDescription, setBrandDescription] = useState('');
   const [brandVoice, setBrandVoice] = useState('professional');
   const [tone, setTone] = useState('friendly');
   const [targetAudience, setTargetAudience] = useState('');
@@ -31,17 +32,43 @@ export default function BrandSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
 
+  useEffect(() => {
+    const saved = localStorage.getItem('brandSettings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.brandName) setBrandName(parsed.brandName);
+        if (parsed.brandDescription) setBrandDescription(parsed.brandDescription);
+        if (parsed.brandVoice) setBrandVoice(parsed.brandVoice);
+        if (parsed.tone) setTone(parsed.tone);
+        if (parsed.targetAudience) setTargetAudience(parsed.targetAudience);
+        if (parsed.writingStyle) setWritingStyle(parsed.writingStyle);
+        if (parsed.keyTopics) setKeyTopics(parsed.keyTopics);
+      } catch (e) {}
+    }
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const settings = {
+      brandName,
+      brandDescription,
+      brandVoice,
+      tone,
+      targetAudience,
+      writingStyle,
+      keyTopics,
+    };
+    localStorage.setItem('brandSettings', JSON.stringify(settings));
+    await new Promise(resolve => setTimeout(resolve, 800));
     setIsSaving(false);
   };
 
   const handleTrain = async () => {
     if (isTraining) return;
     setIsTraining(true);
-    // Placeholder for future backend call to train on brand data
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await handleSave();
+    alert("AI has successfully learned your brand voice!");
     setIsTraining(false);
   };
 
@@ -65,8 +92,8 @@ export default function BrandSettings() {
             label="Brand Description"
             placeholder="Describe what your brand does and stands for..."
             rows={3}
-            value={targetAudience}
-            onChange={(e) => setTargetAudience(e.target.value)}
+            value={brandDescription}
+            onChange={(e) => setBrandDescription(e.target.value)}
           />
         </div>
       </Card>
@@ -125,7 +152,7 @@ export default function BrandSettings() {
       <Card>
         <h3 className="text-lg font-semibold text-white mb-4">Content Guidelines</h3>
         <div className="space-y-4">
-          <div className="p-4 bg-gray-800 rounded-lg">
+          <div className="p-4 bg-[rgba(15,15,15,0.8)] border border-white/10 rounded-lg">
             <h4 className="text-sm font-medium text-white mb-2">Do's</h4>
             <ul className="text-sm text-gray-400 space-y-1">
               <li>• Use clear, concise language</li>
@@ -133,7 +160,7 @@ export default function BrandSettings() {
               <li>• Add relevant hashtags</li>
             </ul>
           </div>
-          <div className="p-4 bg-gray-800 rounded-lg">
+          <div className="p-4 bg-[rgba(15,15,15,0.8)] border border-white/10 rounded-lg">
             <h4 className="text-sm font-medium text-white mb-2">Don'ts</h4>
             <ul className="text-sm text-gray-400 space-y-1">
               <li>• Avoid jargon and complex terms</li>

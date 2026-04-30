@@ -1,6 +1,4 @@
 import {
-  BarChart3,
-  Calendar,
   CreditCard,
   FolderOpen,
   LayoutDashboard,
@@ -8,9 +6,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  User,
   Wand2,
 } from "lucide-react";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import logo from "../../../Logo.png";
 
 type SidebarProps = {
   activeView: string;
@@ -26,13 +25,11 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "generate", label: "Generate Content", icon: Wand2 },
-  { id: "library", label: "Content Library", icon: FolderOpen },
-  { id: "scheduler", label: "Scheduler", icon: Calendar },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "brand", label: "Brand Settings", icon: Settings },
-  { id: "billing", label: "Billing", icon: CreditCard },
+  { id: "dashboard", label: "Dashboard",       icon: LayoutDashboard },
+  { id: "generate",  label: "Generate Content", icon: Wand2 },
+  { id: "library",   label: "Content Library",  icon: FolderOpen },
+  { id: "brand",     label: "Brand Settings",   icon: Settings },
+  { id: "billing",   label: "Billing",          icon: CreditCard },
 ];
 
 export default function Sidebar({
@@ -41,99 +38,120 @@ export default function Sidebar({
   isOpen,
   onToggle,
 }: SidebarProps) {
-  const asideClassName = [
-    "w-64 bg-black border-r border-gray-800 h-screen flex flex-col fixed left-0 top-0",
-    "z-30 md:z-10 transform transition-transform duration-200",
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  const asideClass = [
+    "w-64 h-screen flex flex-col fixed left-0 top-0 z-30 md:z-10",
+    "bg-[rgba(10,10,10,0.8)] border-r border-white/10 backdrop-blur-xl",
+    "transform transition-transform duration-200 ease-out",
     isOpen ? "translate-x-0" : "-translate-x-full",
   ].join(" ");
 
-  const activeItemClassName = "bg-gray-900 text-white";
-  const inactiveItemClassName =
-    "text-gray-400 hover:text-white hover:bg-gray-900/50";
-
   return (
     <>
+      {/* Hamburger toggle when closed */}
       {!isOpen && (
         <button
           type="button"
           onClick={onToggle}
-          className="fixed top-4 left-4 z-30 p-2 rounded-lg bg-black border border-gray-800 text-gray-300 hover:text-white hover:bg-gray-900 transition-colors"
+          className="fixed top-4 left-4 z-30 p-2 rounded-lg
+            bg-black border border-[#2a2a2a] text-white/40
+            hover:text-white hover:border-[#444] transition-all duration-150"
           aria-label="Open sidebar"
-          title="Open sidebar"
         >
-          <PanelLeftOpen className="w-5 h-5" />
+          <PanelLeftOpen className="w-4 h-4" />
         </button>
       )}
 
+      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-20 md:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 md:hidden"
           onClick={onToggle}
         />
       )}
 
-      <aside className={asideClassName}>
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <Wand2 className="w-5 h-5 text-black" />
-              </div>
-              <h1 className="text-xl font-bold text-white">ContentOS</h1>
+      <aside className={asideClass}>
+        {/* Logo row */}
+        <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 flex items-center justify-center">
+              <img src={logo} alt="Ghostwrites logo" className="w-full h-full object-contain" />
             </div>
-
-            <button
-              type="button"
-              onClick={onToggle}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900 transition-colors"
-              aria-label="Close sidebar"
-              title="Close sidebar"
+            <span
+              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-[15px] font-bold text-white tracking-tight"
             >
-              <PanelLeftClose className="w-5 h-5" />
-            </button>
+              Ghostwrites
+            </span>
           </div>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="p-1.5 rounded-md text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+            aria-label="Close sidebar"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        {/* Nav items */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-bw">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.id;
-            const itemClassName = [
-              "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-              isActive ? activeItemClassName : inactiveItemClassName,
-            ].join(" ");
-
+            const active = activeView === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => onViewChange(item.id)}
-                className={itemClassName}
+                className={[
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                  active
+                    ? "bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                    : "text-white/40 hover:text-white hover:bg-white/5 font-medium",
+                ].join(" ")}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-medium">{item.label}</span>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{item.label}</span>
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-800">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer mb-2">
-            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-400" />
+        {/* User / logout footer */}
+        <div className="px-3 py-4 border-t border-white/10 space-y-1">
+          {user && (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
+              <div className="w-7 h-7 rounded-full bg-white/10 border border-white/10 overflow-hidden flex-shrink-0">
+                {user.imageUrl ? (
+                  <img src={user.imageUrl} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full flex items-center justify-center text-xs font-bold text-white/60">
+                    {user.firstName?.[0] ?? "U"}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white/80 truncate">
+                  {user.fullName ?? user.username ?? "User"}
+                </p>
+                <p className="text-[10px] text-white/30 truncate">
+                  {user.primaryEmailAddress?.emailAddress}
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">John Doe</p>
-              <p className="text-xs text-gray-500">john@example.com</p>
-            </div>
-          </div>
-
+          )}
           <button
             type="button"
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-900/50 transition-colors"
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+              text-sm text-white/30 hover:text-white hover:bg-white/5
+              transition-all duration-150 font-medium"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-sm font-medium">Logout</span>
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            <span>Sign out</span>
           </button>
         </div>
       </aside>

@@ -1,31 +1,38 @@
-import { Sparkles, ArrowRight, BarChart3, Calendar, FolderOpen } from "lucide-react";
+import { Sparkles, ArrowRight, FolderOpen, Settings } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 
 type HomeProps = {
   onStartGenerate: () => void;
   onOpenLibrary: () => void;
-  onOpenAnalytics: () => void;
 };
 
-export default function Home({
-  onStartGenerate,
-  onOpenLibrary,
-  onOpenAnalytics,
-}: HomeProps) {
+export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
   return (
     <div className="space-y-8">
-      <Card className="bg-gradient-to-br from-gray-900 to-black border-gray-800">
-        <div className="max-w-3xl mx-auto space-y-4 py-4 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800 text-gray-300 text-xs">
-            <Sparkles className="w-3.5 h-3.5" />
-            AI Marketing Agent
+      {/* Hero card */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#1f1f1f] bg-[#0a0a0a] px-8 py-12 text-center">
+        {/* Radial glow */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255,255,255,0.06), transparent)",
+          }}
+        />
+        <div className="relative max-w-2xl mx-auto space-y-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/50 text-xs tracking-widest uppercase">
+            <Sparkles className="w-3 h-3" />
+            Ghostwrite
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight">
-            Create high-performing post
+          <h1
+            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight"
+          >
+            Create high-performing<br />social content
           </h1>
-          <p className="text-gray-400 text-base">
-            Generate posts, schedule content, check analytics all at one place.
+          <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed">
+            Generate posts and manage your content library — all in one place.
           </p>
           <div className="flex flex-wrap gap-3 pt-2 justify-center">
             <Button
@@ -41,37 +48,41 @@ export default function Home({
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Quick-access cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card hover>
-          <div className="space-y-2">
-            <FolderOpen className="w-5 h-5 text-gray-300" />
-            <h3 className="text-white font-semibold">Manage Content</h3>
-            <p className="text-gray-400 text-sm">
-              Save and reuse your best-performing post ideas.
+          <div className="space-y-3" onClick={onStartGenerate}>
+            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-white/60" />
+            </div>
+            <h3
+              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-sm font-bold text-white tracking-tight"
+            >
+              Generate Content
+            </h3>
+            <p className="text-xs text-white/40 leading-relaxed">
+              AI-powered posts written in your brand voice, ready to publish.
             </p>
           </div>
         </Card>
+
         <Card hover>
-          <div className="space-y-2">
-            <Calendar className="w-5 h-5 text-gray-300" />
-            <h3 className="text-white font-semibold">Plan Schedule</h3>
-            <p className="text-gray-400 text-sm">
-              Organize what to publish and when across channels.
+          <div className="space-y-3" onClick={onOpenLibrary}>
+            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <FolderOpen className="w-4 h-4 text-white/60" />
+            </div>
+            <h3
+              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-sm font-bold text-white tracking-tight"
+            >
+              Content Library
+            </h3>
+            <p className="text-xs text-white/40 leading-relaxed">
+              Save and reuse your best-performing post ideas across platforms.
             </p>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="space-y-2">
-            <BarChart3 className="w-5 h-5 text-gray-300" />
-            <h3 className="text-white font-semibold">Track Insights</h3>
-            <p className="text-gray-400 text-sm">
-              Review trends and improve your strategy over time.
-            </p>
-            <Button variant="ghost" size="sm" onClick={onOpenAnalytics}>
-              View analytics
-            </Button>
           </div>
         </Card>
       </div>

@@ -1,16 +1,17 @@
 import { useCallback, useState } from "react";
+import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import Dashboard, {
-  type CarouselSlide,
   type ChatLine,
 } from "./components/views/Dashboard";
 import Home from "./components/views/Home";
 import ContentLibrary from "./components/views/ContentLibrary";
-import Scheduler from "./components/views/Scheduler";
-import Analytics from "./components/views/Analytics";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
+import Landing from "./components/views/Landing";
+import AuthGate from "./components/AuthGate";
+import { useUsageLimit } from "./hooks/useUsageLimit";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -28,7 +29,8 @@ const emptyContentRecord = () => ({
   youtube: "",
 });
 
-function App() {
+function AppContent() {
+  const { hasTrialExpired } = useUsageLimit();
   const [activeView, setActiveView] = useState("dashboard");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const [library, setLibrary] = useState<any[]>([]);
@@ -91,6 +93,19 @@ function App() {
       const body: Record<string, unknown> = { message };
       if (platform) body.platform = platform;
       if (clientDrafts) body.client_drafts = clientDrafts;
+      
+      const user = (window as any).Clerk?.user;
+      if (user) {
+        body.user_name = user.firstName || user.username || "there";
+      }
+
+      const brandSettingsStr = localStorage.getItem("brandSettings");
+      if (brandSettingsStr) {
+        try {
+          body.brand_settings = JSON.parse(brandSettingsStr);
+        } catch (e) { }
+      }
+
       const res = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         mode: "cors",
@@ -113,83 +128,10 @@ function App() {
     [applySessionDrafts],
   );
 
-  const runGenerateImage = useCallback(
-    async (prompt: string, options?: { rawPrompt?: boolean }) => {
-      if (!API_BASE_URL) {
-        throw new Error(
-          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
-        );
-      }
-      const body: Record<string, unknown> = {
-        prompt,
-        style_suffix: options?.rawPrompt ? "" : null,
-      };
-      const res = await fetch(`${API_BASE_URL}/generate-image`, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await res.json().catch(() => null)) as Record<
-        string,
-        unknown
-      > | null;
-      if (!res.ok) {
-        throw new Error(parseApiError(res, data));
-      }
-      if (!data || typeof data.image_url !== "string") {
-        throw new Error("Invalid response from image API");
-      }
-      return data as { image_url: string; prompt_used?: string };
-    },
-    [],
-  );
 
-  const runGenerateCarousel = useCallback(
-    async (idea: string, slides: number) => {
-      if (!API_BASE_URL) {
-        throw new Error(
-          "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
-        );
-      }
-      const res = await fetch(`${API_BASE_URL}/generate-carousel`, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, slides }),
-      });
-      const data = (await res.json().catch(() => null)) as Record<
-        string,
-        unknown
-      > | null;
-      if (!res.ok) {
-        throw new Error(parseApiError(res, data));
-      }
-      const raw = data?.carousel;
-      if (!Array.isArray(raw)) {
-        throw new Error("Invalid carousel response");
-      }
-      const carousel: CarouselSlide[] = raw.map((row) => {
-        const o = row as Record<string, unknown>;
-        return {
-          title: String(o.title ?? ""),
-          content: String(o.content ?? ""),
-          image_url: String(o.image_url ?? ""),
-        };
-      });
-      if (carousel.length === 0 || carousel.some((s) => !s.image_url)) {
-        throw new Error("Invalid carousel slide payload");
-      }
-      return { carousel };
-    },
-    [],
-  );
 
   const runPostAction = useCallback(
-    async (
-      action: "approve" | "regenerate" | "edit",
-      editContent?: string,
-    ) => {
+    async (action: "approve" | "regenerate" | "edit", editContent?: string) => {
       if (!API_BASE_URL) {
         throw new Error(
           "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
@@ -222,13 +164,15 @@ function App() {
   );
 
   const renderView = () => {
+    if (hasTrialExpired && activeView !== "billing") {
+      return <Billing />;
+    }
     switch (activeView) {
       case "dashboard":
         return (
           <Home
             onStartGenerate={() => setActiveView("generate")}
             onOpenLibrary={() => setActiveView("library")}
-            onOpenAnalytics={() => setActiveView("analytics")}
           />
         );
       case "generate":
@@ -238,8 +182,6 @@ function App() {
             onSave={saveContent}
             onChatCommand={runChatCommand}
             onPostAction={runPostAction}
-            onGenerateImage={runGenerateImage}
-            onGenerateCarousel={runGenerateCarousel}
             chatMessages={genChatMessages}
             setChatMessages={setGenChatMessages}
             chatStep={genChatStep}
@@ -250,10 +192,6 @@ function App() {
         );
       case "library":
         return <ContentLibrary library={library} />;
-      case "scheduler":
-        return <Scheduler />;
-      case "analytics":
-        return <Analytics />;
       case "brand":
         return <BrandSettings />;
       case "billing":
@@ -263,14 +201,13 @@ function App() {
           <Home
             onStartGenerate={() => setActiveView("generate")}
             onOpenLibrary={() => setActiveView("library")}
-            onOpenAnalytics={() => setActiveView("analytics")}
           />
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white bg-dot-grid">
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
@@ -280,12 +217,41 @@ function App() {
       <TopBar sidebarOpen={sidebarOpen} />
 
       <main
-        className={`pt-16 transition-all ${
-          sidebarOpen ? "md:ml-64" : "ml-0"
-        }`}
+        className={`pt-14 transition-all duration-200 ${sidebarOpen ? "md:ml-64" : "ml-0"}`}
       >
         <div className="p-4 md:p-8 animate-fadeIn">{renderView()}</div>
       </main>
+    </div>
+  );
+}
+
+function App() {
+  const { user, isLoaded } = useUser();
+
+  // Handle Clerk SSO OAuth callback
+  if (window.location.pathname === "/sso-callback") {
+    return <AuthenticateWithRedirectCallback />;
+  }
+
+  // Show landing page if user is not logged in
+  if (isLoaded && !user) {
+    return <Landing />;
+  }
+
+  // Show app if user is logged in
+  if (isLoaded && user) {
+    return (
+      <AppContent />
+    );
+  }
+
+  // Show loading state
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="h-12 w-12 rounded-full border-4 border-white/20 border-t-white animate-spin mx-auto" />
+        <p className="mt-4 text-gray-400">Loading...</p>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { Copy, Image as ImageIcon, Save } from "lucide-react";
+import { Copy, Save } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Textarea from "../ui/Textarea";
@@ -17,12 +17,6 @@ type ContentType = {
 export type DraftPlatform = keyof ContentType;
 
 export type ChatLine = { role: "user" | "assistant"; text: string };
-
-export type CarouselSlide = {
-  title: string;
-  content: string;
-  image_url: string;
-};
 
 const PLATFORM_TABS: { id: DraftPlatform; label: string }[] = [
   { id: "linkedin", label: "LinkedIn" },
@@ -45,14 +39,7 @@ type DashboardProps = {
     action: "approve" | "regenerate" | "edit",
     editContent?: string,
   ) => Promise<Record<string, unknown>>;
-  onGenerateImage: (
-    prompt: string,
-    options?: { rawPrompt?: boolean },
-  ) => Promise<{ image_url: string; prompt_used?: string }>;
-  onGenerateCarousel: (
-    idea: string,
-    slides: number,
-  ) => Promise<{ carousel: CarouselSlide[] }>;
+
   chatMessages: ChatLine[];
   setChatMessages: Dispatch<SetStateAction<ChatLine[]>>;
   chatStep: string;
@@ -95,8 +82,6 @@ export default function Dashboard({
   onSave,
   onChatCommand,
   onPostAction,
-  onGenerateImage,
-  onGenerateCarousel,
   chatMessages,
   setChatMessages,
   chatStep,
@@ -113,18 +98,6 @@ export default function Dashboard({
   const [autoSaveBusy, setAutoSaveBusy] = useState(false);
   const lastSyncedPostRef = useRef("");
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [imageRawOnly, setImageRawOnly] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageBusy, setImageBusy] = useState(false);
-  const [imageErr, setImageErr] = useState<string | null>(null);
-
-  const [carouselIdea, setCarouselIdea] = useState("");
-  const [carouselSlideCount, setCarouselSlideCount] = useState(5);
-  const [carouselSlides, setCarouselSlides] = useState<CarouselSlide[]>([]);
-  const [carouselBusy, setCarouselBusy] = useState(false);
-  const [carouselErr, setCarouselErr] = useState<string | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -285,39 +258,6 @@ export default function Dashboard({
       ? "e.g. next Monday at 10am"
       : "Ask a question, brainstorm, or say what you want to post…";
 
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
-    setImageBusy(true);
-    setImageErr(null);
-    try {
-      const { image_url } = await onGenerateImage(imagePrompt.trim(), {
-        rawPrompt: imageRawOnly,
-      });
-      setImageUrl(image_url);
-    } catch (e) {
-      setImageErr(e instanceof Error ? e.message : "Image generation failed");
-    } finally {
-      setImageBusy(false);
-    }
-  };
-
-  const handleGenerateCarousel = async () => {
-    if (!carouselIdea.trim()) return;
-    setCarouselBusy(true);
-    setCarouselErr(null);
-    try {
-      const n = Math.min(10, Math.max(1, Math.floor(carouselSlideCount)));
-      const { carousel } = await onGenerateCarousel(carouselIdea.trim(), n);
-      setCarouselSlides(carousel);
-    } catch (e) {
-      setCarouselErr(
-        e instanceof Error ? e.message : "Carousel generation failed",
-      );
-    } finally {
-      setCarouselBusy(false);
-    }
-  };
-
   const selectPlatform = async (p: DraftPlatform) => {
     if (p === activePlatform || chatBusy) return;
     setChatErr(null);
@@ -344,7 +284,7 @@ export default function Dashboard({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">
-          AI Social Media Manager
+          Ghostwrites
         </h1>
         <p className="text-gray-400 text-sm">
           Choose a platform, chat to draft, then edit the post below and approve
@@ -361,8 +301,8 @@ export default function Dashboard({
             disabled={chatBusy}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
               activePlatform === tab.id
-                ? "bg-indigo-600/30 border-indigo-500 text-white"
-                : "bg-gray-900/60 border-gray-700 text-gray-400 hover:text-gray-200 hover:border-gray-600"
+                ? "bg-white border-white text-black"
+                : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:border-white/20"
             }`}
           >
             {tab.label}
@@ -387,8 +327,8 @@ export default function Dashboard({
                 <div
                   className={
                     line.role === "user"
-                      ? "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-indigo-900/50 text-gray-100 whitespace-pre-wrap"
-                      : "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-gray-800/80 border border-gray-700 text-gray-200 whitespace-pre-wrap"
+                      ? "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-white/10 border border-white/10 text-white whitespace-pre-wrap"
+                      : "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-[rgba(15,15,15,0.8)] border border-white/10 text-gray-300 whitespace-pre-wrap"
                   }
                 >
                   {line.text}
@@ -407,7 +347,7 @@ export default function Dashboard({
                 if (e.key === "Enter" && !chatBusy) handleNlChat();
               }}
               placeholder={placeholder}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/80 text-gray-100 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 px-3 py-2 rounded-lg border border-white/10 bg-black text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-white/30"
               disabled={chatBusy}
             />
             <Button
@@ -482,126 +422,6 @@ export default function Dashboard({
           </div>
         </Card>
 
-        <Card>
-          <h2 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-indigo-400" aria-hidden />
-            Generate image
-          </h2>
-          <p className="text-xs text-gray-500 mb-3">
-            Uses Pixazo on the server. Set{" "}
-            <code className="text-gray-400">PIXAZO_API_KEY</code> in{" "}
-            <code className="text-gray-400">backend/.env</code>.
-          </p>
-          <Textarea
-            rows={3}
-            value={imagePrompt}
-            onChange={(e) => setImagePrompt(e.target.value)}
-            placeholder="e.g. modern minimal illustration of a startup team, pastel colors"
-            className="min-h-[80px] mb-2"
-          />
-          <label className="flex items-center gap-2 text-xs text-gray-400 mb-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={imageRawOnly}
-              onChange={(e) => setImageRawOnly(e.target.checked)}
-              className="rounded border-gray-600 bg-gray-900"
-            />
-            Raw prompt only (skip aesthetic style suffix)
-          </label>
-          <div className="flex flex-wrap gap-2 items-center">
-            <Button
-              variant="secondary"
-              onClick={() => void handleGenerateImage()}
-              disabled={imageBusy || !imagePrompt.trim()}
-            >
-              {imageBusy ? "Generating…" : "Generate image"}
-            </Button>
-            {imageUrl && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.open(imageUrl, "_blank", "noopener,noreferrer")}
-              >
-                Open full size
-              </Button>
-            )}
-          </div>
-          {imageErr && (
-            <p className="text-sm text-red-400 mt-2">{imageErr}</p>
-          )}
-          {imageUrl && (
-            <div className="mt-4 rounded-lg overflow-hidden border border-gray-700 bg-gray-900/50">
-              <img
-                src={imageUrl}
-                alt="Generated"
-                className="w-full max-h-[min(420px,50vh)] object-contain"
-              />
-            </div>
-          )}
-        </Card>
-
-        <Card>
-          <h2 className="text-sm font-semibold text-white mb-2">
-            Carousel (images per slide)
-          </h2>
-          <p className="text-xs text-gray-500 mb-3">
-            One image per slide via Pixazo; can take a minute for several slides.
-          </p>
-          <input
-            type="text"
-            value={carouselIdea}
-            onChange={(e) => setCarouselIdea(e.target.value)}
-            placeholder="Main idea or theme"
-            className="w-full px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/80 text-gray-100 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2"
-          />
-          <div className="flex flex-wrap gap-3 items-center mb-3">
-            <label className="text-xs text-gray-400 flex items-center gap-2">
-              Slides (1–10)
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={carouselSlideCount}
-                onChange={(e) =>
-                  setCarouselSlideCount(Number(e.target.value) || 1)
-                }
-                className="w-16 px-2 py-1 rounded border border-gray-700 bg-gray-900 text-gray-100 text-sm"
-              />
-            </label>
-            <Button
-              variant="secondary"
-              onClick={() => void handleGenerateCarousel()}
-              disabled={carouselBusy || !carouselIdea.trim()}
-            >
-              {carouselBusy ? "Generating…" : "Generate carousel"}
-            </Button>
-          </div>
-          {carouselErr && (
-            <p className="text-sm text-red-400 mb-2">{carouselErr}</p>
-          )}
-          {carouselSlides.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {carouselSlides.map((slide, idx) => (
-                <div
-                  key={`${slide.title}-${idx}`}
-                  className="rounded-lg border border-gray-700 overflow-hidden bg-gray-900/40"
-                >
-                  <img
-                    src={slide.image_url}
-                    alt={slide.title}
-                    className="w-full h-40 object-cover"
-                  />
-                  <div className="p-3 space-y-1">
-                    <p className="text-sm font-medium text-white">
-                      {slide.title}
-                    </p>
-                    <p className="text-xs text-gray-400">{slide.content}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
     </div>
   );

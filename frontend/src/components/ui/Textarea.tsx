@@ -9,15 +9,18 @@ export default function Textarea({ label, error, className = '', ...props }: Tex
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-2">
           {label}
         </label>
       )}
       <textarea
-        className={`w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors resize-none ${className}`}
+        className={`w-full bg-black border border-[#2a2a2a] rounded-lg px-4 py-2.5
+          text-white placeholder-[#444] text-sm
+          focus:outline-none focus:border-white/40 focus:ring-0
+          transition-colors duration-150 resize-none ${className}`}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-white/50">{error}</p>}
     </div>
   );
 }

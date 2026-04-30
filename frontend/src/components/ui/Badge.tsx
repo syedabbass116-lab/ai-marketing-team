@@ -6,19 +6,15 @@ interface BadgeProps {
   className?: string;
 }
 
-export default function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
-  const variants = {
-    linkedin: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
-    twitter: 'bg-sky-600/20 text-sky-400 border-sky-600/30',
-    instagram: 'bg-pink-600/20 text-pink-400 border-pink-600/30',
-    facebook: 'bg-blue-700/20 text-blue-400 border-blue-700/30',
-    tiktok: 'bg-purple-600/20 text-purple-400 border-purple-600/30',
-    default: 'bg-gray-800 text-gray-300 border-gray-700'
-  };
-
+/**
+ * All platform variants rendered as a uniform B&W monochrome badge.
+ * The platform name is still shown so context isn't lost.
+ */
+export default function Badge({ children, className = '' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${variants[variant]} ${className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium
+        bg-white/5 text-white/70 border border-white/10 tracking-widest uppercase ${className}`}
     >
       {children}
     </span>
