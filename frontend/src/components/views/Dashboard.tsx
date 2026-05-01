@@ -82,8 +82,6 @@ export default function Dashboard({
   onSave,
   onChatCommand,
   onPostAction,
-  chatMessages,
-  setChatMessages,
   chatStep,
   setChatStep,
   chatInput: chatText,
@@ -97,11 +95,6 @@ export default function Dashboard({
   const [editablePost, setEditablePost] = useState("");
   const [autoSaveBusy, setAutoSaveBusy] = useState(false);
   const lastSyncedPostRef = useRef("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
 
   useEffect(() => {
     let mounted = true;
@@ -115,13 +108,7 @@ export default function Dashboard({
         const data = await onChatCommand("", "linkedin", drafts);
         if (!mounted) return;
         if (typeof data.step === "string") setChatStep(data.step);
-        setChatMessages((prev) => {
-          if (prev.length > 0) return prev;
-          if (typeof data.message === "string") {
-            return [{ role: "assistant", text: data.message }];
-          }
-          return prev;
-        });
+        // The assistant greeting is ignored in the UI; generated drafts appear in the post editor.
       } catch (e) {
         if (mounted) {
           setChatErr(
@@ -174,11 +161,7 @@ export default function Dashboard({
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [editablePost, chatStep, onPostAction]);
-
-  const appendAssistant = (text: string) => {
-    setChatMessages((prev) => [...prev, { role: "assistant", text }]);
-  };
+  }, [editablePost, chatStep, onPostAction, setChatStep]);
 
   const hydrateDraftFromResponse = (data: Record<string, unknown>) => {
     const contentValue =
@@ -207,7 +190,6 @@ export default function Dashboard({
     setChatText("");
     setChatBusy(true);
     setChatErr(null);
-    setChatMessages((prev) => [...prev, { role: "user", text: outgoing }]);
     try {
       const drafts = buildClientDraftsPayload(
         content,
@@ -217,9 +199,6 @@ export default function Dashboard({
       const data = await onChatCommand(outgoing, activePlatform, drafts);
       if (typeof data.step === "string") setChatStep(data.step);
       hydrateDraftFromResponse(data);
-      if (typeof data.message === "string") {
-        appendAssistant(data.message);
-      }
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Message failed");
     } finally {
@@ -233,9 +212,6 @@ export default function Dashboard({
     try {
       const data = await onPostAction("approve");
       if (typeof data.step === "string") setChatStep(data.step);
-      if (typeof data.message === "string") {
-        appendAssistant(data.message);
-      }
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Approve failed");
     } finally {
@@ -266,9 +242,6 @@ export default function Dashboard({
       lastSyncedPostRef.current = "";
       setChatText("");
       if (typeof data.step === "string") setChatStep(data.step);
-      if (typeof data.message === "string") {
-        setChatMessages([{ role: "assistant", text: data.message }]);
-      }
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Could not reset");
     } finally {
@@ -332,33 +305,14 @@ export default function Dashboard({
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* Chat — full width on top */}
         <Card>
-          <h2 className="text-sm font-semibold text-white mb-3">Chat</h2>
-          <div className="max-h-[min(260px,32vh)] overflow-y-auto space-y-3 mb-2 pr-1">
-            {chatMessages.map((line, i) => (
-              <div
-                key={`${line.role}-${i}`}
-                className={
-                  line.role === "user"
-                    ? "flex justify-end"
-                    : "flex justify-start"
-                }
-              >
-                <div
-                  className={
-                    line.role === "user"
-                      ? "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-white/10 border border-white/10 text-white whitespace-pre-wrap"
-                      : "max-w-[90%] rounded-lg px-3 py-2 text-sm bg-[rgba(15,15,15,0.8)] border border-white/10 text-gray-300 whitespace-pre-wrap"
-                  }
-                >
-                  {line.text}
-                </div>
-              </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-
+          <h2 className="text-sm font-semibold text-white mb-3">
+            What do you want to post?
+          </h2>
+          <p className="text-xs text-gray-500 mb-3">
+            Enter your idea below and the generated draft will appear in the
+            post editor.
+          </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
@@ -376,14 +330,14 @@ export default function Dashboard({
               onClick={handleNlChat}
               disabled={chatBusy || !chatText.trim()}
             >
-              {chatBusy ? "…" : "Send"}
+              {chatBusy ? "…" : "Generate"}
             </Button>
             <Button
               variant="ghost"
               onClick={handleStartOver}
               disabled={chatBusy}
             >
-              Start over
+              Reset
             </Button>
           </div>
           {chatErr && <p className="text-sm text-red-400 mt-2">{chatErr}</p>}
