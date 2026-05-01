@@ -42,8 +42,8 @@ export default function Sidebar({
   const { signOut } = useClerk();
 
   const asideClass = [
-    "w-64 h-screen flex flex-col fixed left-0 top-0 z-30 md:z-10",
-    "bg-[rgba(10,10,10,0.8)] border-r border-white/10 backdrop-blur-xl",
+    "w-64 min-h-screen flex flex-col fixed left-0 top-0 z-30 md:z-10",
+    "bg-[rgba(10,10,10,0.8)] border-r border-white/10 backdrop-blur-xl touch-pan-y",
     "transform transition-transform duration-200 ease-out",
     isOpen ? "translate-x-0" : "-translate-x-full",
   ].join(" ");
@@ -97,7 +97,7 @@ export default function Sidebar({
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-bw">
+        <nav className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto pb-8 scrollbar-bw">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = activeView === item.id;
@@ -121,7 +121,7 @@ export default function Sidebar({
         </nav>
 
         {/* User / logout footer */}
-        <div className="px-3 py-4 border-t border-white/10 space-y-1">
+        <div className="sticky bottom-0 px-3 py-4 border-t border-white/10 space-y-1 bg-[rgba(10,10,10,0.95)]">
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
               <div className="w-7 h-7 rounded-full bg-white/10 border border-white/10 overflow-hidden flex-shrink-0">
