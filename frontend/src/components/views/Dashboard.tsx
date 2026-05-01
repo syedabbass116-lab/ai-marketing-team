@@ -106,6 +106,12 @@ export default function Dashboard({
   }, [content, activePlatform]);
 
   useEffect(() => {
+    if (chatStep !== "approval" && content?.[activePlatform]?.trim()) {
+      setChatStep("approval");
+    }
+  }, [chatStep, content, activePlatform, setChatStep]);
+
+  useEffect(() => {
     if (chatStep !== "approval") return;
     const next = editablePost.trim();
     if (!next || next === lastSyncedPostRef.current.trim()) return;
