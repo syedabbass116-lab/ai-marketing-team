@@ -231,6 +231,15 @@ def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
     draft = data.get("post_draft")
     if not isinstance(draft, str) or not draft.strip():
         draft = data.get("linkedin_draft")
+    
+    # PERMANENT FIX: If no draft was found, but the reply looks like a formatted post 
+    # (starts with numbers like 1/ or has hook-like structure), move it to draft.
+    if (not draft or not draft.strip()) and reply_out:
+        # Check for Twitter thread style (1/) or LinkedIn structure (lots of newlines/hooks)
+        if re.match(r"^1/", reply_out) or reply_out.count("\n\n") > 2:
+            draft = reply_out
+            reply_out = "I've drafted that for you! You can see it in the panel below."
+
     if isinstance(draft, str) and draft.strip():
         return (reply_out, draft.strip(), None)
     return (reply_out, None, None)
