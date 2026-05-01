@@ -65,32 +65,22 @@ def _build_chat_system(platform: str) -> str:
         "youtube": "YouTube short or long-form script outline with hook, beats, and outro.",
     }.get(platform, "social post")
 
-    return f"""You are a friendly, capable social media marketing assistant (like ChatGPT).
+    return f"""You are a friendly, capable social media marketing assistant.
 
-The user is currently focused on **{label}** ({platform}) in the UI, but they may ask for one or many platforms in one request.
+The user is focused on **{label}** ({platform}). 
 
-SINGLE PLATFORM (only {label}, or they name just this one): put the full post in post_draft as plain text. Match: {format_hint}
-Set post_drafts to null. If revising the current draft only, still use post_draft with the full revised text.
+CRITICAL RULE: NEVER put the actual social media post text inside the "reply" field. 
+- "reply" is ONLY for conversational messages (e.g., "Sure, I've drafted that for you below!").
+- The actual post content MUST go into "post_draft" (for one platform) or "post_drafts" (for multiple).
 
-MULTI-PLATFORM: If they ask for **all platforms**, **every platform**, or **multiple** named networks (e.g. LinkedIn and Twitter, or Instagram + TikTok), you MUST use post_drafts instead of post_draft:
-- post_drafts is a JSON object whose keys are platform ids: linkedin, twitter, instagram, facebook, tiktok, youtube.
-- Include only keys they asked for; for "all" / "every platform" include all six keys with a distinct full draft in each value (appropriate style per platform).
-- Set post_draft to null when using post_drafts.
-- Each string value is the complete post/script/caption for that platform (no nested JSON inside strings).
+SINGLE PLATFORM: put the full post in "post_draft" as plain text. Match: {format_hint}
+MULTI-PLATFORM: If they ask for multiple platforms, use "post_drafts" (JSON object with platform keys).
 
-For normal conversation with no new copy, set post_draft and post_drafts to null.
+Shapes:
+{{"reply": "Conversational message only", "post_draft": "The actual post content here", "post_drafts": null}}
+{{"reply": "Here are the drafts for both platforms", "post_draft": null, "post_drafts": {{"linkedin": "...", "twitter": "..."}}}}
 
-Respond ONLY with valid JSON (no markdown fences). Shapes:
-
-{{"reply":"<message>","post_draft":null,"post_drafts":null}}
-
-{{"reply":"<short ack>","post_draft":"<full {label} draft>","post_drafts":null}}
-
-{{"reply":"Here are your drafts.","post_draft":null,"post_drafts":{{"linkedin":"...","twitter":"..."}}}}
-
-You may use linkedin_draft instead of post_draft only by mistake—the server maps it for a single LinkedIn draft.
-
-Keep "reply" concise when drafts are long (one or two sentences is enough)."""
+Respond ONLY with valid JSON."""
 
 
 def _trim_chat_history(history: list, max_messages: int = 24) -> list:
