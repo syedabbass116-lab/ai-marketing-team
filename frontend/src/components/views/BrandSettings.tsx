@@ -27,7 +27,8 @@ export default function BrandSettings() {
   const [brandVoice, setBrandVoice] = useState('professional');
   const [tone, setTone] = useState('friendly');
   const [targetAudience, setTargetAudience] = useState('');
-  const [writingStyle, setWritingStyle] = useState('');
+  const [writingStyleLinkedin, setWritingStyleLinkedin] = useState('');
+  const [writingStyleTwitter, setWritingStyleTwitter] = useState('');
   const [keyTopics, setKeyTopics] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
@@ -42,7 +43,8 @@ export default function BrandSettings() {
         if (parsed.brandVoice) setBrandVoice(parsed.brandVoice);
         if (parsed.tone) setTone(parsed.tone);
         if (parsed.targetAudience) setTargetAudience(parsed.targetAudience);
-        if (parsed.writingStyle) setWritingStyle(parsed.writingStyle);
+        if (parsed.writingStyleLinkedin) setWritingStyleLinkedin(parsed.writingStyleLinkedin);
+        if (parsed.writingStyleTwitter) setWritingStyleTwitter(parsed.writingStyleTwitter);
         if (parsed.keyTopics) setKeyTopics(parsed.keyTopics);
       } catch (e) {}
     }
@@ -56,7 +58,8 @@ export default function BrandSettings() {
       brandVoice,
       tone,
       targetAudience,
-      writingStyle,
+      writingStyleLinkedin,
+      writingStyleTwitter,
       keyTopics,
     };
     localStorage.setItem('brandSettings', JSON.stringify(settings));
@@ -129,14 +132,28 @@ export default function BrandSettings() {
       <Card>
         <h3 className="text-lg font-semibold text-white mb-4">Writing Style Examples</h3>
         <p className="text-sm text-gray-400 mb-4">
-          Paste examples of your best-performing content to help the AI learn your style
+          Paste examples of your best-performing content separately for LinkedIn and Twitter.
         </p>
-        <Textarea
-          placeholder="Paste 2-3 examples of your content that best represents your brand voice..."
-          rows={6}
-          value={writingStyle}
-          onChange={(e) => setWritingStyle(e.target.value)}
-        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white">LinkedIn examples</label>
+            <Textarea
+              placeholder="Paste LinkedIn examples that show your brand voice..."
+              rows={6}
+              value={writingStyleLinkedin}
+              onChange={(e) => setWritingStyleLinkedin(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white">Twitter examples</label>
+            <Textarea
+              placeholder="Paste Twitter examples that show your brand voice..."
+              rows={6}
+              value={writingStyleTwitter}
+              onChange={(e) => setWritingStyleTwitter(e.target.value)}
+            />
+          </div>
+        </div>
       </Card>
 
       <Card>

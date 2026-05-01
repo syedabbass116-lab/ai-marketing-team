@@ -596,6 +596,38 @@ def _sanitize_json_string(raw: str) -> str:
     return "".join(out)
 
 
+def _escape_invalid_json_escapes(raw: str) -> str:
+    out: list[str] = []
+    in_string = False
+    escape = False
+    i = 0
+
+    while i < len(raw):
+        ch = raw[i]
+        if ch == '"' and not escape:
+            in_string = not in_string
+            out.append(ch)
+            i += 1
+            continue
+
+        if in_string and ch == '\\' and not escape:
+            nxt = raw[i + 1] if i + 1 < len(raw) else ''
+            if nxt not in '"\\/bfnrtu':
+                out.append('\\\\')
+                i += 1
+                continue
+            out.append(ch)
+            escape = True
+            i += 1
+            continue
+
+        out.append(ch)
+        escape = (ch == '\\' and not escape)
+        i += 1
+
+    return "".join(out)
+
+
 def _parse_llm_json(raw: str) -> dict:
     try:
         return json.loads(raw)
@@ -608,7 +640,11 @@ def _parse_llm_json(raw: str) -> dict:
             return json.loads(json_text)
         except Exception:
             sanitized = _sanitize_json_string(json_text)
-            return json.loads(sanitized)
+            try:
+                return json.loads(sanitized)
+            except Exception:
+                sanitized = _escape_invalid_json_escapes(sanitized)
+                return json.loads(sanitized)
 
 
 def _carousel_slide_texts(idea: str, n: int) -> list[dict[str, str]]:
@@ -949,7 +985,13 @@ def chat_command(payload: ChatCommandRequest):
             lines.append(f"Tone: {brand_settings['tone']}")
         if brand_settings.get("targetAudience"):
             lines.append(f"Target Audience: {brand_settings['targetAudience']}")
-        if brand_settings.get("writingStyle"):
+        if brand_settings.get("writingStyleLinkedin"):
+            lines.append("LinkedIn Writing Style / Examples:")
+            lines.append(brand_settings["writingStyleLinkedin"])
+        if brand_settings.get("writingStyleTwitter"):
+            lines.append("Twitter Writing Style / Examples:")
+            lines.append(brand_settings["writingStyleTwitter"])
+        if brand_settings.get("writingStyle") and not brand_settings.get("writingStyleLinkedin") and not brand_settings.get("writingStyleTwitter"):
             lines.append("Writing Style / Examples:")
             lines.append(brand_settings["writingStyle"])
         if brand_settings.get("keyTopics"):
@@ -958,7 +1000,21 @@ def chat_command(payload: ChatCommandRequest):
         lines.append("If examples are provided, mimic the style, phrasing, and structure.")
         brand_prompt = "\n".join(lines) + "\n\n"
 
-    prompt = f"""You must respond with ONLY a single JSON object. No markdown, no explanation.
+    requested_posts = 1
+    post_count_match = re.search(r"\b([1-9][0-9]*)\s*(?:posts?|post|pieces?|ideas?)\b", msg.lower())
+    if post_count_match:
+        requested_posts = min(10, int(post_count_match.group(1)))
+
+    prompt = f"""system_prompt = \"\"\"
+You are a LinkedIn content writer.
+IMPORTANT:
+- Respond ONLY with valid JSON
+- No markdown, no backticks, no code blocks
+- No backslashes in your response
+- No newlines inside JSON string values, use \\n instead
+\"\"\"
+
+You must respond with ONLY a single JSON object. No markdown, no explanation.
 
 Today's date (UTC) is: {today_utc}
 
@@ -967,6 +1023,9 @@ Platform: {platform}
 User message: {json.dumps(msg)}
 
 {brand_prompt}Generate content for the requested platform using the exact format rules below.
+
+If the user requests {requested_posts} post{'s' if requested_posts != 1 else ''}, return exactly {requested_posts} post{'s' if requested_posts != 1 else ''} in the content string.
+Separate multiple posts with two blank lines, and encode all line breaks as \\n.
 
 If the content contains line breaks, encode them as \\n inside the JSON string value. Do not include raw unescaped newlines inside JSON strings.
 
