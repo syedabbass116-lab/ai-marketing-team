@@ -180,6 +180,27 @@ export default function Dashboard({
     setChatMessages((prev) => [...prev, { role: "assistant", text }]);
   };
 
+  const hydrateDraftFromResponse = (data: Record<string, unknown>) => {
+    const contentValue =
+      typeof data.content === "string" && data.content.trim()
+        ? data.content.trim()
+        : "";
+    const draftsValue =
+      data.drafts && typeof data.drafts === "object"
+        ? (data.drafts as Record<string, unknown>)[activePlatform]
+        : undefined;
+    const draftFromDrafts =
+      typeof draftsValue === "string" && draftsValue.trim()
+        ? draftsValue.trim()
+        : "";
+
+    const nextDraft = contentValue || draftFromDrafts;
+    if (nextDraft) {
+      setEditablePost(nextDraft);
+      lastSyncedPostRef.current = nextDraft;
+    }
+  };
+
   const handleNlChat = async () => {
     if (!chatText.trim()) return;
     const outgoing = chatText.trim();
@@ -195,6 +216,7 @@ export default function Dashboard({
       );
       const data = await onChatCommand(outgoing, activePlatform, drafts);
       if (typeof data.step === "string") setChatStep(data.step);
+      hydrateDraftFromResponse(data);
       if (typeof data.message === "string") {
         appendAssistant(data.message);
       }
@@ -225,7 +247,8 @@ export default function Dashboard({
     setChatBusy(true);
     setChatErr(null);
     try {
-      await onPostAction("regenerate");
+      const data = await onPostAction("regenerate");
+      hydrateDraftFromResponse(data);
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Regenerate failed");
     } finally {
@@ -283,9 +306,7 @@ export default function Dashboard({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">
-          Ghostwrites
-        </h1>
+        <h1 className="text-2xl font-bold text-white mb-1">Ghostwrites</h1>
         <p className="text-gray-400 text-sm">
           Choose a platform, chat to draft, then edit the post below and approve
           to schedule.
@@ -357,13 +378,15 @@ export default function Dashboard({
             >
               {chatBusy ? "…" : "Send"}
             </Button>
-            <Button variant="ghost" onClick={handleStartOver} disabled={chatBusy}>
+            <Button
+              variant="ghost"
+              onClick={handleStartOver}
+              disabled={chatBusy}
+            >
               Start over
             </Button>
           </div>
-          {chatErr && (
-            <p className="text-sm text-red-400 mt-2">{chatErr}</p>
-          )}
+          {chatErr && <p className="text-sm text-red-400 mt-2">{chatErr}</p>}
         </Card>
 
         {/* Generated Post — below chat */}
@@ -372,7 +395,8 @@ export default function Dashboard({
             Generated post
           </h2>
           <p className="text-xs text-gray-500 mb-3">
-            {activeTabLabel} draft — edit here, regenerate, or approve when ready.
+            {activeTabLabel} draft — edit here, regenerate, or approve when
+            ready.
           </p>
           <Textarea
             rows={12}
@@ -400,7 +424,9 @@ export default function Dashboard({
               variant="ghost"
               size="sm"
               icon={<Copy className="w-4 h-4" />}
-              onClick={() => editablePost && navigator.clipboard.writeText(editablePost)}
+              onClick={() =>
+                editablePost && navigator.clipboard.writeText(editablePost)
+              }
               disabled={!editablePost}
             >
               Copy
@@ -421,7 +447,6 @@ export default function Dashboard({
             )}
           </div>
         </Card>
-
       </div>
     </div>
   );
