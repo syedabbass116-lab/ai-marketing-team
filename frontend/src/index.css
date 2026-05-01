@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Poppins:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,16 +6,31 @@
 
 /* ─── Design Tokens ───────────────────────────────────────── */
 :root {
-  --color-bg:       #000000;
-  --color-surface:  #0a0a0a;
-  --color-border:   #1f1f1f;
-  --color-border-hover: #333333;
-  --color-text:     #ffffff;
-  --color-muted:    #6b6b6b;
-  --color-subtle:   #3a3a3a;
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --grid-line: rgba(255,255,255,0.05);
 
-  --font-heading: "Montserrat", system-ui, sans-serif;
-  --font-body:    "Poppins", system-ui, sans-serif;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A8B0;
+  --text-muted: #6B7280;
+
+  --accent: #4F46E5;
+  --accent-hover: #6366F1;
+
+  --border: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.03);
+  --glass: rgba(255,255,255,0.05);
+
+  --color-bg: var(--bg-primary);
+  --color-surface: var(--bg-secondary);
+  --color-border: var(--border);
+  --color-border-hover: rgba(255,255,255,0.12);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-subtle: rgba(255,255,255,0.03);
+
+  --font-heading: "Inter", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
 
   --radius-sm:  6px;
   --radius-md:  10px;
@@ -35,20 +50,33 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: thin;
-    scrollbar-color: #2a2a2a #0a0a0a;
+    scrollbar-color: #2a2a2a var(--color-bg);
   }
 
   body {
+    margin: 0;
+    min-height: 100vh;
     font-family: var(--font-body);
-    background-color: var(--color-bg);
+    background: #000000;
     color: var(--color-text);
+    position: relative;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--color-text);
+  }
+
+  h1 {
+    font-size: 64px;
+    line-height: 1.1;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 18px;
   }
 
   button, input, textarea, select {
@@ -94,6 +122,54 @@
   .animate-fade-in   { animation: fade-in 0.5s ease-out both; }
   .animate-float     { animation: float 6s ease-in-out infinite; }
   .animate-pulse-soft{ animation: pulse-soft 3s ease-in-out infinite; }
+
+  /* ── Theme buttons and surfaces ── */
+  .btn-primary {
+    background: white;
+    color: black;
+    padding: 14px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn-secondary {
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+  }
+
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    margin: 0 12px;
+    text-decoration: none;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
 
   /* ── Grid background (matches landing page) ── */
   .bg-dot-grid {

@@ -40,8 +40,6 @@ type DashboardProps = {
     editContent?: string,
   ) => Promise<Record<string, unknown>>;
 
-  chatMessages: ChatLine[];
-  setChatMessages: Dispatch<SetStateAction<ChatLine[]>>;
   chatStep: string;
   setChatStep: Dispatch<SetStateAction<string>>;
   chatInput: string;
@@ -95,37 +93,6 @@ export default function Dashboard({
   const [editablePost, setEditablePost] = useState("");
   const [autoSaveBusy, setAutoSaveBusy] = useState(false);
   const lastSyncedPostRef = useRef("");
-
-  useEffect(() => {
-    let mounted = true;
-    const boot = async () => {
-      try {
-        const drafts = buildClientDraftsPayload(
-          content,
-          activePlatform,
-          editablePost,
-        );
-        const data = await onChatCommand("", "linkedin", drafts);
-        if (!mounted) return;
-        if (typeof data.step === "string") setChatStep(data.step);
-        // The assistant greeting is ignored in the UI; generated drafts appear in the post editor.
-      } catch (e) {
-        if (mounted) {
-          setChatErr(
-            e instanceof Error
-              ? e.message
-              : "Could not reach the chat API. Is the backend running at VITE_API_URL?",
-          );
-        }
-      }
-    };
-    void boot();
-    return () => {
-      mounted = false;
-    };
-    // Boot once per mount; avoids wiping chat when returning to this view.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChatCommand]);
 
   useEffect(() => {
     const text = content?.[activePlatform];
@@ -197,8 +164,21 @@ export default function Dashboard({
         editablePost,
       );
       const data = await onChatCommand(outgoing, activePlatform, drafts);
-      if (typeof data.step === "string") setChatStep(data.step);
-      hydrateDraftFromResponse(data);
+      if (data.action === "generate_post") {
+        hydrateDraftFromResponse(data);
+        setChatStep("approval");
+      } else if (data.action === "schedule_post") {
+        if (typeof data.content === "string") {
+          hydrateDraftFromResponse(data);
+          setChatStep("approval");
+        }
+      } else if (data.action === "clarify") {
+        setChatErr(
+          typeof data.message === "string"
+            ? data.message
+            : "Please clarify your request.",
+        );
+      }
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Message failed");
     } finally {
@@ -236,38 +216,13 @@ export default function Dashboard({
     setChatBusy(true);
     setChatErr(null);
     try {
-      const data = await onChatCommand("start over", "linkedin", null);
       setActivePlatform("linkedin");
       setEditablePost("");
       lastSyncedPostRef.current = "";
       setChatText("");
-      if (typeof data.step === "string") setChatStep(data.step);
+      setChatStep("start");
     } catch (e) {
       setChatErr(e instanceof Error ? e.message : "Could not reset");
-    } finally {
-      setChatBusy(false);
-    }
-  };
-
-  const placeholder =
-    chatStep === "awaiting_schedule"
-      ? "e.g. next Monday at 10am"
-      : "Ask a question, brainstorm, or say what you want to post…";
-
-  const selectPlatform = async (p: DraftPlatform) => {
-    if (p === activePlatform || chatBusy) return;
-    setChatErr(null);
-    setChatBusy(true);
-    try {
-      const drafts = buildClientDraftsPayload(
-        content,
-        activePlatform,
-        editablePost,
-      );
-      await onChatCommand("", p, drafts);
-      setActivePlatform(p);
-    } catch (e) {
-      setChatErr(e instanceof Error ? e.message : "Could not switch platform");
     } finally {
       setChatBusy(false);
     }
@@ -276,13 +231,21 @@ export default function Dashboard({
   const activeTabLabel =
     PLATFORM_TABS.find((t) => t.id === activePlatform)?.label ?? "Post";
 
+  const placeholder = `Tell me what you want to post on ${activeTabLabel}. I’ll draft it in the selected format.`;
+
+  const selectPlatform = (p: DraftPlatform) => {
+    if (p === activePlatform || chatBusy) return;
+    setChatErr(null);
+    setActivePlatform(p);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">Ghostwrites</h1>
         <p className="text-gray-400 text-sm">
-          Choose a platform, chat to draft, then edit the post below and approve
-          to schedule.
+          Choose a platform, enter your idea, and the generated draft will
+          appear below.
         </p>
       </div>
 
@@ -370,7 +333,7 @@ export default function Dashboard({
             <Button
               variant="ghost"
               onClick={handleRegenerate}
-              disabled={chatBusy || chatStep !== "approval"}
+              disabled={chatBusy || !editablePost.trim()}
             >
               Regenerate 🔄
             </Button>

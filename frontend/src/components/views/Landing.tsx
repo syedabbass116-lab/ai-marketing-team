@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Mic,
   Calendar,
   TrendingUp,
@@ -8,7 +7,7 @@ import {
   Linkedin,
   Check,
 } from "lucide-react";
-import { useUser, useSignIn } from "@clerk/clerk-react";
+import { SignInButton, SignUpButton, useUser, useSignIn } from "@clerk/clerk-react";
 import { useState } from "react";
 import logo from "../../../Logo.png";
 
@@ -171,15 +170,23 @@ export default function Landing() {
                 ) : (
                   <GoogleIcon className="h-4 w-4" />
                 )}
-                <span>{signingIn ? "..." : "Get Started Free"}</span>
+                <span>{signingIn ? "..." : "Get Started with Google"}</span>
               </button>
-              <a
-                href="#preview"
-                className="group inline-flex h-14 items-center justify-center gap-2 rounded-full px-7 text-sm font-medium text-white transition-colors hover:bg-white/10"
-              >
-                Explore Demo
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+              <SignUpButton mode="modal">
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                >
+                  Sign up with Email
+                </button>
+              </SignUpButton>
+            </div>
+            <div className="mt-4 text-sm text-gray-400 text-center lg:text-left">
+              Already have an account?{' '}
+              <SignInButton mode="modal">
+                <span className="font-medium text-white underline decoration-white/20 hover:decoration-white">
+                  Sign in with Email
+                </span>
+              </SignInButton>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-gray-400">
               <span className="inline-flex items-center gap-1.5">

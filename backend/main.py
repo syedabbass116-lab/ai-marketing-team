@@ -90,9 +90,9 @@ def _build_chat_system(platform: str) -> str:
 
     return f"""You are a friendly, capable social media marketing assistant.
 
-The user is focused on **{label}** ({platform}). 
+The user is focused on **{label}** ({platform}).
 
-CRITICAL RULE 1: NEVER put the actual social media post text inside the "reply" field. 
+CRITICAL RULE 1: NEVER put the actual social media post text inside the "reply" field.
 - "reply" is ONLY for conversational messages.
 - The actual post content MUST go into "post_draft" or "post_drafts".
 
@@ -231,8 +231,8 @@ def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
     draft = data.get("post_draft")
     if not isinstance(draft, str) or not draft.strip():
         draft = data.get("linkedin_draft")
-    
-    # PERMANENT FIX: If no draft was found, but the reply looks like a formatted post 
+
+    # PERMANENT FIX: If no draft was found, but the reply looks like a formatted post
     # (starts with numbers like 1/ or has hook-like structure), move it to draft.
     if (not draft or not draft.strip()) and reply_out:
         # Check for Twitter thread style (1/) or LinkedIn structure (lots of newlines/hooks)
@@ -256,19 +256,24 @@ def send_to_zapier(data: dict) -> None:
     response = requests.post(webhook_url, json=data, timeout=15)
     response.raise_for_status()
 
+
 print("PORT ENV:", os.getenv("PORT"))
+
 
 @app.get("/")
 def root():
     return {"status": "ok"}
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
 @app.get("/health/")
 def health_trailing_slash():
     return {"status": "ok"}
+
 
 allowed_origins = [
     # Vercel frontend (production)
@@ -305,6 +310,8 @@ class SchedulePostRequest(BaseModel):
 
 class ChatCommandRequest(BaseModel):
     message: str
+    platform: str = "linkedin"
+    brand_settings: dict | None = None
 
 
 class ChatRequest(BaseModel):
@@ -474,23 +481,81 @@ def _normalize_time(raw_time: str | None) -> str:
 
 
 def _extract_schedule_data(instruction: str) -> dict:
-    prompt = f"""
-Extract all dates and time from this instruction.
-Return JSON only in this format:
-{{
-  "dates": ["YYYY-MM-DD"],
-  "time": "HH:MM"
-}}
+    prompt = f"""You must respond with ONLY a single JSON object. No markdown, no explanation.
 
-Rules:
-- dates must be ISO format YYYY-MM-DD
-- if multiple dates are present, include all of them
-- if no time is present, return "10:00"
-- do not return markdown or explanation
+Today's date (UTC) is: {today_utc}
 
-Instruction:
-{instruction}
-""".strip()
+Platform: {platform}
+
+User message: {json.dumps(msg)}
+
+Generate content for the requested platform using the exact format rules below.
+
+If the content contains line breaks, encode them as \n inside the JSON string value. Do not include raw unescaped newlines inside JSON strings.
+
+LinkedIn format:
+- First line is a strong hook line that stops the scroll.
+
+- Blank line.
+
+- Problem section with 2-3 lines about the audience pain.
+
+- Blank line.
+
+- Story or insight section describing what changed or what you discovered.
+
+- Blank line.
+
+- Value section with 3-5 short lines or a mini list:
+  - Point 1
+  - Point 2
+  - Point 3
+
+- Blank line.
+
+- Conclusion line that is punchy.
+
+- Blank line.
+
+- CTA line with one clear ask.
+
+- Blank line.
+
+- Hashtags line with 3 hashtags.
+
+Twitter format:
+1/ [Big hook tweet � make them want to read more]
+
+2/ [Problem]
+
+3/ [Agitate the problem]
+
+4/ [Your solution / story]
+
+5/ [Proof or result]
+
+6/ [Actionable tip]
+
+7/ [CTA � link, follow, retweet]
+
+For Instagram, Facebook, TikTok, or YouTube output a platform-appropriate post with a strong hook, problem, story, value, CTA, and hashtags.
+
+Return exactly one of:
+
+1) New post content:
+{{"action":"generate_post","content":"<full generated post text>"}}
+
+2) Schedule a post:
+{{"action":"schedule_post","content":"<post text>","date":"YYYY-MM-DD","time":"HH:MM","platform":"{platform}"}}
+
+If the user says "schedule this" / "schedule it", set "content" to empty string ""; the server will use the last generated post.
+
+Resolve relative dates (tomorrow, next Monday, April 15, etc.) to YYYY-MM-DD using today {today_utc}.
+
+If the user clearly wants to schedule but date or time cannot be determined, return:
+{{"action":"clarify","message":"<one short question>"}}
+
+JSON only.""".strip()
 
     raw = generate_text(prompt)
 
@@ -504,6 +569,33 @@ Instruction:
         return json.loads(json_match.group(0))
 
 
+def _sanitize_json_string(raw: str) -> str:
+    out: list[str] = []
+    in_string = False
+    escape = False
+
+    for ch in raw:
+        if ch == '"' and not escape:
+            in_string = not in_string
+            out.append(ch)
+            continue
+
+        if in_string and ch in "\n\r\t":
+            if ch == "\n":
+                out.append("\\n")
+            elif ch == "\r":
+                out.append("\\r")
+            else:
+                out.append("\\t")
+            escape = False
+            continue
+
+        out.append(ch)
+        escape = (ch == "\\" and not escape)
+
+    return "".join(out)
+
+
 def _parse_llm_json(raw: str) -> dict:
     try:
         return json.loads(raw)
@@ -511,7 +603,12 @@ def _parse_llm_json(raw: str) -> dict:
         json_match = re.search(r"\{.*\}", raw, re.DOTALL)
         if not json_match:
             raise ValueError("Could not parse JSON from AI output")
-        return json.loads(json_match.group(0))
+        json_text = json_match.group(0)
+        try:
+            return json.loads(json_text)
+        except Exception:
+            sanitized = _sanitize_json_string(json_text)
+            return json.loads(sanitized)
 
 
 def _carousel_slide_texts(idea: str, n: int) -> list[dict[str, str]]:
@@ -531,7 +628,8 @@ def post_action(payload: ActionRequest):
 
     act = (payload.action or "").strip().lower()
     if act not in {"approve", "regenerate", "edit"}:
-        raise HTTPException(status_code=400, detail="action must be approve, regenerate, or edit")
+        raise HTTPException(
+            status_code=400, detail="action must be approve, regenerate, or edit")
 
     step = conversation_state["step"]
 
@@ -542,7 +640,8 @@ def post_action(payload: ActionRequest):
                 detail="Approve your draft in the panel first (no draft to approve).",
             )
         if not conversation_state.get("content", "").strip():
-            raise HTTPException(status_code=400, detail="No post content to approve.")
+            raise HTTPException(
+                status_code=400, detail="No post content to approve.")
         conversation_state["step"] = "awaiting_schedule"
         return _with_session_meta(
             {
@@ -561,11 +660,13 @@ def post_action(payload: ActionRequest):
             )
         source_idea = conversation_state.get("idea", "").strip()
         if not source_idea:
-            raise HTTPException(status_code=400, detail="No idea stored — start over and share your topic again.")
+            raise HTTPException(
+                status_code=400, detail="No idea stored — start over and share your topic again.")
         plat = conversation_state.get("platform") or "linkedin"
         regenerated = _generate_for_platform(source_idea, plat)
         if not regenerated:
-            raise HTTPException(status_code=500, detail="Failed to regenerate post")
+            raise HTTPException(
+                status_code=500, detail="Failed to regenerate post")
         _store_active_draft(regenerated)
         last_generated_post = regenerated
         return _with_session_meta(
@@ -605,7 +706,8 @@ def chat(payload: ChatRequest):
     lowered = message.lower()
     current_step = conversation_state["step"]
     hist: list = conversation_state.setdefault("chat_history", [])
-    plat_in = _normalize_platform(payload.platform) if payload.platform else None
+    plat_in = _normalize_platform(
+        payload.platform) if payload.platform else None
 
     if payload.brand_settings:
         conversation_state["brand_settings"] = payload.brand_settings
@@ -704,7 +806,8 @@ def chat(payload: ChatRequest):
         except HTTPException:
             raise
         except requests.RequestException as exc:
-            raise HTTPException(status_code=502, detail=f"Webhook error: {str(exc)}")
+            raise HTTPException(
+                status_code=502, detail=f"Webhook error: {str(exc)}")
 
         confirm = f"✅ Post scheduled for {date_str} at {norm_time}"
         hist.append({"role": "user", "content": message})
@@ -825,28 +928,110 @@ def chat_command(payload: ChatCommandRequest):
         )
 
     today_utc = datetime.utcnow().strftime("%Y-%m-%d")
+    platform = (payload.platform or "linkedin").lower().strip()
+    if platform not in {"linkedin", "twitter", "instagram", "facebook", "tiktok", "youtube"}:
+        platform = "linkedin"
+
+    if payload.brand_settings:
+        conversation_state["brand_settings"] = payload.brand_settings
+
+    brand_settings = payload.brand_settings or conversation_state.get("brand_settings") or {}
+    brand_prompt = ""
+    if isinstance(brand_settings, dict) and brand_settings:
+        lines = ["--- BRAND SETTINGS ---"]
+        if brand_settings.get("brandName"):
+            lines.append(f"Brand Name: {brand_settings['brandName']}")
+        if brand_settings.get("brandDescription"):
+            lines.append(f"Brand Description: {brand_settings['brandDescription']}")
+        if brand_settings.get("brandVoice"):
+            lines.append(f"Voice: {brand_settings['brandVoice']}")
+        if brand_settings.get("tone"):
+            lines.append(f"Tone: {brand_settings['tone']}")
+        if brand_settings.get("targetAudience"):
+            lines.append(f"Target Audience: {brand_settings['targetAudience']}")
+        if brand_settings.get("writingStyle"):
+            lines.append("Writing Style / Examples:")
+            lines.append(brand_settings["writingStyle"])
+        if brand_settings.get("keyTopics"):
+            lines.append(f"Key Topics: {brand_settings['keyTopics']}")
+        lines.append("Use these brand settings to write every post in the user's exact brand voice, tone, and style.")
+        lines.append("If examples are provided, mimic the style, phrasing, and structure.")
+        brand_prompt = "\n".join(lines) + "\n\n"
+
     prompt = f"""You must respond with ONLY a single JSON object. No markdown, no explanation.
 
 Today's date (UTC) is: {today_utc}
 
+Platform: {platform}
+
 User message: {json.dumps(msg)}
+
+{brand_prompt}Generate content for the requested platform using the exact format rules below.
+
+If the content contains line breaks, encode them as \\n inside the JSON string value. Do not include raw unescaped newlines inside JSON strings.
+
+LinkedIn format:
+- First line is a strong hook line that stops the scroll.
+
+- Blank line.
+
+- Problem section with 2-3 lines about the audience pain.
+
+- Blank line.
+
+- Story or insight section describing what changed or what you discovered.
+
+- Blank line.
+
+- Value section with 3-5 short lines or a mini list:
+  - Point 1
+  - Point 2
+  - Point 3
+
+- Blank line.
+
+- Conclusion line that is punchy.
+
+- Blank line.
+
+- CTA line with one clear ask.
+
+- Blank line.
+
+- Hashtags line with 3 hashtags.
+
+Twitter format:
+1 / [Big hook tweet — make them want to read more]
+
+2 / [Problem]
+
+3 / [Agitate the problem]
+
+4 / [Your solution / story]
+
+5 / [Proof or result]
+
+6 / [Actionable tip]
+
+7 / [CTA — link, follow, retweet]
+
+For Instagram, Facebook, TikTok, or YouTube output a platform-appropriate post with a strong hook, problem, story, value, CTA, and hashtags.
 
 Return exactly one of:
 
 1) New post content:
-{{"action":"generate_post","content":"<full generated post text>"}}
+{{"action": "generate_post", "content": "<full generated post text>"}}
 
 2) Schedule a post:
-{{"action":"schedule_post","content":"<post text>","date":"YYYY-MM-DD","time":"HH:MM","platform":"linkedin"}}
-
-Use platform "linkedin" unless the user names another (twitter, instagram, facebook, tiktok, youtube).
+{{"action": "schedule_post", "content": "<post text>",
+    "date": "YYYY-MM-DD", "time": "HH:MM", "platform": "{platform}"}}
 
 If the user says "schedule this" / "schedule it", set "content" to empty string ""; the server will use the last generated post.
 
 Resolve relative dates (tomorrow, next Monday, April 15, etc.) to YYYY-MM-DD using today {today_utc}.
 
 If the user clearly wants to schedule but date or time cannot be determined, return:
-{{"action":"clarify","message":"<one short question>"}}
+{{"action": "clarify", "message": "<one short question>"}}
 
 JSON only.""".strip()
 
@@ -869,7 +1054,8 @@ JSON only.""".strip()
     if action == "generate_post":
         content = data.get("content")
         if not isinstance(content, str) or not content.strip():
-            raise HTTPException(status_code=500, detail="Generated content was empty")
+            raise HTTPException(
+                status_code=500, detail="Generated content was empty")
         last_generated_post = content.strip()
         return {"action": "generate_post", "content": last_generated_post}
 
@@ -926,7 +1112,8 @@ JSON only.""".strip()
         except HTTPException:
             raise
         except requests.RequestException as exc:
-            raise HTTPException(status_code=502, detail=f"Webhook error: {str(exc)}")
+            raise HTTPException(
+                status_code=502, detail=f"Webhook error: {str(exc)}")
 
         return {
             "action": "schedule_post",
@@ -937,7 +1124,8 @@ JSON only.""".strip()
             "platform": platform,
         }
 
-    raise HTTPException(status_code=400, detail=f"Unknown or missing action: {action!r}")
+    raise HTTPException(
+        status_code=400, detail=f"Unknown or missing action: {action!r}")
 
 
 @app.post("/repurpose")
@@ -1019,9 +1207,11 @@ def schedule_post(payload: SchedulePostRequest):
     except HTTPException:
         raise
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Webhook error: {str(exc)}")
+        raise HTTPException(
+            status_code=502, detail=f"Webhook error: {str(exc)}")
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Scheduling failed: {str(exc)}")
+        raise HTTPException(
+            status_code=500, detail=f"Scheduling failed: {str(exc)}")
 
 
 @app.post("/generate-image")

@@ -2,9 +2,7 @@ import { useCallback, useState } from "react";
 import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
-import Dashboard, {
-  type ChatLine,
-} from "./components/views/Dashboard";
+import Dashboard from "./components/views/Dashboard";
 import Home from "./components/views/Home";
 import ContentLibrary from "./components/views/ContentLibrary";
 import BrandSettings from "./components/views/BrandSettings";
@@ -35,7 +33,6 @@ function AppContent() {
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const [library, setLibrary] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [genChatMessages, setGenChatMessages] = useState<ChatLine[]>([]);
   const [genChatStep, setGenChatStep] = useState("start");
   const [genChatInput, setGenChatInput] = useState("");
 
@@ -82,7 +79,7 @@ function AppContent() {
   const runChatCommand = useCallback(
     async (
       message: string,
-      platform?: string,
+      platform: string = "linkedin",
       clientDrafts?: Record<string, string> | null,
     ) => {
       if (!API_BASE_URL) {
@@ -90,10 +87,9 @@ function AppContent() {
           "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
         );
       }
-      const body: Record<string, unknown> = { message };
-      if (platform) body.platform = platform;
+      const body: Record<string, unknown> = { message, platform };
       if (clientDrafts) body.client_drafts = clientDrafts;
-      
+
       const user = (window as any).Clerk?.user;
       if (user) {
         body.user_name = user.firstName || user.username || "there";
@@ -103,10 +99,10 @@ function AppContent() {
       if (brandSettingsStr) {
         try {
           body.brand_settings = JSON.parse(brandSettingsStr);
-        } catch (e) { }
+        } catch (e) {}
       }
 
-      const res = await fetch(`${API_BASE_URL}/chat`, {
+      const res = await fetch(`${API_BASE_URL}/chat-command`, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
@@ -122,13 +118,20 @@ function AppContent() {
       if (!data) {
         throw new Error("Invalid response from server");
       }
-      applySessionDrafts(data);
+
+      if (data.action === "generate_post" && typeof data.content === "string") {
+        const sanitized = sanitizePostText(data.content);
+        setContent((prev) => ({
+          ...emptyContentRecord(),
+          ...(prev || {}),
+          [platform]: sanitized,
+        }));
+      }
+
       return data;
     },
-    [applySessionDrafts],
+    [],
   );
-
-
 
   const runPostAction = useCallback(
     async (action: "approve" | "regenerate" | "edit", editContent?: string) => {
@@ -182,8 +185,6 @@ function AppContent() {
             onSave={saveContent}
             onChatCommand={runChatCommand}
             onPostAction={runPostAction}
-            chatMessages={genChatMessages}
-            setChatMessages={setGenChatMessages}
             chatStep={genChatStep}
             setChatStep={setGenChatStep}
             chatInput={genChatInput}
@@ -240,9 +241,7 @@ function App() {
 
   // Show app if user is logged in
   if (isLoaded && user) {
-    return (
-      <AppContent />
-    );
+    return <AppContent />;
   }
 
   // Show loading state
