@@ -235,6 +235,7 @@ def health_trailing_slash():
 allowed_origins = [
     # Vercel frontend (production)
     "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
+    "https://ai-marketing-team-alpha.vercel.app",
     # Local development
     "http://localhost:5173",
     "http://127.0.0.1:5173",
