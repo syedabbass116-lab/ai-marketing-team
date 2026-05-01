@@ -186,19 +186,6 @@ export default function Dashboard({
     }
   };
 
-  const handleApprove = async () => {
-    setChatBusy(true);
-    setChatErr(null);
-    try {
-      const data = await onPostAction("approve");
-      if (typeof data.step === "string") setChatStep(data.step);
-    } catch (e) {
-      setChatErr(e instanceof Error ? e.message : "Approve failed");
-    } finally {
-      setChatBusy(false);
-    }
-  };
-
   const handleRegenerate = async () => {
     setChatBusy(true);
     setChatErr(null);
@@ -312,8 +299,7 @@ export default function Dashboard({
             Generated post
           </h2>
           <p className="text-xs text-gray-500 mb-3">
-            {activeTabLabel} draft — edit here, regenerate, or approve when
-            ready.
+            {activeTabLabel} draft — edit here and regenerate when ready.
           </p>
           <Textarea
             rows={12}
@@ -323,13 +309,6 @@ export default function Dashboard({
             className="min-h-[200px]"
           />
           <div className="flex flex-wrap gap-2 mt-3 items-center">
-            <Button
-              variant="secondary"
-              onClick={handleApprove}
-              disabled={chatBusy || !editablePost.trim()}
-            >
-              Approve ✅
-            </Button>
             <Button
               variant="ghost"
               onClick={handleRegenerate}
