@@ -57,8 +57,31 @@ def _platform_label(p: str) -> str:
 def _build_chat_system(platform: str) -> str:
     label = _platform_label(platform)
     format_hint = {
-        "linkedin": "professional LinkedIn post: hook, short paragraphs, optional CTA, no hashtags unless asked.",
-        "twitter": "Twitter/X post or numbered thread if multiple tweets fit the topic; concise, engaging.",
+        "linkedin": """STRICT FORMAT:
+[Hook - 1 bold line that stops the scroll]
+[Blank line]
+[Problem - 2-3 lines about the pain your audience feels]
+[Blank line]
+[Story or insight - what changed / what you discovered]
+[Blank line]
+[Value - 3-5 short lines or a mini list]
+- Point 1
+- Point 2
+- Point 3
+[Blank line]
+[Conclusion - 1 punchy line]
+[Blank line]
+[CTA - one clear ask]
+[Blank line]
+#Hashtag1 #Hashtag2 #Hashtag3""",
+        "twitter": """STRICT FORMAT (Thread):
+1/ [Big hook tweet — make them want to read more]
+2/ [Problem]
+3/ [Agitate the problem]
+4/ [Your solution / story]
+5/ [Proof or result]
+6/ [Actionable tip]
+7/ [CTA — link, follow, retweet]""",
         "instagram": "Instagram caption: hook, body, line breaks; optional emoji; hashtags only if natural.",
         "facebook": "Facebook post: warm, conversational, paragraph style.",
         "tiktok": "TikTok caption or short on-camera script lines: punchy, trend-aware, line breaks OK.",
@@ -69,16 +92,32 @@ def _build_chat_system(platform: str) -> str:
 
 The user is focused on **{label}** ({platform}). 
 
-CRITICAL RULE: NEVER put the actual social media post text inside the "reply" field. 
-- "reply" is ONLY for conversational messages (e.g., "Sure, I've drafted that for you below!").
-- The actual post content MUST go into "post_draft" (for one platform) or "post_drafts" (for multiple).
+CRITICAL RULE 1: NEVER put the actual social media post text inside the "reply" field. 
+- "reply" is ONLY for conversational messages.
+- The actual post content MUST go into "post_draft" or "post_drafts".
+
+CRITICAL RULE 2: You MUST follow these formats for EVERY generation:
+
+FOR LINKEDIN:
+[Hook]
+[Blank Line]
+[Problem]
+[Blank Line]
+[Story/Insight]
+[Blank Line]
+[Value List]
+[Blank Line]
+[Conclusion]
+[Blank Line]
+[CTA]
+[Blank Line]
+#Hashtags
+
+FOR TWITTER:
+Use a numbered thread (1/ to 7/) following the Hook -> Problem -> Agitate -> Solution -> Proof -> Tip -> CTA structure.
 
 SINGLE PLATFORM: put the full post in "post_draft" as plain text. Match: {format_hint}
 MULTI-PLATFORM: If they ask for multiple platforms, use "post_drafts" (JSON object with platform keys).
-
-Shapes:
-{{"reply": "Conversational message only", "post_draft": "The actual post content here", "post_drafts": null}}
-{{"reply": "Here are the drafts for both platforms", "post_draft": null, "post_drafts": {{"linkedin": "...", "twitter": "..."}}}}
 
 Respond ONLY with valid JSON."""
 
