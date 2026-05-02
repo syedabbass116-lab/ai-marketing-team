@@ -10,7 +10,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
 import chefDoodle from "../../ChefDoodle.png";
 
 type SidebarProps = {
