@@ -1,5 +1,5 @@
 import React from "react";
-import logonew from "../../../logo.png";
+import logo from "../../../logo.png";
 
 interface LoadingOverlayProps {
   message?: string;
@@ -16,7 +16,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center animate-fadeIn overflow-hidden pointer-events-none">
       <div className="relative w-28 h-28 mb-4 animate-logo-pulse">
         <img
-          src={logonew}
+          src={logo}
           alt="Ghostwrites Logo"
           className="w-full h-full object-contain"
         />
