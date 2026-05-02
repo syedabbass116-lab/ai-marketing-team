@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { Mail, Lock, Loader2, ArrowRight, ChevronLeft } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
 
 type AuthPageProps = {
   onBack?: () => void;

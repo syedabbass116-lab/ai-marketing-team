@@ -9,7 +9,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
