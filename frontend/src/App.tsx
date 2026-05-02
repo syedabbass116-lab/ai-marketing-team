@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
+import { useCallback, useState, useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import Dashboard from "./components/views/Dashboard";
@@ -9,8 +9,9 @@ import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
 import Profile from "./components/views/Profile";
-import AuthGate from "./components/AuthGate";
+import AuthPage from "./components/views/AuthPage";
 import { useUsageLimit } from "./hooks/useUsageLimit";
+import { useLibrary } from "./hooks/useLibrary";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -26,27 +27,71 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { usage, trialDaysLeft, loading, hasTrialExpired, incrementUsage } = useUsageLimit();
+  const { usage, trialDaysLeft, loading: usageLoading, hasTrialExpired, incrementUsage } = useUsageLimit();
+  const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
   const [activeView, setActiveView] = useState("dashboard");
   const [content, setContent] = useState<Record<string, string> | null>(null);
-  const [library, setLibrary] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [brandSettings, setBrandSettings] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [genChatStep, setGenChatStep] = useState("start");
   const [genChatInput, setGenChatInput] = useState("");
 
-  const saveContent = (platform: string, text: string) => {
-    const newItem = {
-      id: Date.now().toString(),
-      platform,
-      text,
-      timestamp: new Date().toISOString(),
-    };
-    setLibrary((prev) => [newItem, ...prev]);
-    incrementUsage();
+  useEffect(() => {
+    async function loadBrandSettings() {
+      if (!user) {
+        setBrandSettings(null);
+        localStorage.removeItem("brandSettings");
+        return;
+      }
+      
+      try {
+        const { supabase } = await import("./lib/supabase");
+        const { data, error } = await supabase
+          .from('brand_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (data) {
+          const settings = {
+            brandName: data.brand_name,
+            brandDescription: data.brand_description,
+            brandVoice: data.brand_voice,
+            tone: data.tone,
+            targetAudience: data.target_audience,
+            writingStyleLinkedin: data.writing_style_linkedin,
+            writingStyleTwitter: data.writing_style_twitter,
+            keyTopics: data.key_topics
+          };
+          setBrandSettings(settings);
+          localStorage.setItem("brandSettings", JSON.stringify(settings));
+        }
+      } catch (err) {
+        console.error("Error loading brand settings in App:", err);
+      }
+    }
+
+    loadBrandSettings();
+  }, [user]);
+
+  const saveContent = async (platform: string, text: string) => {
+    try {
+      await saveToLibrary(platform, text);
+      incrementUsage();
+    } catch (err) {
+      console.error("Failed to save content", err);
+    }
   };
 
-  const deleteContent = (id: string) => {
-    setLibrary((prev) => prev.filter((item) => item.id !== id));
+  const deleteContent = async (id: string) => {
+    try {
+      await deleteFromLibrary(id);
+    } catch (err) {
+      console.error("Failed to delete content", err);
+    }
   };
 
   const applySessionDrafts = useCallback((data: Record<string, unknown>) => {
@@ -99,9 +144,8 @@ function AppContent() {
       const body: Record<string, unknown> = { message, platform };
       if (clientDrafts) body.client_drafts = clientDrafts;
 
-      const user = (window as any).Clerk?.user;
       if (user) {
-        body.user_name = user.firstName || user.username || "there";
+        body.user_name = user.user_metadata?.full_name || user.email?.split('@')[0] || "there";
       }
 
       const brandSettingsStr = localStorage.getItem("brandSettings");
@@ -140,7 +184,7 @@ function AppContent() {
 
       return data;
     },
-    [incrementUsage],
+    [incrementUsage, user],
   );
 
   const runPostAction = useCallback(
@@ -173,7 +217,7 @@ function AppContent() {
       applySessionDrafts(data);
       return data;
     },
-    [applySessionDrafts, incrementUsage],
+    [applySessionDrafts],
   );
 
   const renderView = () => {
@@ -231,41 +275,41 @@ function AppContent() {
       <TopBar sidebarOpen={sidebarOpen} />
 
       <main
-        className={`pt-14 transition-all duration-200 ${sidebarOpen ? "md:ml-64" : "ml-0"}`}
+        className={`pt-14 transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "ml-0"}`}
       >
-        <div className="p-4 md:p-8 animate-fadeIn">{renderView()}</div>
+        <div className="p-4 sm:p-6 md:p-8 animate-fadeIn max-w-7xl mx-auto">{renderView()}</div>
       </main>
     </div>
   );
 }
 
 function App() {
-  const { user, isLoaded } = useUser();
+  const { user, loading } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
 
-  // Handle Clerk SSO OAuth callback
-  if (window.location.pathname === "/sso-callback") {
-    return <AuthenticateWithRedirectCallback />;
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-12 w-12 rounded-full border-4 border-white/20 border-t-white animate-spin mx-auto" />
+          <p className="mt-4 text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Show landing page if user is not logged in
-  if (isLoaded && !user) {
-    return <Landing />;
+  // Show Landing/Auth if user is not logged in
+  if (!user) {
+    return showAuth ? (
+      <AuthPage onBack={() => setShowAuth(false)} />
+    ) : (
+      <Landing onSignIn={() => setShowAuth(true)} />
+    );
   }
 
   // Show app if user is logged in
-  if (isLoaded && user) {
-    return <AppContent />;
-  }
-
-  // Show loading state
-  return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="h-12 w-12 rounded-full border-4 border-white/20 border-t-white animate-spin mx-auto" />
-        <p className="mt-4 text-gray-400">Loading...</p>
-      </div>
-    </div>
-  );
+  return <AppContent />;
 }
 
 export default App;

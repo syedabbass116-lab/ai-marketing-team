@@ -13,10 +13,12 @@ export default function TopBar({ sidebarOpen }: TopBarProps) {
         transition-all duration-200 ${sidebarOpen ? 'md:left-64 left-0' : 'left-0'}`}
     >
       <div className="flex items-center gap-2">
-        {/* Upgrade CTA */}
-        <Button variant="primary" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
-          Upgrade
-        </Button>
+        {/* Upgrade CTA - hidden on mobile to avoid overlap with sidebar toggle */}
+        <div className="hidden sm:block">
+          <Button variant="primary" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
+            Upgrade
+          </Button>
+        </div>
       </div>
     </header>
   );

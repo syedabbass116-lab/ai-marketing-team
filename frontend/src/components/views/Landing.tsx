@@ -3,18 +3,13 @@ import {
   Calendar,
   TrendingUp,
   Twitter,
-  Github,
   Linkedin,
   Check,
 } from "lucide-react";
-import {
-  SignInButton,
-  SignUpButton,
-  useUser,
-  useSignIn,
-} from "@clerk/clerk-react";
 import { useState } from "react";
-import logo from "../../../Logo.png";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
+import logo from "../../../logo.png";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -75,24 +70,21 @@ const STEPS = [
   },
 ];
 
-export default function Landing() {
-  const { user, isLoaded } = useUser();
-  const { signIn, isLoaded: signInLoaded } = useSignIn();
+export default function Landing({ onSignIn }: { onSignIn: () => void }) {
+  const { user } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
 
-  if (isLoaded && user) {
+  if (user) {
     return null; // Will be handled by App.tsx routing
   }
 
   const handleGoogleSignIn = async () => {
-    if (!signIn || !signInLoaded || signingIn) return;
     try {
       setSigningIn(true);
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: window.location.origin + "/sso-callback",
-        redirectUrlComplete: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
       });
+      if (error) throw error;
     } catch (err) {
       console.error("Google sign-in error:", err);
       setSigningIn(false);
@@ -108,7 +100,7 @@ export default function Landing() {
             <img
               src={logo}
               alt="Ghostwrite logo"
-              className="h-10 w-10 object-contain"
+              className="h-20 w-20 object-contain ml-2"
             />
             <span className="font-mono text-lg font-bold tracking-tight text-white sm:text-xl">
               Ghostwrite
@@ -127,16 +119,10 @@ export default function Landing() {
           </div>
           <button
             id="navbar-google-signin"
-            onClick={handleGoogleSignIn}
-            disabled={signingIn || !signInLoaded}
-            className="inline-flex items-center justify-center gap-2 rounded-full font-medium h-9 px-4 text-xs bg-white text-black border border-white hover:bg-gray-100 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={onSignIn}
+            className="inline-flex items-center justify-center gap-2 rounded-full font-medium h-9 px-4 text-xs bg-white text-black border border-white hover:bg-gray-100 transition-all duration-300"
           >
-            {signingIn ? (
-              <span className="h-3 w-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />
-            ) : (
-              <GoogleIcon className="h-3.5 w-3.5" />
-            )}
-            <span>{signingIn ? "..." : "Sign in"}</span>
+            Sign in
           </button>
         </nav>
       </header>
@@ -171,7 +157,7 @@ export default function Landing() {
               <button
                 id="hero-google-signin"
                 onClick={handleGoogleSignIn}
-                disabled={signingIn || !signInLoaded}
+                disabled={signingIn}
                 className="inline-flex items-center justify-center gap-2.5 rounded-full font-medium h-11 px-5 text-sm bg-white text-black border border-white hover:bg-gray-100 transition-all mx-auto lg:mx-0 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {signingIn ? (
@@ -181,19 +167,21 @@ export default function Landing() {
                 )}
                 <span>{signingIn ? "..." : "Get Started with Google"}</span>
               </button>
-              <SignUpButton mode="modal">
-                <button className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm">
-                  Sign up with Email
-                </button>
-              </SignUpButton>
+              <button
+                onClick={onSignIn}
+                className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm"
+              >
+                Sign up with Email
+              </button>
             </div>
             <div className="mt-4 text-sm text-gray-400 text-center lg:text-left">
               Already have an account?{" "}
-              <SignInButton mode="modal">
-                <span className="font-medium text-white underline decoration-white/20 hover:decoration-white">
-                  Sign in with Email
-                </span>
-              </SignInButton>
+              <button
+                onClick={onSignIn}
+                className="font-medium text-white underline decoration-white/20 hover:decoration-white"
+              >
+                Sign in with Email
+              </button>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-gray-400">
               <span className="inline-flex items-center gap-1.5">
@@ -246,7 +234,7 @@ export default function Landing() {
       >
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">
-            Why AI Marketing Team
+            Why Ghostwrite
           </p>
           <h2 className="mt-3 font-mono text-3xl font-bold tracking-tight sm:text-5xl">
             Sounds like you.
@@ -337,7 +325,7 @@ export default function Landing() {
               <button
                 id="cta-google-signin"
                 onClick={handleGoogleSignIn}
-                disabled={signingIn || !signInLoaded}
+                disabled={signingIn}
                 className="inline-flex items-center justify-center gap-2.5 rounded-full font-medium h-11 px-6 text-sm bg-black text-white border border-black hover:bg-gray-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {signingIn ? (
@@ -387,13 +375,6 @@ export default function Landing() {
             </a>
             <a
               href="#"
-              aria-label="GitHub"
-              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <Github className="h-4 w-4" />
-            </a>
-            <a
-              href="#"
               aria-label="LinkedIn"
               className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
@@ -402,7 +383,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="border-t border-white/10 py-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} AI Marketing Team. All rights reserved.
+          © {new Date().getFullYear()} Ghostwrites. All rights reserved.
         </div>
       </footer>
     </div>

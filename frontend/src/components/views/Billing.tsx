@@ -82,7 +82,7 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
 
 const PLATFORM_NAMES: Record<string, string> = {
   linkedin: 'LinkedIn',
-  twitter: 'Twitter',
+  twitter: 'X (Twitter)',
   threads: 'Threads',
 };
 

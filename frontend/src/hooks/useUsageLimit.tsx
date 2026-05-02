@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 
 const FREE_LIMIT = 3; // free posts per user
 const TRIAL_DAYS = 7; // trial duration
 
 export function useUsageLimit() {
-  const { user } = useUser();
-  const [usage, setUsage] = useState(null);
+  const { user } = useAuth();
+  const [usage, setUsage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    fetchUsage();
+    if (user) {
+      fetchUsage();
+    }
   }, [user]);
 
   async function fetchUsage() {
     if (!user?.id) {
-      console.error("User ID not available");
       setLoading(false);
       return;
     }

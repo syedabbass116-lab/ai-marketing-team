@@ -19,13 +19,16 @@ type Props = {
 const PLATFORM_COLORS: Record<string, string> = {
   linkedin: "bg-blue-900/30 text-blue-300 border-blue-700",
   twitter: "bg-sky-900/30 text-sky-300 border-sky-700",
-  instagram: "bg-pink-900/30 text-pink-300 border-pink-700",
-  facebook: "bg-indigo-900/30 text-indigo-300 border-indigo-700",
-  tiktok: "bg-purple-900/30 text-purple-300 border-purple-700",
-  youtube: "bg-red-900/30 text-red-300 border-red-700",
+  threads: "bg-zinc-900/30 text-zinc-300 border-zinc-700",
 };
 
-const PLATFORMS = ["linkedin", "twitter", "instagram", "facebook", "tiktok", "youtube"];
+const PLATFORMS = ["linkedin", "twitter", "threads"];
+
+const PLATFORM_NAMES: Record<string, string> = {
+  linkedin: "LinkedIn",
+  twitter: "X (Twitter)",
+  threads: "Threads",
+};
 
 export default function ContentLibrary({ library, onDelete }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,13 +112,13 @@ export default function ContentLibrary({ library, onDelete }: Props) {
             onClick={() =>
               setSelectedPlatform(selectedPlatform === platform ? null : platform)
             }
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors border capitalize ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors border ${
               selectedPlatform === platform
                 ? PLATFORM_COLORS[platform]
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white/80 hover:border-white/20"
             }`}
           >
-            {platform} {platformCounts[platform] > 0 && `(${platformCounts[platform]})`}
+            {PLATFORM_NAMES[platform] || platform} {platformCounts[platform] > 0 && `(${platformCounts[platform]})`}
           </button>
         ))}
       </div>
@@ -143,14 +146,14 @@ export default function ContentLibrary({ library, onDelete }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded capitalize border ${PLATFORM_COLORS[item.platform] || "bg-gray-900/30 text-gray-300 border-gray-700"}`}
+                      className={`text-xs font-semibold px-2 py-1 rounded border ${PLATFORM_COLORS[item.platform] || "bg-gray-900/30 text-gray-300 border-gray-700"}`}
                     >
-                      {item.platform}
+                      {PLATFORM_NAMES[item.platform] || item.platform}
                     </span>
-                    {item.timestamp && (
+                    {item.created_at && (
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(item.timestamp)}
+                        {formatDate(item.created_at)}
                       </span>
                     )}
                   </div>

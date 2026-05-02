@@ -9,8 +9,9 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import { useUser, useClerk } from "@clerk/clerk-react";
-import logo from "../../../Logo.png";
+import { useAuth } from "../../context/AuthContext";
+import logo from "../../../logo.png";
+import chefDoodle from "../../ChefDoodle.png";
 
 type SidebarProps = {
   activeView: string;
@@ -40,8 +41,7 @@ export default function Sidebar({
   isOpen,
   onToggle,
 }: SidebarProps) {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, signOut } = useAuth();
 
   const asideClass = [
     "w-64 min-h-screen flex flex-col fixed left-0 top-0 z-30 md:z-10",
@@ -57,28 +57,30 @@ export default function Sidebar({
         <button
           type="button"
           onClick={onToggle}
-          className="fixed top-4 left-4 z-30 p-2 rounded-lg
-            bg-black border border-[#2a2a2a] text-white/40
-            hover:text-white hover:border-[#444] transition-all duration-150"
+          className="fixed top-5 left-5 z-40 p-2.5 rounded-xl
+            bg-white/5 border border-white/10 text-white/50 backdrop-blur-xl
+            hover:text-white hover:bg-white/10 hover:border-white/20 
+            shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 group"
           aria-label="Open sidebar"
         >
-          <PanelLeftOpen className="w-4 h-4" />
+          <PanelLeftOpen className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       )}
 
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 md:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-20 md:hidden"
           onClick={onToggle}
         />
       )}
 
       <aside className={asideClass}>
         {/* Logo row */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 flex items-center justify-center">
+        <div className="flex items-center justify-between px-5 py-6 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 flex items-center justify-center p-1.5 bg-white/5 rounded-lg border border-white/10">
               <img
                 src={logo}
                 alt="Ghostwrites logo"
@@ -87,7 +89,7 @@ export default function Sidebar({
             </div>
             <span
               style={{ fontFamily: "var(--font-heading)" }}
-              className="text-[15px] font-bold text-white tracking-tight"
+              className="text-[16px] font-bold text-white tracking-tight"
             >
               Ghostwrites
             </span>
@@ -95,10 +97,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onToggle}
-            className="p-1.5 rounded-md text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-2 rounded-lg text-white/20 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             aria-label="Close sidebar"
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftClose className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </button>
         </div>
 
@@ -131,24 +133,20 @@ export default function Sidebar({
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
               <div className="w-7 h-7 rounded-full bg-white/10 border border-white/10 overflow-hidden flex-shrink-0">
-                {user.imageUrl ? (
-                  <img
-                    src={user.imageUrl}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="w-full h-full flex items-center justify-center text-xs font-bold text-white/60">
-                    {user.firstName?.[0] ?? "U"}
-                  </span>
-                )}
+                <img
+                  src={user.user_metadata?.avatar_url || chefDoodle}
+                  alt="User"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-white/80 truncate">
-                  {user.fullName ?? user.username ?? "User"}
+                  {user.user_metadata?.full_name ??
+                    user.email?.split("@")[0] ??
+                    "User"}
                 </p>
                 <p className="text-[10px] text-white/30 truncate">
-                  {user.primaryEmailAddress?.emailAddress}
+                  {user.email}
                 </p>
               </div>
             </div>

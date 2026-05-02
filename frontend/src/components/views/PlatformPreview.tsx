@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Share2, MoreHorizontal, Search } from 'lucide-react';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from "../../context/AuthContext";
+import chefDoodle from "../../ChefDoodle.png";
 
 interface PlatformPreviewProps {
   platform: string;
@@ -7,9 +8,10 @@ interface PlatformPreviewProps {
 }
 
 export default function PlatformPreview({ platform, content }: PlatformPreviewProps) {
-  const { user } = useUser();
-  const userName = user?.fullName || 'Your Name';
-  const userHandle = user?.username || user?.firstName?.toLowerCase() || 'username';
+  const { user } = useAuth();
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User Name';
+  const userHandle = user?.email?.split('@')[0] || 'username';
+  const avatarUrl = user?.user_metadata?.avatar_url || chefDoodle;
 
   const truncateText = (text: string, limit: number) => {
     return text.length > limit ? text.substring(0, limit) + '...' : text;
@@ -21,7 +23,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full" />
+            <div className="w-12 h-12 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+            </div>
             <div className="flex-1">
               <div className="font-semibold text-sm">{userName}</div>
               <div className="text-xs text-gray-600">Professional · 2nd</div>
@@ -73,7 +77,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full" />
+            <div className="w-12 h-12 rounded-full border border-gray-700 overflow-hidden flex-shrink-0">
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+            </div>
             <div className="flex-1">
               <div className="font-bold text-sm">{userName}</div>
               <div className="text-xs text-gray-500">@{userHandle}</div>
@@ -125,7 +131,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
       <div className="bg-white text-black rounded-2xl border border-gray-200 overflow-hidden w-full max-w-md shadow-sm">
         {/* Header */}
         <div className="p-4 flex items-start gap-3">
-          <div className="w-10 h-10 bg-zinc-100 rounded-full flex-shrink-0" />
+          <div className="w-10 h-10 rounded-full border border-gray-100 overflow-hidden flex-shrink-0">
+            <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-0.5">
               <div className="font-bold text-sm hover:underline cursor-pointer">{userHandle}</div>
@@ -164,7 +172,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Header */}
         <div className="p-3 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 via-pink-500 to-red-500 rounded-full" />
+            <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+            </div>
             <div className="text-sm font-semibold">{userHandle}</div>
           </div>
           <MoreHorizontal size={16} />
@@ -221,7 +231,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full" />
+            <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+            </div>
             <div>
               <div className="text-sm font-semibold">{userName}</div>
               <div className="text-xs text-gray-600">2 hours ago</div>
@@ -272,7 +284,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Caption and Info */}
         <div className="p-4 space-y-3">
           <div className="flex gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full" />
+            <div className="w-10 h-10 rounded-full border border-gray-800 overflow-hidden flex-shrink-0">
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+            </div>
             <div className="flex-1">
               <div className="font-semibold text-sm">@{userHandle}</div>
               <div className="text-xs text-gray-400">Followed</div>
@@ -317,7 +331,9 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
           {/* Channel Info */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-full" />
+              <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+              </div>
               <div>
                 <div className="text-sm font-semibold">{userName}</div>
                 <div className="text-xs text-gray-600">234K subscribers</div>

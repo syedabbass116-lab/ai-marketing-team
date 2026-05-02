@@ -1,7 +1,7 @@
-import { useUser } from "@clerk/clerk-react";
-import { Sparkles, ArrowRight, FolderOpen, Settings } from "lucide-react";
+import { Sparkles, ArrowRight, FolderOpen } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
+import { useAuth } from "../../context/AuthContext";
 
 type HomeProps = {
   onStartGenerate: () => void;
@@ -9,8 +9,10 @@ type HomeProps = {
 };
 
 export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
-  const { user } = useUser();
-  const username = user?.firstName || user?.username || "there";
+  const { user } = useAuth();
+  const fullName = user?.user_metadata?.full_name || "";
+  const firstName = fullName ? fullName.split(' ')[0] : (user?.email?.split('@')[0] || "there");
+  const username = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   return (
     <div className="space-y-8">

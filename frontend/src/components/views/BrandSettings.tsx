@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Save, Sparkles } from "lucide-react";
+import { Save, Sparkles, Loader2, Check } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
 import Textarea from "../ui/Textarea";
 import Select from "../ui/Select";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 const voiceOptions = [
   { value: "professional", label: "Professional" },
@@ -22,6 +24,7 @@ const toneOptions = [
 ];
 
 export default function BrandSettings() {
+  const { user } = useAuth();
   const [brandName, setBrandName] = useState("");
   const [brandDescription, setBrandDescription] = useState("");
   const [brandVoice, setBrandVoice] = useState("professional");
@@ -32,51 +35,115 @@ export default function BrandSettings() {
   const [keyTopics, setKeyTopics] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("brandSettings");
-    if (saved) {
+    async function loadSettings() {
+      if (!user) return;
+      
       try {
-        const parsed = JSON.parse(saved);
-        if (parsed.brandName) setBrandName(parsed.brandName);
-        if (parsed.brandDescription)
-          setBrandDescription(parsed.brandDescription);
-        if (parsed.brandVoice) setBrandVoice(parsed.brandVoice);
-        if (parsed.tone) setTone(parsed.tone);
-        if (parsed.targetAudience) setTargetAudience(parsed.targetAudience);
-        if (parsed.writingStyleLinkedin)
-          setWritingStyleLinkedin(parsed.writingStyleLinkedin);
-        if (parsed.writingStyleTwitter)
-          setWritingStyleTwitter(parsed.writingStyleTwitter);
-        if (parsed.keyTopics) setKeyTopics(parsed.keyTopics);
-      } catch (e) {}
+        const { data, error } = await supabase
+          .from('brand_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (data) {
+          setBrandName(data.brand_name || "");
+          setBrandDescription(data.brand_description || "");
+          setBrandVoice(data.brand_voice || "professional");
+          setTone(data.tone || "friendly");
+          setTargetAudience(data.target_audience || "");
+          setWritingStyleLinkedin(data.writing_style_linkedin || "");
+          setWritingStyleTwitter(data.writing_style_twitter || "");
+          setKeyTopics(data.key_topics || "");
+          
+          // Also sync to localStorage for the chat component to use immediately
+          localStorage.setItem("brandSettings", JSON.stringify({
+            brandName: data.brand_name,
+            brandDescription: data.brand_description,
+            brandVoice: data.brand_voice,
+            tone: data.tone,
+            targetAudience: data.target_audience,
+            writingStyleLinkedin: data.writing_style_linkedin,
+            writingStyleTwitter: data.writing_style_twitter,
+            keyTopics: data.key_topics
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading brand settings:", err);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, []);
+
+    loadSettings();
+  }, [user]);
 
   const handleSave = async () => {
+    if (!user) return;
     setIsSaving(true);
+    setSaveSuccess(false);
+
     const settings = {
-      brandName,
-      brandDescription,
-      brandVoice,
-      tone,
-      targetAudience,
-      writingStyleLinkedin,
-      writingStyleTwitter,
-      keyTopics,
+      user_id: user.id,
+      brand_name: brandName,
+      brand_description: brandDescription,
+      brand_voice: brandVoice,
+      tone: tone,
+      target_audience: targetAudience,
+      writing_style_linkedin: writingStyleLinkedin,
+      writing_style_twitter: writingStyleTwitter,
+      key_topics: keyTopics,
+      updated_at: new Date().toISOString(),
     };
-    localStorage.setItem("brandSettings", JSON.stringify(settings));
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSaving(false);
+
+    try {
+      const { error } = await supabase
+        .from('brand_settings')
+        .upsert(settings);
+
+      if (error) throw error;
+
+      // Update localStorage so chat works immediately without reload
+      localStorage.setItem("brandSettings", JSON.stringify({
+        brandName,
+        brandDescription,
+        brandVoice,
+        tone,
+        targetAudience,
+        writingStyleLinkedin,
+        writingStyleTwitter,
+        keyTopics
+      }));
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error saving brand settings:", err);
+      alert("Failed to save settings. Make sure you have a 'brand_settings' table in Supabase.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleTrain = async () => {
-    if (isTraining) return;
+    if (isTraining || !user) return;
     setIsTraining(true);
     await handleSave();
-    alert("AI has successfully learned your brand voice!");
     setIsTraining(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,18 +278,29 @@ export default function BrandSettings() {
       <div className="flex gap-3">
         <Button
           variant="primary"
-          icon={<Save className="w-4 h-4" />}
           onClick={handleSave}
           disabled={isSaving}
+          className={saveSuccess ? "!bg-green-600 border-green-600 text-white" : ""}
         >
-          {isSaving ? "Saving..." : "Save Settings"}
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : saveSuccess ? (
+            <Check className="w-4 h-4 mr-2" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          {isSaving ? "Saving..." : saveSuccess ? "Saved Successfully" : "Save Settings"}
         </Button>
         <Button
           variant="secondary"
-          icon={<Sparkles className="w-4 h-4" />}
           onClick={handleTrain}
           disabled={isTraining}
         >
+          {isTraining ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Sparkles className="w-4 h-4 mr-2" />
+          )}
           {isTraining ? "Training AI..." : "Train AI on My Brand"}
         </Button>
       </div>

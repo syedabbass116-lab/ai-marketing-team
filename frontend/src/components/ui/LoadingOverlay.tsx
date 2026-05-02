@@ -1,23 +1,24 @@
-import React from 'react';
+import React from "react";
+import logonew from "../../../logo.png";
 
 interface LoadingOverlayProps {
   message?: string;
   isVisible: boolean;
 }
 
-const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
-  message = "Cooking your first post...", 
-  isVisible 
+const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
+  message = "Cooking your first post...",
+  isVisible,
 }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm rounded-2xl animate-fadeIn overflow-hidden">
-      <div className="relative w-32 h-32 mb-6">
-        <img 
-          src="/ChefDoodle.png" 
-          alt="Chef Doodle" 
-          className="w-full h-full object-contain animate-bounce-slow"
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center animate-fadeIn overflow-hidden pointer-events-none">
+      <div className="relative w-28 h-28 mb-4 animate-logo-pulse">
+        <img
+          src={logonew}
+          alt="Ghostwrites Logo"
+          className="w-full h-full object-contain"
         />
       </div>
 
@@ -25,22 +26,19 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         {message}
       </div>
 
-      <div className="mt-4 flex gap-1.5">
-        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]" />
-        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]" />
-        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" />
-      </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-30px); }
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes logo-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
         }
-        .animate-bounce-slow {
-          animation: bounce-slow 4s ease-in-out infinite;
+        .animate-logo-pulse {
+          animation: logo-pulse 2s ease-in-out infinite;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 };
