@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-react";
 import { Sparkles, ArrowRight, FolderOpen, Settings } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
@@ -8,6 +9,9 @@ type HomeProps = {
 };
 
 export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
+  const { user } = useUser();
+  const username = user?.firstName || user?.username || "there";
+
   return (
     <div className="space-y-8">
       {/* Hero card */}
@@ -29,7 +33,7 @@ export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
             style={{ fontFamily: "var(--font-heading)" }}
             className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight"
           >
-            Create high-performing<br />social content
+            Hii {username} what would<br />you like to post today?
           </h1>
           <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed">
             Generate posts and manage your content library — all in one place.

@@ -8,38 +8,40 @@
 :root {
   --bg-primary: #000000;
   --bg-secondary: #000000;
-  --grid-line: rgba(255,255,255,0.05);
+  --grid-line: rgba(255, 255, 255, 0.05);
 
-  --text-primary: #FFFFFF;
-  --text-secondary: #A0A8B0;
-  --text-muted: #6B7280;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a8b0;
+  --text-muted: #6b7280;
 
-  --accent: #4F46E5;
-  --accent-hover: #6366F1;
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
 
-  --border: rgba(255,255,255,0.08);
-  --card-bg: rgba(255,255,255,0.03);
-  --glass: rgba(255,255,255,0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --glass: rgba(255, 255, 255, 0.05);
 
   --color-bg: var(--bg-primary);
   --color-surface: var(--bg-secondary);
   --color-border: var(--border);
-  --color-border-hover: rgba(255,255,255,0.12);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
   --color-text: var(--text-primary);
   --color-muted: var(--text-muted);
-  --color-subtle: rgba(255,255,255,0.03);
+  --color-subtle: rgba(255, 255, 255, 0.03);
 
   --font-heading: "Montserrat", system-ui, sans-serif;
-  --font-body:    "Montserrat", system-ui, sans-serif;
+  --font-body: "Montserrat", system-ui, sans-serif;
 
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --radius-xl:  20px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 }
 
 @layer base {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
@@ -62,7 +64,12 @@
     position: relative;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
     font-weight: 800;
     letter-spacing: -0.02em;
@@ -79,49 +86,102 @@
     font-size: 18px;
   }
 
-  button, input, textarea, select {
+  button,
+  input,
+  textarea,
+  select {
     font-family: var(--font-body);
   }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--color-bg); }
-  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #3d3d3d; }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3d3d3d;
+  }
 }
 
 @layer utilities {
   /* ── Animations ── */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   @keyframes fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
   @keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.55; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
   }
   @keyframes shimmer {
-    0%   { background-position: -400px 0; }
-    100% { background-position: 400px 0; }
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
   }
 
-  .animate-fadeIn    { animation: fadeIn 0.25s ease-out both; }
-  .animate-fade-up   { animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .animate-fade-in   { animation: fade-in 0.5s ease-out both; }
-  .animate-float     { animation: float 6s ease-in-out infinite; }
-  .animate-pulse-soft{ animation: pulse-soft 3s ease-in-out infinite; }
+  .animate-fadeIn {
+    animation: fadeIn 0.25s ease-out both;
+  }
+  .animate-fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out both;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
 
   /* ── Theme buttons and surfaces ── */
   .btn-primary {
@@ -173,7 +233,9 @@
 
   /* ── Grid background (matches landing page) ── */
   .bg-dot-grid {
-    background-image: linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
@@ -185,7 +247,14 @@
   }
 
   /* ── Scrollbars ── */
-  .scrollbar-bw::-webkit-scrollbar       { width: 5px; }
-  .scrollbar-bw::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-bw::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  .scrollbar-bw::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-bw::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-bw::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 3px;
+  }
 }

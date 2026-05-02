@@ -971,20 +971,23 @@ def chat_command(payload: ChatCommandRequest):
     if payload.brand_settings:
         conversation_state["brand_settings"] = payload.brand_settings
 
-    brand_settings = payload.brand_settings or conversation_state.get("brand_settings") or {}
+    brand_settings = payload.brand_settings or conversation_state.get(
+        "brand_settings") or {}
     brand_prompt = ""
     if isinstance(brand_settings, dict) and brand_settings:
         lines = ["--- BRAND SETTINGS ---"]
         if brand_settings.get("brandName"):
             lines.append(f"Brand Name: {brand_settings['brandName']}")
         if brand_settings.get("brandDescription"):
-            lines.append(f"Brand Description: {brand_settings['brandDescription']}")
+            lines.append(
+                f"Brand Description: {brand_settings['brandDescription']}")
         if brand_settings.get("brandVoice"):
             lines.append(f"Voice: {brand_settings['brandVoice']}")
         if brand_settings.get("tone"):
             lines.append(f"Tone: {brand_settings['tone']}")
         if brand_settings.get("targetAudience"):
-            lines.append(f"Target Audience: {brand_settings['targetAudience']}")
+            lines.append(
+                f"Target Audience: {brand_settings['targetAudience']}")
         if brand_settings.get("writingStyleLinkedin"):
             lines.append("LinkedIn Writing Style / Examples:")
             lines.append(brand_settings["writingStyleLinkedin"])
@@ -996,12 +999,15 @@ def chat_command(payload: ChatCommandRequest):
             lines.append(brand_settings["writingStyle"])
         if brand_settings.get("keyTopics"):
             lines.append(f"Key Topics: {brand_settings['keyTopics']}")
-        lines.append("Use these brand settings to write every post in the user's exact brand voice, tone, and style.")
-        lines.append("If examples are provided, mimic the style, phrasing, and structure.")
+        lines.append(
+            "Use these brand settings to write every post in the user's exact brand voice, tone, and style.")
+        lines.append(
+            "If examples are provided, mimic the style, phrasing, and structure.")
         brand_prompt = "\n".join(lines) + "\n\n"
 
     requested_posts = 1
-    post_count_match = re.search(r"\b([1-9][0-9]*)\s*(?:posts?|post|pieces?|ideas?)\b", msg.lower())
+    post_count_match = re.search(
+        r"\b([1-9][0-9]*)\s*(?:posts?|post|pieces?|ideas?)\b", msg.lower())
     if post_count_match:
         requested_posts = min(10, int(post_count_match.group(1)))
 

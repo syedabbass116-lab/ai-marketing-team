@@ -1,18 +1,27 @@
-import { Check, CreditCard, Download } from 'lucide-react';
+import { Check, CreditCard, Download, Zap } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { useUsageLimit } from '../../hooks/useUsageLimit';
+
+interface ContentItem {
+  id: string;
+  platform: string;
+  text: string;
+  timestamp?: string;
+}
 
 interface PlanCardProps {
   name: string;
   price: string;
   period: string;
+  postsPerMonth: number;
+  platforms: number;
   features: string[];
   current?: boolean;
   popular?: boolean;
 }
 
-function PlanCard({ name, price, period, features, current, popular }: PlanCardProps) {
+function PlanCard({ name, price, period, postsPerMonth, platforms, features, current, popular }: PlanCardProps) {
   return (
     <Card className={popular ? 'border-white/30' : ''}>
       {popular && (
@@ -33,11 +42,7 @@ function PlanCard({ name, price, period, features, current, popular }: PlanCardP
           {name}
         </h3>
         <div className="mb-4 mt-3">
-          <span
-            className="text-4xl font-black text-white"
-          >
-            {price}
-          </span>
+          <span className="text-4xl font-black text-white">{price}</span>
           <span className="text-xs text-white/30 ml-1">/{period}</span>
         </div>
         <Button
@@ -48,6 +53,21 @@ function PlanCard({ name, price, period, features, current, popular }: PlanCardP
           {current ? 'Current Plan' : 'Upgrade'}
         </Button>
       </div>
+
+      {/* Key metrics */}
+      <div className="space-y-3 mb-6 p-3 bg-white/5 rounded-lg border border-white/10">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-white/60" />
+          <span className="text-sm font-semibold text-white">{postsPerMonth}</span>
+          <span className="text-xs text-white/50">posts/month</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Check className="w-4 h-4 text-white/60" />
+          <span className="text-sm font-semibold text-white">{platforms}</span>
+          <span className="text-xs text-white/50">platforms</span>
+        </div>
+      </div>
+
       <ul className="space-y-2.5">
         {features.map((feature, index) => (
           <li key={index} className="flex items-start gap-2 text-xs text-white/50">
@@ -60,15 +80,72 @@ function PlanCard({ name, price, period, features, current, popular }: PlanCardP
   );
 }
 
-export default function Billing() {
-  const { usage, trialDaysLeft, hasTrialExpired } = useUsageLimit();
+const PLATFORM_NAMES: Record<string, string> = {
+  linkedin: 'LinkedIn',
+  twitter: 'Twitter',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+};
+
+const PLATFORM_COLORS: Record<string, string> = {
+  linkedin: 'bg-blue-900/30 text-blue-300',
+  twitter: 'bg-sky-900/30 text-sky-300',
+  instagram: 'bg-pink-900/30 text-pink-300',
+  facebook: 'bg-indigo-900/30 text-indigo-300',
+  tiktok: 'bg-purple-900/30 text-purple-300',
+  youtube: 'bg-red-900/30 text-red-300',
+};
+
+interface BillingProps {
+  library?: ContentItem[];
+  usage?: any;
+  trialDaysLeft?: number;
+  hasTrialExpired?: boolean;
+}
+
+export default function Billing({ 
+  library = [], 
+  usage, 
+  trialDaysLeft, 
+  hasTrialExpired 
+}: BillingProps) {
+
+  // Calculate real usage from library
+  const platformUsage: Record<string, number> = {
+    linkedin: 0,
+    twitter: 0,
+    instagram: 0,
+    facebook: 0,
+    tiktok: 0,
+    youtube: 0,
+  };
+
+  library.forEach((item) => {
+    if (platformUsage.hasOwnProperty(item.platform)) {
+      platformUsage[item.platform]++;
+    }
+  });
+
+  const libraryTotal = Object.values(platformUsage).reduce((sum, count) => sum + count, 0);
+  const totalUsed = usage?.posts_generated ?? libraryTotal;
+  const monthlyLimit = usage?.is_pro ? 1000 : 50; // Dynamic limit based on plan
+  const percentUsed = Math.min(100, Math.round((totalUsed / monthlyLimit) * 100));
+
+  const platformList = Object.entries(platformUsage).map(([key, count]) => ({
+    name: PLATFORM_NAMES[key] || key,
+    platform: key,
+    used: count,
+    color: PLATFORM_COLORS[key] || 'bg-gray-900/30 text-gray-300',
+  }));
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Billing & Plans</h1>
-          <p className="text-sm text-white/40">Choose the plan that fits your content needs</p>
+          <h1 className="text-3xl font-bold text-white mb-1">Billing & Usage</h1>
+          <p className="text-sm text-white/40">Track your posts and platform usage</p>
         </div>
         {!usage?.is_pro && (
           <div className="text-right">
@@ -79,50 +156,94 @@ export default function Billing() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-        <PlanCard
-          name="Starter"
-          price="$29"
-          period="month"
-          features={[
-            '50 AI-generated posts per month',
-            '3 connected platforms',
-            'Basic analytics',
-            'Content library',
-            'Email support',
-          ]}
-        />
-        <PlanCard
-          name="Professional"
-          price="$79"
-          period="month"
-          popular
-          current
-          features={[
-            '200 AI-generated posts per month',
-            'All platforms',
-            'Advanced analytics',
-            'Content scheduler',
-            'Brand voice training',
-            'Priority support',
-            'Team collaboration (3 members)',
-          ]}
-        />
-        <PlanCard
-          name="Enterprise"
-          price="$199"
-          period="month"
-          features={[
-            'Unlimited AI-generated posts',
-            'All platforms',
-            'Custom analytics & reports',
-            'Advanced scheduler',
-            'Custom brand training',
-            'Dedicated account manager',
-            'Unlimited team members',
-            'API access',
-          ]}
-        />
+      {/* Current Usage Overview */}
+      <Card className="border-white/20">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-white mb-4">Posts Generated This Month</h3>
+          <div className="flex items-end gap-4">
+            <div>
+              <div className="text-4xl font-black text-white">{totalUsed}</div>
+              <div className="text-xs text-white/50">of {monthlyLimit} available</div>
+            </div>
+            <div className="flex-1">
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                  style={{ width: `${percentUsed}%` }}
+                />
+              </div>
+              <div className="text-xs text-white/50 mt-2">{percentUsed}% used</div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Platform Breakdown */}
+      <Card>
+        <h3 className="text-sm font-semibold text-white mb-4">Usage by Platform</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {platformList.map((platform) => (
+            <div
+              key={platform.platform}
+              className={`p-3 rounded-lg border border-white/10 ${platform.color}`}
+            >
+              <div className="text-xs font-semibold mb-1">{platform.name}</div>
+              <div className="text-lg font-bold">{platform.used}</div>
+              <div className="text-[10px] opacity-70">posts</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Pricing Plans */}
+      <div>
+        <h2 className="text-lg font-bold text-white mb-4">Plans</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          <PlanCard
+            name="Starter"
+            price="$29"
+            period="month"
+            postsPerMonth={50}
+            platforms={3}
+            features={[
+              'LinkedIn, Twitter, Instagram',
+              'Monthly post limit',
+              'Content library storage',
+              'Email support',
+            ]}
+          />
+          <PlanCard
+            name="Professional"
+            price="$79"
+            period="month"
+            postsPerMonth={200}
+            platforms={6}
+            popular
+            current
+            features={[
+              'All 6 platforms',
+              'Monthly post limit',
+              'Content library storage',
+              'Priority support',
+              'Export posts',
+            ]}
+          />
+          <PlanCard
+            name="Enterprise"
+            price="$199"
+            period="month"
+            postsPerMonth={500}
+            platforms={6}
+            features={[
+              'All platforms unlimited',
+              'No monthly limits',
+              'Advanced content library',
+              'Dedicated support',
+              'Custom integrations',
+              'Team management',
+            ]}
+          />
+        </div>
       </div>
 
       {/* Payment Method */}

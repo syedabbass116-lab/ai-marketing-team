@@ -4,6 +4,7 @@ import { Copy, Save } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Textarea from "../ui/Textarea";
+import PlatformPreview from "./PlatformPreview";
 
 type ContentType = {
   linkedin?: string;
@@ -36,7 +37,7 @@ type DashboardProps = {
     clientDrafts?: Record<string, string> | null,
   ) => Promise<Record<string, unknown>>;
   onPostAction: (
-    action: "approve" | "regenerate" | "edit",
+    action: "approve" | "edit",
     editContent?: string,
   ) => Promise<Record<string, unknown>>;
 
@@ -92,7 +93,9 @@ export default function Dashboard({
 
   const [editablePost, setEditablePost] = useState("");
   const [autoSaveBusy, setAutoSaveBusy] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const lastSyncedPostRef = useRef("");
+  const saveSuccessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const text = content?.[activePlatform];
@@ -135,6 +138,15 @@ export default function Dashboard({
 
     return () => window.clearTimeout(timer);
   }, [editablePost, chatStep, onPostAction, setChatStep]);
+
+  // Cleanup save success timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveSuccessTimeoutRef.current) {
+        clearTimeout(saveSuccessTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const hydrateDraftFromResponse = (data: Record<string, unknown>) => {
     const contentValue =
@@ -192,18 +204,7 @@ export default function Dashboard({
     }
   };
 
-  const handleRegenerate = async () => {
-    setChatBusy(true);
-    setChatErr(null);
-    try {
-      const data = await onPostAction("regenerate");
-      hydrateDraftFromResponse(data);
-    } catch (e) {
-      setChatErr(e instanceof Error ? e.message : "Regenerate failed");
-    } finally {
-      setChatBusy(false);
-    }
-  };
+
 
   const handleStartOver = async () => {
     setChatBusy(true);
@@ -301,27 +302,68 @@ export default function Dashboard({
 
         {/* Generated Post — below chat */}
         <Card>
-          <h2 className="text-sm font-semibold text-white mb-2">
-            Generated post
-          </h2>
-          <p className="text-xs text-gray-500 mb-3">
-            {activeTabLabel} draft — edit here and regenerate when ready.
-          </p>
-          <Textarea
-            rows={12}
-            value={editablePost}
-            onChange={(e) => setEditablePost(e.target.value)}
-            placeholder="Your draft will appear here after you share an idea in chat."
-            className="min-h-[200px]"
-          />
-          <div className="flex flex-wrap gap-2 mt-3 items-center">
-            <Button
-              variant="ghost"
-              onClick={handleRegenerate}
-              disabled={chatBusy || !editablePost.trim()}
-            >
-              Regenerate 🔄
-            </Button>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white">
+                Generated post
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {activeTabLabel} draft — see live preview while you edit.
+              </p>
+            </div>
+            {editablePost.trim() && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (editablePost) {
+                    onSave(activePlatform, editablePost);
+                    setSaveSuccess(true);
+                    if (saveSuccessTimeoutRef.current) {
+                      clearTimeout(saveSuccessTimeoutRef.current);
+                    }
+                    saveSuccessTimeoutRef.current = setTimeout(() => {
+                      setSaveSuccess(false);
+                    }, 2000);
+                  }
+                }}
+                className={saveSuccess ? "bg-green-500 hover:bg-green-600 text-white" : "bg-white text-black hover:bg-gray-200"}
+              >
+                {saveSuccess ? "✓ Saved" : "Save Post"}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Editor */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-white/60 uppercase">Edit Content</label>
+              <Textarea
+                rows={20}
+                value={editablePost}
+                onChange={(e) => setEditablePost(e.target.value)}
+                placeholder="Your draft will appear here after you share an idea in chat."
+                className="min-h-[500px] text-sm"
+              />
+            </div>
+
+            {/* Platform Preview */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-white/60 uppercase">Live Preview</label>
+              <div className="flex items-center justify-center min-h-[500px] bg-white/5 rounded-lg border border-white/10 overflow-auto">
+                {editablePost.trim() ? (
+                  <div className="p-4 max-w-full">
+                    <PlatformPreview platform={activePlatform} content={editablePost} />
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500">
+                    <p className="text-sm">Preview will appear here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-4 items-center">
             <Button
               variant="ghost"
               size="sm"
@@ -332,17 +374,6 @@ export default function Dashboard({
               disabled={!editablePost}
             >
               Copy
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Save className="w-4 h-4" />}
-              onClick={() =>
-                editablePost && onSave(activePlatform, editablePost)
-              }
-              disabled={!editablePost}
-            >
-              Save
             </Button>
             {autoSaveBusy && (
               <span className="text-xs text-gray-500">Saving edits…</span>

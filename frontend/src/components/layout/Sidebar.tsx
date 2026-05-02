@@ -25,11 +25,11 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard",       icon: LayoutDashboard },
-  { id: "generate",  label: "Generate Content", icon: Wand2 },
-  { id: "library",   label: "Content Library",  icon: FolderOpen },
-  { id: "brand",     label: "Brand Settings",   icon: Settings },
-  { id: "billing",   label: "Billing",          icon: CreditCard },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "generate", label: "Generate Content", icon: Wand2 },
+  { id: "library", label: "Content Library", icon: FolderOpen },
+  { id: "brand", label: "Brand Settings", icon: Settings },
+  { id: "billing", label: "Billing", icon: CreditCard },
 ];
 
 export default function Sidebar({
@@ -77,7 +77,11 @@ export default function Sidebar({
         <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 flex items-center justify-center">
-              <img src={logo} alt="Ghostwrites logo" className="w-full h-full object-contain" />
+              <img
+                src={logo}
+                alt="Ghostwrites logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <span
               style={{ fontFamily: "var(--font-heading)" }}
@@ -126,7 +130,11 @@ export default function Sidebar({
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
               <div className="w-7 h-7 rounded-full bg-white/10 border border-white/10 overflow-hidden flex-shrink-0">
                 {user.imageUrl ? (
-                  <img src={user.imageUrl} alt="avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={user.imageUrl}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="w-full h-full flex items-center justify-center text-xs font-bold text-white/60">
                     {user.firstName?.[0] ?? "U"}

@@ -7,7 +7,12 @@ import {
   Linkedin,
   Check,
 } from "lucide-react";
-import { SignInButton, SignUpButton, useUser, useSignIn } from "@clerk/clerk-react";
+import {
+  SignInButton,
+  SignUpButton,
+  useUser,
+  useSignIn,
+} from "@clerk/clerk-react";
 import { useState } from "react";
 import logo from "../../../Logo.png";
 
@@ -100,7 +105,11 @@ export default function Landing() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
         <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Ghostwrite logo" className="h-10 w-10 object-contain" />
+            <img
+              src={logo}
+              alt="Ghostwrite logo"
+              className="h-10 w-10 object-contain"
+            />
             <span className="font-mono text-lg font-bold tracking-tight text-white sm:text-xl">
               Ghostwrite
             </span>
@@ -173,15 +182,13 @@ export default function Landing() {
                 <span>{signingIn ? "..." : "Get Started with Google"}</span>
               </button>
               <SignUpButton mode="modal">
-                <button
-                  className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm"
-                >
+                <button className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm">
                   Sign up with Email
                 </button>
               </SignUpButton>
             </div>
             <div className="mt-4 text-sm text-gray-400 text-center lg:text-left">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <SignInButton mode="modal">
                 <span className="font-medium text-white underline decoration-white/20 hover:decoration-white">
                   Sign in with Email
@@ -352,7 +359,11 @@ export default function Landing() {
       <footer className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-10 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2 font-mono text-base font-bold">
-            <img src={logo} alt="Ghostwrite logo" className="h-8 w-8 object-contain" />
+            <img
+              src={logo}
+              alt="Ghostwrite logo"
+              className="h-8 w-8 object-contain"
+            />
             <span>Ghostwrite</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">

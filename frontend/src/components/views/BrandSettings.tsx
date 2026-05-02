@@ -1,50 +1,53 @@
-import { useState, useEffect } from 'react';
-import { Save, Sparkles } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
-import Textarea from '../ui/Textarea';
-import Select from '../ui/Select';
+import { useState, useEffect } from "react";
+import { Save, Sparkles } from "lucide-react";
+import Button from "../ui/Button";
+import Card from "../ui/Card";
+import Input from "../ui/Input";
+import Textarea from "../ui/Textarea";
+import Select from "../ui/Select";
 
 const voiceOptions = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'bold', label: 'Bold' },
-  { value: 'inspirational', label: 'Inspirational' },
-  { value: 'humorous', label: 'Humorous' },
+  { value: "professional", label: "Professional" },
+  { value: "casual", label: "Casual" },
+  { value: "bold", label: "Bold" },
+  { value: "inspirational", label: "Inspirational" },
+  { value: "humorous", label: "Humorous" },
 ];
 
 const toneOptions = [
-  { value: 'friendly', label: 'Friendly' },
-  { value: 'authoritative', label: 'Authoritative' },
-  { value: 'empathetic', label: 'Empathetic' },
-  { value: 'educational', label: 'Educational' },
+  { value: "friendly", label: "Friendly" },
+  { value: "authoritative", label: "Authoritative" },
+  { value: "empathetic", label: "Empathetic" },
+  { value: "educational", label: "Educational" },
 ];
 
 export default function BrandSettings() {
-  const [brandName, setBrandName] = useState('');
-  const [brandDescription, setBrandDescription] = useState('');
-  const [brandVoice, setBrandVoice] = useState('professional');
-  const [tone, setTone] = useState('friendly');
-  const [targetAudience, setTargetAudience] = useState('');
-  const [writingStyleLinkedin, setWritingStyleLinkedin] = useState('');
-  const [writingStyleTwitter, setWritingStyleTwitter] = useState('');
-  const [keyTopics, setKeyTopics] = useState('');
+  const [brandName, setBrandName] = useState("");
+  const [brandDescription, setBrandDescription] = useState("");
+  const [brandVoice, setBrandVoice] = useState("professional");
+  const [tone, setTone] = useState("friendly");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [writingStyleLinkedin, setWritingStyleLinkedin] = useState("");
+  const [writingStyleTwitter, setWritingStyleTwitter] = useState("");
+  const [keyTopics, setKeyTopics] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('brandSettings');
+    const saved = localStorage.getItem("brandSettings");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.brandName) setBrandName(parsed.brandName);
-        if (parsed.brandDescription) setBrandDescription(parsed.brandDescription);
+        if (parsed.brandDescription)
+          setBrandDescription(parsed.brandDescription);
         if (parsed.brandVoice) setBrandVoice(parsed.brandVoice);
         if (parsed.tone) setTone(parsed.tone);
         if (parsed.targetAudience) setTargetAudience(parsed.targetAudience);
-        if (parsed.writingStyleLinkedin) setWritingStyleLinkedin(parsed.writingStyleLinkedin);
-        if (parsed.writingStyleTwitter) setWritingStyleTwitter(parsed.writingStyleTwitter);
+        if (parsed.writingStyleLinkedin)
+          setWritingStyleLinkedin(parsed.writingStyleLinkedin);
+        if (parsed.writingStyleTwitter)
+          setWritingStyleTwitter(parsed.writingStyleTwitter);
         if (parsed.keyTopics) setKeyTopics(parsed.keyTopics);
       } catch (e) {}
     }
@@ -62,8 +65,8 @@ export default function BrandSettings() {
       writingStyleTwitter,
       keyTopics,
     };
-    localStorage.setItem('brandSettings', JSON.stringify(settings));
-    await new Promise(resolve => setTimeout(resolve, 800));
+    localStorage.setItem("brandSettings", JSON.stringify(settings));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setIsSaving(false);
   };
 
@@ -79,11 +82,15 @@ export default function BrandSettings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Brand Settings</h1>
-        <p className="text-gray-400">Train the AI to match your unique brand voice and style</p>
+        <p className="text-gray-400">
+          Train the AI to match your unique brand voice and style
+        </p>
       </div>
 
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Basic Information</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Basic Information
+        </h3>
         <div className="space-y-4">
           <Input
             label="Brand Name"
@@ -120,7 +127,9 @@ export default function BrandSettings() {
       </Card>
 
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Target Audience</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Target Audience
+        </h3>
         <Textarea
           placeholder="Describe your target audience (e.g., 'B2B SaaS founders, tech-savvy professionals aged 25-45')"
           rows={3}
@@ -130,13 +139,18 @@ export default function BrandSettings() {
       </Card>
 
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Writing Style Examples</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Writing Style Examples
+        </h3>
         <p className="text-sm text-gray-400 mb-4">
-          Paste examples of your best-performing content separately for LinkedIn and Twitter.
+          Paste examples of your best-performing content separately for LinkedIn
+          and Twitter.
         </p>
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-medium text-white">LinkedIn examples</label>
+            <label className="mb-2 block text-sm font-medium text-white">
+              LinkedIn examples
+            </label>
             <Textarea
               placeholder="Paste LinkedIn examples that show your brand voice..."
               rows={6}
@@ -145,7 +159,9 @@ export default function BrandSettings() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-white">Twitter examples</label>
+            <label className="mb-2 block text-sm font-medium text-white">
+              Twitter examples
+            </label>
             <Textarea
               placeholder="Paste Twitter examples that show your brand voice..."
               rows={6}
@@ -157,7 +173,9 @@ export default function BrandSettings() {
       </Card>
 
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Key Topics & Themes</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Key Topics & Themes
+        </h3>
         <Textarea
           placeholder="What topics does your brand cover? (e.g., 'productivity, entrepreneurship, marketing strategies')"
           rows={3}
@@ -167,7 +185,9 @@ export default function BrandSettings() {
       </Card>
 
       <Card>
-        <h3 className="text-lg font-semibold text-white mb-4">Content Guidelines</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Content Guidelines
+        </h3>
         <div className="space-y-4">
           <div className="p-4 bg-[rgba(15,15,15,0.8)] border border-white/10 rounded-lg">
             <h4 className="text-sm font-medium text-white mb-2">Do's</h4>
@@ -195,7 +215,7 @@ export default function BrandSettings() {
           onClick={handleSave}
           disabled={isSaving}
         >
-          {isSaving ? 'Saving...' : 'Save Settings'}
+          {isSaving ? "Saving..." : "Save Settings"}
         </Button>
         <Button
           variant="secondary"
@@ -203,7 +223,7 @@ export default function BrandSettings() {
           onClick={handleTrain}
           disabled={isTraining}
         >
-          {isTraining ? 'Training AI...' : 'Train AI on My Brand'}
+          {isTraining ? "Training AI..." : "Train AI on My Brand"}
         </Button>
       </div>
     </div>

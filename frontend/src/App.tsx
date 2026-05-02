@@ -28,7 +28,7 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { hasTrialExpired } = useUsageLimit();
+  const { usage, trialDaysLeft, loading, hasTrialExpired, incrementUsage } = useUsageLimit();
   const [activeView, setActiveView] = useState("dashboard");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const [library, setLibrary] = useState<any[]>([]);
@@ -37,7 +37,18 @@ function AppContent() {
   const [genChatInput, setGenChatInput] = useState("");
 
   const saveContent = (platform: string, text: string) => {
-    setLibrary((prev) => [...prev, { platform, text }]);
+    const newItem = {
+      id: Date.now().toString(),
+      platform,
+      text,
+      timestamp: new Date().toISOString(),
+    };
+    setLibrary((prev) => [newItem, ...prev]);
+    incrementUsage();
+  };
+
+  const deleteContent = (id: string) => {
+    setLibrary((prev) => prev.filter((item) => item.id !== id));
   };
 
   const applySessionDrafts = useCallback((data: Record<string, unknown>) => {
@@ -126,15 +137,16 @@ function AppContent() {
           ...(prev || {}),
           [platform]: sanitized,
         }));
+        incrementUsage();
       }
 
       return data;
     },
-    [],
+    [incrementUsage],
   );
 
   const runPostAction = useCallback(
-    async (action: "approve" | "regenerate" | "edit", editContent?: string) => {
+    async (action: "approve" | "edit", editContent?: string) => {
       if (!API_BASE_URL) {
         throw new Error(
           "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
@@ -163,12 +175,12 @@ function AppContent() {
       applySessionDrafts(data);
       return data;
     },
-    [applySessionDrafts],
+    [applySessionDrafts, incrementUsage],
   );
 
   const renderView = () => {
     if (hasTrialExpired && activeView !== "billing") {
-      return <Billing />;
+      return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
     }
     switch (activeView) {
       case "dashboard":
@@ -192,11 +204,11 @@ function AppContent() {
           />
         );
       case "library":
-        return <ContentLibrary library={library} />;
+        return <ContentLibrary library={library} onDelete={deleteContent} />;
       case "brand":
         return <BrandSettings />;
       case "billing":
-        return <Billing />;
+        return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
       default:
         return (
           <Home
