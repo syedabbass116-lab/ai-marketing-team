@@ -83,19 +83,13 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
 const PLATFORM_NAMES: Record<string, string> = {
   linkedin: 'LinkedIn',
   twitter: 'Twitter',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  tiktok: 'TikTok',
-  youtube: 'YouTube',
+  threads: 'Threads',
 };
 
 const PLATFORM_COLORS: Record<string, string> = {
   linkedin: 'bg-blue-900/30 text-blue-300',
   twitter: 'bg-sky-900/30 text-sky-300',
-  instagram: 'bg-pink-900/30 text-pink-300',
-  facebook: 'bg-indigo-900/30 text-indigo-300',
-  tiktok: 'bg-purple-900/30 text-purple-300',
-  youtube: 'bg-red-900/30 text-red-300',
+  threads: 'bg-zinc-900/30 text-zinc-300',
 };
 
 interface BillingProps {
@@ -116,10 +110,7 @@ export default function Billing({
   const platformUsage: Record<string, number> = {
     linkedin: 0,
     twitter: 0,
-    instagram: 0,
-    facebook: 0,
-    tiktok: 0,
-    youtube: 0,
+    threads: 0,
   };
 
   library.forEach((item) => {

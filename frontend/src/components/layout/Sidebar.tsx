@@ -6,6 +6,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  User,
   Wand2,
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/clerk-react";
@@ -30,6 +31,7 @@ const menuItems: MenuItem[] = [
   { id: "library", label: "Content Library", icon: FolderOpen },
   { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "billing", label: "Billing", icon: CreditCard },
+  { id: "profile", label: "Profile", icon: User },
 ];
 
 export default function Sidebar({

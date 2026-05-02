@@ -5,14 +5,12 @@ import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Textarea from "../ui/Textarea";
 import PlatformPreview from "./PlatformPreview";
+import LoadingOverlay from "../ui/LoadingOverlay";
 
 type ContentType = {
   linkedin?: string;
   twitter?: string;
-  instagram?: string;
-  facebook?: string;
-  tiktok?: string;
-  youtube?: string;
+  threads?: string;
 };
 
 export type DraftPlatform = keyof ContentType;
@@ -22,10 +20,7 @@ export type ChatLine = { role: "user" | "assistant"; text: string };
 const PLATFORM_TABS: { id: DraftPlatform; label: string }[] = [
   { id: "linkedin", label: "LinkedIn" },
   { id: "twitter", label: "Twitter" },
-  { id: "instagram", label: "Instagram" },
-  { id: "facebook", label: "Facebook" },
-  { id: "tiktok", label: "TikTok" },
-  { id: "youtube", label: "YouTube" },
+  { id: "threads", label: "Threads" },
 ];
 
 type DashboardProps = {
@@ -45,6 +40,7 @@ type DashboardProps = {
   setChatStep: Dispatch<SetStateAction<string>>;
   chatInput: string;
   setChatInput: Dispatch<SetStateAction<string>>;
+  usage?: any;
 };
 
 function buildClientDraftsPayload(
@@ -55,10 +51,7 @@ function buildClientDraftsPayload(
   const out: Record<string, string> = {
     linkedin: "",
     twitter: "",
-    instagram: "",
-    facebook: "",
-    tiktok: "",
-    youtube: "",
+    threads: "",
   };
   if (content) {
     (Object.keys(out) as DraftPlatform[]).forEach((k) => {
@@ -85,8 +78,10 @@ export default function Dashboard({
   setChatStep,
   chatInput: chatText,
   setChatInput: setChatText,
+  usage,
 }: DashboardProps) {
   const [chatBusy, setChatBusy] = useState(false);
+  const [showFirstPostLoading, setShowFirstPostLoading] = useState(false);
   const [chatErr, setChatErr] = useState<string | null>(null);
   const [activePlatform, setActivePlatform] =
     useState<DraftPlatform>("linkedin");
@@ -94,8 +89,10 @@ export default function Dashboard({
   const [editablePost, setEditablePost] = useState("");
   const [autoSaveBusy, setAutoSaveBusy] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const lastSyncedPostRef = useRef("");
   const saveSuccessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const copySuccessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const text = content?.[activePlatform];
@@ -145,6 +142,9 @@ export default function Dashboard({
       if (saveSuccessTimeoutRef.current) {
         clearTimeout(saveSuccessTimeoutRef.current);
       }
+      if (copySuccessTimeoutRef.current) {
+        clearTimeout(copySuccessTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -175,6 +175,13 @@ export default function Dashboard({
     setChatText("");
     setChatBusy(true);
     setChatErr(null);
+
+    // Show special loading if it's the first post
+    const isFirstPost = !usage || usage.posts_generated === 0;
+    if (isFirstPost) {
+      setShowFirstPostLoading(true);
+    }
+
     try {
       const drafts = buildClientDraftsPayload(
         content,
@@ -201,6 +208,7 @@ export default function Dashboard({
       setChatErr(e instanceof Error ? e.message : "Message failed");
     } finally {
       setChatBusy(false);
+      setShowFirstPostLoading(false);
     }
   };
 
@@ -225,7 +233,9 @@ export default function Dashboard({
   const activeTabLabel =
     PLATFORM_TABS.find((t) => t.id === activePlatform)?.label ?? "Post";
 
-  const placeholder = `Tell me what you want to post on ${activeTabLabel}. I’ll draft it in the selected format.`;
+  const placeholder = chatBusy 
+    ? "Generating your post..." 
+    : `Tell me what you want to post on ${activeTabLabel}. I’ll draft it in the selected format.`;
 
   const selectPlatform = (p: DraftPlatform) => {
     if (p === activePlatform || chatBusy) return;
@@ -301,7 +311,8 @@ export default function Dashboard({
         </Card>
 
         {/* Generated Post — below chat */}
-        <Card>
+        <Card className="relative overflow-hidden">
+          <LoadingOverlay isVisible={showFirstPostLoading} message="sit back and relax we are cooking your first post" />
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold text-white">
@@ -326,7 +337,11 @@ export default function Dashboard({
                     }, 2000);
                   }
                 }}
-                className={saveSuccess ? "bg-green-500 hover:bg-green-600 text-white" : "bg-white text-black hover:bg-gray-200"}
+                className={`transition-all duration-300 ${
+                  saveSuccess 
+                    ? "bg-green-600 border-green-600 text-white shadow-[0_0_15px_rgba(22,163,74,0.4)]" 
+                    : "bg-white text-black hover:bg-gray-100"
+                }`}
               >
                 {saveSuccess ? "✓ Saved" : "Save Post"}
               </Button>
@@ -367,13 +382,23 @@ export default function Dashboard({
             <Button
               variant="ghost"
               size="sm"
-              icon={<Copy className="w-4 h-4" />}
-              onClick={() =>
-                editablePost && navigator.clipboard.writeText(editablePost)
-              }
+              icon={copySuccess ? null : <Copy className="w-4 h-4" />}
+              onClick={() => {
+                if (editablePost) {
+                  navigator.clipboard.writeText(editablePost);
+                  setCopySuccess(true);
+                  if (copySuccessTimeoutRef.current) {
+                    clearTimeout(copySuccessTimeoutRef.current);
+                  }
+                  copySuccessTimeoutRef.current = setTimeout(() => {
+                    setCopySuccess(false);
+                  }, 2000);
+                }
+              }}
               disabled={!editablePost}
+              className={`transition-all duration-200 ${copySuccess ? 'text-green-400' : ''}`}
             >
-              Copy
+              {copySuccess ? "✓ Copied" : "Copy"}
             </Button>
             {autoSaveBusy && (
               <span className="text-xs text-gray-500">Saving edits…</span>

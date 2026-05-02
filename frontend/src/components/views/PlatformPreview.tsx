@@ -1,4 +1,5 @@
-import { Heart, MessageCircle, Share2, MoreHorizontal, Search, Home, Bell, Mail, Bookmark, ListIcon, User, BarChart3 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Search } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
 
 interface PlatformPreviewProps {
   platform: string;
@@ -6,6 +7,10 @@ interface PlatformPreviewProps {
 }
 
 export default function PlatformPreview({ platform, content }: PlatformPreviewProps) {
+  const { user } = useUser();
+  const userName = user?.fullName || 'Your Name';
+  const userHandle = user?.username || user?.firstName?.toLowerCase() || 'username';
+
   const truncateText = (text: string, limit: number) => {
     return text.length > limit ? text.substring(0, limit) + '...' : text;
   };
@@ -18,7 +23,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full" />
             <div className="flex-1">
-              <div className="font-semibold text-sm">Your Name</div>
+              <div className="font-semibold text-sm">{userName}</div>
               <div className="text-xs text-gray-600">Professional · 2nd</div>
               <div className="text-xs text-gray-600">2 days ago</div>
             </div>
@@ -70,8 +75,8 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full" />
             <div className="flex-1">
-              <div className="font-bold text-sm">Your Handle</div>
-              <div className="text-xs text-gray-500">@yourhandle</div>
+              <div className="font-bold text-sm">{userName}</div>
+              <div className="text-xs text-gray-500">@{userHandle}</div>
             </div>
             <button className="text-gray-500 hover:text-blue-500">
               <MoreHorizontal size={18} />
@@ -115,6 +120,44 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
     );
   }
 
+  if (platform === 'threads') {
+    return (
+      <div className="bg-white text-black rounded-2xl border border-gray-200 overflow-hidden w-full max-w-md shadow-sm">
+        {/* Header */}
+        <div className="p-4 flex items-start gap-3">
+          <div className="w-10 h-10 bg-zinc-100 rounded-full flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="font-bold text-sm hover:underline cursor-pointer">{userHandle}</div>
+              <div className="flex items-center gap-2 text-zinc-400">
+                <span className="text-xs">2h</span>
+                <MoreHorizontal size={16} />
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="text-[15px] leading-normal whitespace-pre-wrap mb-3">
+              {content}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-4 text-black mb-3">
+              <Heart size={20} className="hover:scale-110 transition-transform cursor-pointer" />
+              <MessageCircle size={20} className="hover:scale-110 transition-transform cursor-pointer" />
+              <Share2 size={20} className="hover:scale-110 transition-transform cursor-pointer" />
+              <Search size={20} className="hover:scale-110 transition-transform cursor-pointer rotate-90" />
+            </div>
+
+            {/* Footer Stats */}
+            <div className="text-sm text-zinc-400">
+              42 replies · 128 likes
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (platform === 'instagram') {
     return (
       <div className="bg-white text-black rounded-lg border border-gray-300 overflow-hidden w-full max-w-sm">
@@ -122,7 +165,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         <div className="p-3 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 via-pink-500 to-red-500 rounded-full" />
-            <div className="text-sm font-semibold">your_username</div>
+            <div className="text-sm font-semibold">{userHandle}</div>
           </div>
           <MoreHorizontal size={16} />
         </div>
@@ -153,7 +196,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
         {/* Caption */}
         <div className="px-3 py-3 text-sm">
           <div className="mb-2">
-            <span className="font-semibold">your_username</span>{' '}
+            <span className="font-semibold">{userHandle}</span>{' '}
             <span className="whitespace-pre-wrap">{content}</span>
           </div>
           <div className="text-gray-500 text-xs">View all 24 comments</div>
@@ -180,7 +223,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full" />
             <div>
-              <div className="text-sm font-semibold">Your Name</div>
+              <div className="text-sm font-semibold">{userName}</div>
               <div className="text-xs text-gray-600">2 hours ago</div>
             </div>
           </div>
@@ -231,7 +274,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
           <div className="flex gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full" />
             <div className="flex-1">
-              <div className="font-semibold text-sm">@your_tiktok</div>
+              <div className="font-semibold text-sm">@{userHandle}</div>
               <div className="text-xs text-gray-400">Followed</div>
             </div>
             <button className="text-red-500 font-semibold">Follow</button>
@@ -276,7 +319,7 @@ export default function PlatformPreview({ platform, content }: PlatformPreviewPr
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-full" />
               <div>
-                <div className="text-sm font-semibold">Your Channel</div>
+                <div className="text-sm font-semibold">{userName}</div>
                 <div className="text-xs text-gray-600">234K subscribers</div>
               </div>
             </div>

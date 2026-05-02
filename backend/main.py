@@ -12,8 +12,7 @@ from agents.repurpose_agent import repurpose
 from agents.content_agent import (
     linkedin_post,
     twitter_thread,
-    instagram_caption,
-    youtube_script
+    threads_post
 )
 from services.llm import generate_text, complete_chat
 from services.pixazo import generate_image_url
@@ -23,7 +22,7 @@ app = FastAPI()
 # Last generated post text (for "schedule this" commands). In-memory only.
 last_generated_post: str | None = None
 ALLOWED_PLATFORMS = frozenset(
-    {"linkedin", "twitter", "instagram", "facebook", "tiktok", "youtube"}
+    {"linkedin", "twitter", "threads"}
 )
 
 conversation_state = {
@@ -47,10 +46,7 @@ def _platform_label(p: str) -> str:
     return {
         "linkedin": "LinkedIn",
         "twitter": "Twitter / X",
-        "instagram": "Instagram",
-        "facebook": "Facebook",
-        "tiktok": "TikTok",
-        "youtube": "YouTube",
+        "threads": "Threads",
     }.get(p, p)
 
 
@@ -82,10 +78,7 @@ def _build_chat_system(platform: str) -> str:
 5/ [Proof or result]
 6/ [Actionable tip]
 7/ [CTA — link, follow, retweet]""",
-        "instagram": "Instagram caption: hook, body, line breaks; optional emoji; hashtags only if natural.",
-        "facebook": "Facebook post: warm, conversational, paragraph style.",
-        "tiktok": "TikTok caption or short on-camera script lines: punchy, trend-aware, line breaks OK.",
-        "youtube": "YouTube short or long-form script outline with hook, beats, and outro.",
+        "threads": "Threads post: conversational, personal tone, strong hook, line breaks, question at end.",
     }.get(platform, "social post")
 
     return f"""You are a friendly, capable social media marketing assistant.
@@ -965,7 +958,7 @@ def chat_command(payload: ChatCommandRequest):
 
     today_utc = datetime.utcnow().strftime("%Y-%m-%d")
     platform = (payload.platform or "linkedin").lower().strip()
-    if platform not in {"linkedin", "twitter", "instagram", "facebook", "tiktok", "youtube"}:
+    if platform not in {"linkedin", "twitter", "threads"}:
         platform = "linkedin"
 
     if payload.brand_settings:
@@ -1080,7 +1073,12 @@ Twitter format:
 
 7 / [CTA — link, follow, retweet]
 
-For Instagram, Facebook, TikTok, or YouTube output a platform-appropriate post with a strong hook, problem, story, value, CTA, and hashtags.
+Threads format:
+- Conversational, slightly more personal than LinkedIn.
+- Strong opening hook.
+- Use line breaks for readability.
+- Ends with a question or CTA to spark conversation.
+- No more than 2-3 hashtags.
 
 Return exactly one of:
 
@@ -1364,8 +1362,7 @@ def generate(topic: str, platform: str = "all", count: int = 1):
             result = {
                 "linkedin": linkedin_post(topic, posts=count),
                 "twitter": twitter_thread(topic, tweets=count),
-                "instagram": generate_variants(instagram_caption),
-                "youtube": generate_variants(youtube_script),
+                "threads": generate_variants(threads_post),
             }
         elif platform == "linkedin":
             result = {"linkedin": linkedin_post(topic, posts=count)}
@@ -1373,8 +1370,7 @@ def generate(topic: str, platform: str = "all", count: int = 1):
             result = {"twitter": twitter_thread(topic, tweets=count)}
         else:
             simple_generators = {
-                "instagram": instagram_caption,
-                "youtube": youtube_script,
+                "threads": threads_post,
             }
 
             if platform not in simple_generators:
@@ -1382,13 +1378,13 @@ def generate(topic: str, platform: str = "all", count: int = 1):
                     status_code=400,
                     detail=(
                         f"Unsupported platform: {platform}. "
-                        f"Supported: all, linkedin, twitter, instagram, youtube"
+                        f"Supported: all, linkedin, twitter, threads"
                     ),
                 )
 
             result = {platform: generate_variants(simple_generators[platform])}
 
-        for key in ("linkedin", "twitter", "instagram", "facebook", "tiktok", "youtube"):
+        for key in ("linkedin", "twitter", "threads"):
             val = result.get(key)
             if isinstance(val, str) and val.strip():
                 last_generated_post = val.strip()

@@ -8,6 +8,7 @@ import ContentLibrary from "./components/views/ContentLibrary";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
+import Profile from "./components/views/Profile";
 import AuthGate from "./components/AuthGate";
 import { useUsageLimit } from "./hooks/useUsageLimit";
 
@@ -21,10 +22,7 @@ const sanitizePostText = (value: unknown): string => {
 const emptyContentRecord = () => ({
   linkedin: "",
   twitter: "",
-  instagram: "",
-  facebook: "",
-  tiktok: "",
-  youtube: "",
+  threads: "",
 });
 
 function AppContent() {
@@ -201,6 +199,7 @@ function AppContent() {
             setChatStep={setGenChatStep}
             chatInput={genChatInput}
             setChatInput={setGenChatInput}
+            usage={usage}
           />
         );
       case "library":
@@ -209,6 +208,8 @@ function AppContent() {
         return <BrandSettings />;
       case "billing":
         return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
+      case "profile":
+        return <Profile />;
       default:
         return (
           <Home

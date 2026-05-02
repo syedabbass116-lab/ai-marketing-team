@@ -28,11 +28,6 @@ def twitter_thread(topic: str, tweets: int = 1) -> str:
     return generate_text(prompt)
 
 
-def instagram_caption(topic: str) -> str:
-    prompt = f"Write an engaging Instagram caption about {topic}"
-    return generate_text(prompt)
-
-
-def youtube_script(topic: str) -> str:
-    prompt = f"Write a YouTube short video script about {topic}"
+def threads_post(topic: str) -> str:
+    prompt = f"Write an engaging Threads post about {topic}. It should be conversational, punchy, and spark conversation."
     return generate_text(prompt)
