@@ -10,6 +10,11 @@ import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
 import Profile from "./components/views/Profile";
 import AuthPage from "./components/views/AuthPage";
+import ContactUs from "./components/views/ContactUs";
+import PrivacyPolicy from "./components/views/PrivacyPolicy";
+import TermsOfService from "./components/views/TermsOfService";
+import AboutUs from "./components/views/AboutUs";
+import FAQ from "./components/views/FAQ";
 import { useUsageLimit } from "./hooks/useUsageLimit";
 import { useLibrary } from "./hooks/useLibrary";
 
@@ -254,6 +259,16 @@ function AppContent() {
         return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
       case "profile":
         return <Profile />;
+      case "contact":
+        return <ContactUs />;
+      case "privacy":
+        return <PrivacyPolicy />;
+      case "terms":
+        return <TermsOfService />;
+      case "about":
+        return <AboutUs />;
+      case "faq":
+        return <FAQ />;
       default:
         return (
           <Home

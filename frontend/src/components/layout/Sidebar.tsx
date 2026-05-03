@@ -8,8 +8,13 @@ import {
   Settings,
   User,
   Wand2,
+  HelpCircle,
+  FileText,
+  Phone,
+  Info,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
 import logo from "../../assets/logo.png";
 import chefDoodle from "../../ChefDoodle.png";
 
@@ -33,6 +38,11 @@ const menuItems: MenuItem[] = [
   { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "profile", label: "Profile", icon: User },
+  { id: "faq", label: "FAQ", icon: HelpCircle },
+  { id: "contact", label: "Contact Us", icon: Phone },
+  { id: "about", label: "About Us", icon: Info },
+  { id: "privacy", label: "Privacy Policy", icon: FileText },
+  { id: "terms", label: "Terms of Service", icon: FileText },
 ];
 
 export default function Sidebar({
@@ -42,6 +52,25 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const { user, signOut } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    console.log('Logout clicked, setting isLoggingOut to true');
+    setIsLoggingOut(true);
+    
+    // Force a re-render to ensure the overlay shows
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Wait for 2 seconds with the loading animation
+    setTimeout(async () => {
+      console.log('Calling signOut after 2 seconds');
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Error during signOut:', error);
+      }
+    }, 2000);
+  };
 
   const asideClass = [
     "w-64 min-h-screen flex flex-col fixed left-0 top-0 z-30 md:z-10",
@@ -52,6 +81,17 @@ export default function Sidebar({
 
   return (
     <>
+      {/* Logging out overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="text-white text-xl font-medium">Logging out...</p>
+            <p className="text-white/60 text-sm mt-2">Please wait a moment</p>
+          </div>
+        </div>
+      )}
+
       {/* Hamburger toggle when closed */}
       {!isOpen && (
         <button
@@ -153,13 +193,14 @@ export default function Sidebar({
           )}
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
               text-sm text-white/30 hover:text-white hover:bg-white/5
-              transition-all duration-150 font-medium"
+              transition-all duration-150 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            <span>Sign out</span>
+            <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
           </button>
         </div>
       </aside>

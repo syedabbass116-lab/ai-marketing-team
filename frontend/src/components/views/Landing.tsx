@@ -10,6 +10,11 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import logo from "../../assets/logo.png";
+import ContactUs from "./ContactUs";
+import PrivacyPolicy from "./PrivacyPolicy";
+import TermsOfService from "./TermsOfService";
+import AboutUs from "./AboutUs";
+import FAQ from "./FAQ";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -73,6 +78,7 @@ const STEPS = [
 export default function Landing({ onSignIn }: { onSignIn: () => void }) {
   const { user } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
+  const [currentPage, setCurrentPage] = useState<"landing" | "contact" | "privacy" | "terms" | "about" | "faq">("landing");
 
   if (user) {
     return null; // Will be handled by App.tsx routing
@@ -90,6 +96,87 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
       setSigningIn(false);
     }
   };
+
+  // Render different pages based on current page state
+  if (currentPage === "contact") {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => setCurrentPage("landing")}
+            className="mb-6 text-white/60 hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </button>
+          <ContactUs />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentPage === "privacy") {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => setCurrentPage("landing")}
+            className="mb-6 text-white/60 hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </button>
+          <PrivacyPolicy />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentPage === "terms") {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => setCurrentPage("landing")}
+            className="mb-6 text-white/60 hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </button>
+          <TermsOfService />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentPage === "about") {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => setCurrentPage("landing")}
+            className="mb-6 text-white/60 hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </button>
+          <AboutUs />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentPage === "faq") {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button 
+            onClick={() => setCurrentPage("landing")}
+            className="mb-6 text-white/60 hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </button>
+          <FAQ />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -355,26 +442,51 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
             <span>Ghostwrite</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">
-            <a href="#" className="transition-colors hover:text-white">
+            <button 
+              onClick={() => setCurrentPage('privacy')}
+              className="transition-colors hover:text-white"
+            >
               Privacy
-            </a>
-            <a href="#" className="transition-colors hover:text-white">
+            </button>
+            <button 
+              onClick={() => setCurrentPage('terms')}
+              className="transition-colors hover:text-white"
+            >
               Terms
-            </a>
-            <a href="#" className="transition-colors hover:text-white">
+            </button>
+            <button 
+              onClick={() => setCurrentPage('contact')}
+              className="transition-colors hover:text-white"
+            >
               Contact
-            </a>
+            </button>
+            <button 
+              onClick={() => setCurrentPage('about')}
+              className="transition-colors hover:text-white"
+            >
+              About
+            </button>
+            <button 
+              onClick={() => setCurrentPage('faq')}
+              className="transition-colors hover:text-white"
+            >
+              FAQ
+            </button>
           </div>
           <div className="flex items-center gap-3 text-gray-400">
             <a
-              href="#"
+              href="https://x.com/abbasintech?s=21"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Twitter"
               className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Twitter className="h-4 w-4" />
             </a>
             <a
-              href="#"
+              href="https://www.linkedin.com/in/mohd-abbas-209a75222?utm_source=share_via&utm_content=profile&utm_medium=member_ios"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="LinkedIn"
               className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
