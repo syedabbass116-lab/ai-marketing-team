@@ -85,7 +85,7 @@ export default function Sidebar({
       {isLoggingOut && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex items-center justify-center">
           <div className="text-center">
-            <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
+            <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-xl font-medium">Logging out...</p>
             <p className="text-white/60 text-sm mt-2">Please wait a moment</p>
           </div>
