@@ -166,24 +166,50 @@ export default function Sidebar({
             </button>
             
             {wsOpen && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-50 py-1">
-                {workspaces.map(ws => (
-                  <button
-                    key={ws.id}
-                    onClick={() => {
-                      setActiveWorkspace(ws);
-                      setWsOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
-                      activeWorkspace?.id === ws.id ? 'text-white bg-white/5' : 'text-white/40 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <span className="truncate">{ws.name}</span>
-                    {activeWorkspace?.id === ws.id && <div className="w-1 h-1 rounded-full bg-blue-400" />}
-                  </button>
-                ))}
+              <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-[100] py-1">
+                {workspaces.length > 0 ? (
+                  workspaces.map(ws => (
+                    <button
+                      key={ws.id}
+                      onClick={() => {
+                        setActiveWorkspace(ws);
+                        setWsOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
+                        activeWorkspace?.id === ws.id ? 'text-white bg-white/5' : 'text-white/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="truncate">{ws.name}</span>
+                      {activeWorkspace?.id === ws.id && <div className="w-1 h-1 rounded-full bg-blue-400" />}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-4 text-center">
+                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold mb-2">No Workspaces</p>
+                    <button 
+                      onClick={async () => {
+                        // Trigger a default creation
+                        if (user) {
+                           const { data: newWs } = await supabase
+                            .from('workspaces')
+                            .insert([{ name: `${user.email?.split('@')[0]}'s Workspace`, owner_id: user.id }])
+                            .select()
+                            .single();
+                          if (newWs) {
+                            await supabase.from('workspace_members').insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+                            window.location.reload();
+                          }
+                        }
+                      }}
+                      className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline"
+                    >
+                      + Create Default
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+
           </div>
         </div>
 
