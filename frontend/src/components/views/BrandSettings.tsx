@@ -293,7 +293,7 @@ export default function BrandSettings() {
 
       <div className="flex gap-3">
         <Button
-          variant="primary"
+          variant="gradient"
           onClick={handleSave}
           disabled={isSaving}
           className={saveSuccess ? "!bg-green-600 border-green-600 text-white" : ""}
@@ -308,7 +308,7 @@ export default function BrandSettings() {
           {isSaving ? "Saving..." : saveSuccess ? "Saved Successfully" : "Save Settings"}
         </Button>
         <Button
-          variant="secondary"
+          variant="gradient"
           onClick={handleTrain}
           disabled={isTraining}
         >
