@@ -32,14 +32,13 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "generate", label: "Generate Content", icon: Wand2 },
+  { id: "generate", label: "Dashboard", icon: Wand2 },
+  { id: "profile", label: "Brand Identities", icon: User },
   { id: "library", label: "Content Library", icon: FolderOpen },
-  { id: "brand", label: "Brand Settings", icon: Settings },
-  { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "profile", label: "Brand Profiles", icon: User },
-  { id: "team", label: "Team Management", icon: TeamIcon },
+  { id: "team", label: "Team Members", icon: TeamIcon },
+  { id: "billing", label: "Subscription", icon: CreditCard },
 ];
+
 
 
 export default function Sidebar({

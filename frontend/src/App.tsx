@@ -203,13 +203,6 @@ function AppContent() {
       return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
     }
     switch (activeView) {
-      case "dashboard":
-        return (
-          <Home
-            onStartGenerate={() => setActiveView("generate")}
-            onOpenLibrary={() => setActiveView("library")}
-          />
-        );
       case "generate":
         return (
           <Dashboard
@@ -226,8 +219,6 @@ function AppContent() {
         );
       case "library":
         return <ContentLibrary library={library} onDelete={deleteContent} />;
-      case "brand":
-        return <BrandSettings />;
       case "billing":
         return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
       case "profile":
@@ -235,14 +226,21 @@ function AppContent() {
       case "team":
         return <Team />;
       default:
-
         return (
-          <Home
-            onStartGenerate={() => setActiveView("generate")}
-            onOpenLibrary={() => setActiveView("library")}
+          <Dashboard
+            content={content}
+            onSave={saveContent}
+            onChatCommand={runChatCommand}
+            onPostAction={runPostAction}
+            chatStep={genChatStep}
+            setChatStep={setGenChatStep}
+            chatInput={genChatInput}
+            setChatInput={setGenChatInput}
+            usage={usage}
           />
         );
     }
+
   };
 
   return (
