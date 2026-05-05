@@ -25,7 +25,6 @@ export default function GhostwriteHero() {
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-      
       {/* Card */}
       <div className="relative max-w-xl w-full rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 text-center shadow-[0_0_80px_rgba(99,102,241,0.15)]">
 
@@ -61,6 +60,18 @@ export default function GhostwriteHero() {
         >
           Open Content Library
         </button>
+
+        {/* Ghostwrites Link */}
+        <div className="mt-6 text-center">
+          <a 
+            href="https://www.ghostwrites.vercel.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-white/60 text-sm hover:text-white/80 transition-colors underline decoration-white/20 hover:decoration-white/40"
+          >
+            Visit Ghostwrites →
+          </a>
+        </div>
       </div>
     </div>
   );
