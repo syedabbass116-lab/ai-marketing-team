@@ -5,11 +5,20 @@ import { supabase } from '../lib/supabase';
 export interface BrandProfile {
   id: string;
   brand_name: string;
+  brand_description?: string;
   brand_voice: string;
   tone: string;
+  target_audience?: string;
+  writing_style_linkedin?: string;
+  writing_style_twitter?: string;
+  writing_style_threads?: string;
+  key_topics?: string;
   is_active: boolean;
+  workspace_id: string;
+  created_by: string;
   created_at: string;
 }
+
 
 export function useBrandVoices(workspaceId?: string) {
   const { user } = useAuth();
