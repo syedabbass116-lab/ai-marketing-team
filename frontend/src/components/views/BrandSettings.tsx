@@ -32,6 +32,7 @@ export default function BrandSettings() {
   const [targetAudience, setTargetAudience] = useState("");
   const [writingStyleLinkedin, setWritingStyleLinkedin] = useState("");
   const [writingStyleTwitter, setWritingStyleTwitter] = useState("");
+  const [writingStyleThreads, setWritingStyleThreads] = useState("");
   const [keyTopics, setKeyTopics] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
@@ -59,6 +60,7 @@ export default function BrandSettings() {
           setTargetAudience(data.target_audience || "");
           setWritingStyleLinkedin(data.writing_style_linkedin || "");
           setWritingStyleTwitter(data.writing_style_twitter || "");
+          setWritingStyleThreads(data.writing_style_threads || "");
           setKeyTopics(data.key_topics || "");
           
           // Also sync to localStorage for the chat component to use immediately
@@ -70,6 +72,7 @@ export default function BrandSettings() {
             targetAudience: data.target_audience,
             writingStyleLinkedin: data.writing_style_linkedin,
             writingStyleTwitter: data.writing_style_twitter,
+            writingStyleThreads: data.writing_style_threads,
             keyTopics: data.key_topics
           }));
         }
@@ -97,6 +100,7 @@ export default function BrandSettings() {
       target_audience: targetAudience,
       writing_style_linkedin: writingStyleLinkedin,
       writing_style_twitter: writingStyleTwitter,
+      writing_style_threads: writingStyleThreads,
       key_topics: keyTopics,
       updated_at: new Date().toISOString(),
     };
@@ -117,6 +121,7 @@ export default function BrandSettings() {
         targetAudience,
         writingStyleLinkedin,
         writingStyleTwitter,
+        writingStyleThreads,
         keyTopics
       }));
 
@@ -210,10 +215,10 @@ export default function BrandSettings() {
           Writing Style Examples
         </h3>
         <p className="text-sm text-gray-400 mb-4">
-          Paste examples of your best-performing content separately for LinkedIn
-          and Twitter.
+          Paste examples of your best-performing content separately for LinkedIn,
+          Twitter, and Threads.
         </p>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
               LinkedIn examples
@@ -234,6 +239,17 @@ export default function BrandSettings() {
               rows={6}
               value={writingStyleTwitter}
               onChange={(e) => setWritingStyleTwitter(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white">
+              Threads examples
+            </label>
+            <Textarea
+              placeholder="Paste Threads examples that show your brand voice..."
+              rows={6}
+              value={writingStyleThreads}
+              onChange={(e) => setWritingStyleThreads(e.target.value)}
             />
           </div>
         </div>
