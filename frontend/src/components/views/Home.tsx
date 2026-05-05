@@ -84,43 +84,6 @@ export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
             </Button>
           </Card>
         </div>
-
-        {/* Quick-access cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card hover>
-            <div className="space-y-3" onClick={onStartGenerate}>
-              <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white/60" />
-              </div>
-              <h3
-                style={{ fontFamily: "var(--font-heading)" }}
-                className="text-sm font-bold text-white tracking-tight"
-              >
-                Generate Content
-              </h3>
-              <p className="text-xs text-white/40 leading-relaxed">
-                AI-powered posts written in your brand voice, ready to publish.
-              </p>
-            </div>
-          </Card>
-
-          <Card hover>
-            <div className="space-y-3" onClick={onOpenLibrary}>
-              <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                <FolderOpen className="w-4 h-4 text-white/60" />
-              </div>
-              <h3
-                style={{ fontFamily: "var(--font-heading)" }}
-                className="text-sm font-bold text-white tracking-tight"
-              >
-                Content Library
-              </h3>
-              <p className="text-xs text-white/40 leading-relaxed">
-                Save and reuse your best-performing post ideas across platforms.
-              </p>
-            </div>
-          </Card>
-        </div>
       </div>
     </div>
   );
