@@ -225,6 +225,8 @@ function AppContent() {
         return <Profiles />;
       case "team":
         return <Team />;
+      case "home":
+        return <Home onViewChange={setActiveView} />;
       default:
         return (
           <Dashboard
@@ -244,7 +246,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white bg-dot-grid">
+    <div className={`min-h-screen text-white ${activeView === 'home' ? 'bg-[#0a0a0a]' : 'bg-black bg-dot-grid'}`}>
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
@@ -254,9 +256,11 @@ function AppContent() {
       <TopBar sidebarOpen={sidebarOpen} />
 
       <main
-        className={`pt-14 transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "ml-0"}`}
+        className={`pt-14 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'} h-full`}
       >
-        <div className="p-4 sm:p-6 md:p-8 animate-fadeIn max-w-7xl mx-auto">{renderView()}</div>
+        <div className={activeView !== 'home' ? "p-4 sm:p-6 md:p-8 animate-fadeIn max-w-7xl mx-auto" : "h-full w-full"}>
+          {renderView()}
+        </div>
       </main>
     </div>
   );

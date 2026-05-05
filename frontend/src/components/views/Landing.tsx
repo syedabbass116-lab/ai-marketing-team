@@ -5,8 +5,12 @@ import {
   Twitter,
   Linkedin,
   Check,
+  Fingerprint,
+  LayoutDashboard,
+  Share2,
+  FolderOpen
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import logo from "../../assets/logo.png";
@@ -15,6 +19,38 @@ import PrivacyPolicy from "./PrivacyPolicy";
 import TermsOfService from "./TermsOfService";
 import AboutUs from "./AboutUs";
 import FAQ from "./FAQ";
+
+function TypewriterPost() {
+  const fullText = "Stop guessing what to post. The best creators build a system. Here is how I scaled my personal brand using AI to automate my thought leadership... 🚀";
+  const [text, setText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    if (!isTyping) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      setText(fullText.slice(0, i));
+      i++;
+      if (i > fullText.length) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsTyping(false);
+          setTimeout(() => {
+            setText("");
+            setIsTyping(true);
+          }, 500);
+        }, 3000);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [isTyping]);
+
+  return (
+    <p className="text-sm text-white/85 h-[80px] leading-relaxed">
+      {text}<span className="animate-pulse text-blue-400">|</span>
+    </p>
+  );
+}
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -298,10 +334,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
                   <p className="text-xs text-white/60 mb-2">
                     Your AI-Generated Post
                   </p>
-                  <p className="text-sm text-white/85">
-                    Stop guessing what to post. The best creators build a
-                    system...
-                  </p>
+                  <TypewriterPost />
                   <div className="mt-2 flex gap-4 text-xs text-white/40">
                     <span>1.2k likes</span>
                     <span>84 comments</span>
@@ -382,16 +415,58 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
         id="preview"
         className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28"
       >
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">
-            The product
+            The Complete Toolkit
           </p>
-          <h2 className="mt-3 font-mono text-3xl font-bold tracking-tight sm:text-5xl">
-            Your content engine, on autopilot
+          <h2 className="mt-3 font-mono text-3xl font-bold tracking-tight sm:text-5xl mb-6">
+            Everything you need to dominate social media
           </h2>
-          <p className="mt-4 text-base text-gray-400 sm:text-lg">
-            Draft, schedule, and track every post from one focused workspace.
+          <p className="text-base text-gray-400 sm:text-lg mb-12">
+            Ghostwrites isn't just a text generator. It is a fully-featured digital marketing agency built directly into your browser.
           </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center mb-6">
+                <Fingerprint className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Multi-Brand Identities</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Manage multiple brands or clients from one dashboard. Train a unique AI model for each identity by providing its core values, target audience, and specific writing samples. 
+              </p>
+            </div>
+            
+            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-purple-500/20 text-purple-400 rounded-lg flex items-center justify-center mb-6">
+                <LayoutDashboard className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Premium Command Center</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Track your monthly output, manage your subscription limits, and quickly jump between drafting new posts and reviewing your library of high-converting content.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center mb-6">
+                <Share2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Platform Native Output</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Stop cross-posting the exact same text. Ghostwrites automatically formats your ideas into algorithm-friendly LinkedIn posts, punchy X (Twitter) threads, and engaging Threads.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center mb-6">
+                <FolderOpen className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Persistent Content Library</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Never lose a good idea. Save your favorite generated posts directly to your secure cloud library, ready to be reviewed, edited, and published whenever you need them.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

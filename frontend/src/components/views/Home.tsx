@@ -1,137 +1,169 @@
-import { Sparkles, ArrowRight, FolderOpen, Zap, Target, BookOpen } from "lucide-react";
-import Button from "../ui/Button";
-import Card from "../ui/Card";
+import { FileText, Fingerprint, ArrowUpRight, PenTool, FolderOpen } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import { useUsageLimit } from "../../hooks/useUsageLimit";
+import logo from "../../assets/logo.png";
 
 type HomeProps = {
-  onStartGenerate: () => void;
-  onOpenLibrary: () => void;
+  onViewChange?: (view: string) => void;
 };
 
-export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
+export default function Home({ onViewChange }: HomeProps) {
   const { user } = useAuth();
-  const { activeWorkspace } = useWorkspace();
+  const { workspaces, activeWorkspace } = useWorkspace();
   const { usage } = useUsageLimit(activeWorkspace?.id);
+  
+  const hasWorkspaces = workspaces && workspaces.length > 0;
   
   const fullName = user?.user_metadata?.full_name || "";
   const firstName = fullName ? fullName.split(' ')[0] : (user?.email?.split('@')[0] || "there");
-  const username = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  const capitalizedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+  const postsGenerated = usage?.posts_generated || 0;
+  const postsLimit = usage?.posts_limit || 10;
+  const percentUsed = Math.min(100, (postsGenerated / postsLimit) * 100);
 
-  const postsLeft = (usage?.posts_limit || 10) - (usage?.posts_generated || 0);
+  const [typedText, setTypedText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+  const fullText = "> Initializing Ghostwrites Engine...\n> Analyzing active Brand Identity...\n> Generating high-conversion hook...\n\nStop guessing what to post. The best creators build a system. Here is how I scaled my personal brand using AI to automate my thought leadership. 🚀";
+
+  useEffect(() => {
+    if (!isTyping) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      setTypedText(fullText.slice(0, i));
+      i++;
+      if (i > fullText.length) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsTyping(false);
+          setTimeout(() => {
+            setTypedText("");
+            setIsTyping(true);
+          }, 1000);
+        }, 5000);
+      }
+    }, 35);
+    return () => clearInterval(interval);
+  }, [isTyping, fullText]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Header Greeting */}
-      <div className="space-y-1">
-        <h2 className="text-white/40 text-xs font-black uppercase tracking-[0.3em]">{greeting}</h2>
-        <h1 className="text-4xl font-black text-white tracking-tight">Welcome back, {username} 👋</h1>
-      </div>
+    <div className="min-h-screen bg-[#000] text-[#f0f0f0] font-sans selection:bg-[#f0f0f0] selection:text-[#000] pb-20 relative">
+      {/* Subtle Background Grid */}
+      <div 
+        className="absolute inset-0 pointer-events-none" 
+        style={{ 
+          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)", 
+          backgroundSize: "64px 64px" 
+        }} 
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000] to-[#000] pointer-events-none" />
 
-      {/* Usage Progress Section */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-8 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Usage Analytics</p>
-            <h3 className="text-2xl font-black text-white">Posts Generated This Month</h3>
+      {/* Body (centered column) */}
+      <main className="relative z-10 flex flex-col items-center justify-center pt-28 px-4 animate-in fade-in duration-700 slide-in-from-bottom-4">
+        <div className="text-center space-y-5 mb-14">
+          <div className="relative inline-block mb-2">
+            <div className="absolute inset-0 bg-white blur-[70px] opacity-[0.07] rounded-full" />
+            <img src={logo} alt="Ghostwrites" className="relative w-20 h-20 object-contain mx-auto opacity-90 drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]" />
           </div>
-          <div className="text-right">
-            <span className="text-3xl font-black text-white">{usage?.posts_generated || 0}</span>
-            <span className="text-white/30 font-bold ml-2">of {usage?.posts_limit || 10} available</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-              style={{ width: `${Math.min(100, ((usage?.posts_generated || 0) / (usage?.posts_limit || 10)) * 100)}%` }}
-            />
-          </div>
-          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-            <span className="text-blue-400">{Math.round(((usage?.posts_generated || 0) / (usage?.posts_limit || 10)) * 100)}% used</span>
-            <span className="text-white/20">{postsLeft} posts remaining</span>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 flex items-center gap-4 group hover:bg-white/[0.05] transition-all">
-          <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform">
-            <Zap className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Posts Remaining</p>
-            <h3 className="text-xl font-black text-white">{postsLeft} <span className="text-xs text-white/20 font-normal">/ {usage?.posts_limit || 10}</span></h3>
-          </div>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 flex items-center gap-4 group hover:bg-white/[0.05] transition-all">
-          <div className="p-3 bg-purple-500/10 rounded-xl text-purple-500 group-hover:scale-110 transition-transform">
-            <Target className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Active Identity</p>
-            <h3 className="text-xl font-black text-white truncate">{activeWorkspace?.name || "No Brand Selected"}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 flex items-center gap-4 group hover:bg-white/[0.05] transition-all">
-          <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Recent Drafts</p>
-            <h3 className="text-xl font-black text-white">Manage Library</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Hero Card */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border border-white/5 bg-[#0a0a0a] px-10 py-16 text-center group">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 to-transparent pointer-events-none" />
-        
-        <div className="relative max-w-2xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 text-[10px] font-black tracking-[0.2em] uppercase">
-            <Sparkles className="w-3 h-3 text-blue-400" />
-            AI Content Engine Active
-          </div>
-          
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter">
-            Ready to scale your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">personal brand?</span>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-[#888]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            Hii {capitalizedFirstName}, what would you like to post today?
           </h1>
-          
-          <p className="text-sm md:text-base text-white/40 max-w-lg mx-auto leading-relaxed font-medium px-4">
-            Generate high-conversion posts tailored to your <span className="text-white">"{activeWorkspace?.name}"</span> identity in seconds.
+          <p className="text-sm md:text-base text-[#666] font-medium max-w-md mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
+            Your content engine is fully operational. Select an action to begin crafting.
           </p>
+        </div>
+
+        {/* Action Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full max-w-[500px]">
           
-          <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center px-6">
-            <Button
-              variant="primary"
-              size="lg"
-              icon={<Sparkles className="w-5 h-5" />}
-              onClick={onStartGenerate}
-              className="w-full sm:w-auto px-10 py-5 rounded-2xl shadow-2xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all font-black text-sm uppercase tracking-wider"
-            >
-              Generate New Post
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="lg" 
-              onClick={onOpenLibrary}
-              className="w-full sm:w-auto px-8 py-5 rounded-2xl border-white/5 hover:bg-white/5 transition-all font-bold text-sm"
-            >
-              View Saved Drafts
-            </Button>
+          {/* Card 1: Generate a post */}
+          <button 
+            onClick={() => onViewChange && onViewChange('generate')}
+            className="group relative flex flex-col text-left p-6 bg-[#0a0a0a] hover:bg-[#111] border border-[#1f1f1f] hover:border-[#333] rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent rounded-2xl pointer-events-none" />
+            <div className="flex items-center justify-between w-full mb-5 relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-[#111] border border-[#252525] group-hover:border-[#2a2540] flex items-center justify-center transition-colors duration-300 shadow-inner">
+                <PenTool className="w-5 h-5 text-[#888] group-hover:text-[#7F77DD] transition-colors duration-300" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-[#444] group-hover:text-[#888] transition-colors duration-300" />
+            </div>
+            
+            <h3 className="text-lg font-semibold text-[#f0f0f0] mb-2 tracking-tight relative z-10" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              Generate a post
+            </h3>
+            <p className="text-xs text-[#888] leading-relaxed relative z-10" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              Turn any idea into a platform-ready draft instantly.
+            </p>
+          </button>
+
+          {/* Card 2: Create brand identity */}
+          <button 
+            onClick={() => onViewChange && onViewChange('profile')}
+            className="group relative flex flex-col text-left p-6 bg-[#0a0a0a] hover:bg-[#111] border border-[#1f1f1f] hover:border-[#333] rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent rounded-2xl pointer-events-none" />
+            <div className="flex items-center justify-between w-full mb-5 relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-[#111] border border-[#252525] group-hover:border-[#0f2035] flex items-center justify-center transition-colors duration-300 shadow-inner">
+                <Fingerprint className="w-5 h-5 text-[#888] group-hover:text-[#378ADD] transition-colors duration-300" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-[#444] group-hover:text-[#888] transition-colors duration-300" />
+            </div>
+            
+            <h3 className="text-lg font-semibold text-[#f0f0f0] mb-2 tracking-tight relative z-10" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              Create brand identity
+            </h3>
+            <p className="text-xs text-[#888] leading-relaxed relative z-10" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              Train your AI clone on your unique voice and tone.
+            </p>
+          </button>
+
+        </div>
+
+        {/* Context & Live Preview */}
+        <div className="w-full max-w-[500px] mt-10 text-left">
+          <div className="p-6 bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#444] to-transparent opacity-50" />
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#7F77DD] animate-pulse shadow-[0_0_8px_rgba(127,119,221,0.8)]" />
+                <span className="text-[10px] font-bold text-[#888] tracking-widest uppercase" style={{ fontFamily: 'Poppins, sans-serif' }}>Live AI Engine</span>
+              </div>
+            </div>
+            
+            <p className="text-xs text-[#777] leading-relaxed mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              Ghostwrites automatically structures your thoughts into platform-native posts.
+            </p>
+
+            <div className="bg-[#050505] border border-[#1a1a1a] rounded-xl font-mono text-xs text-[#888] h-[160px] overflow-hidden relative shadow-inner">
+              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+                 <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+                 <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+                 <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+                 <span className="ml-2 text-[9px] uppercase tracking-widest text-[#555]">ai_engine.sh</span>
+              </div>
+              <div className="p-4">
+                <span className="whitespace-pre-wrap leading-relaxed text-[#a0a0a0]">{typedText}</span>
+                <span className="animate-pulse text-[#fff] ml-0.5">_</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Divider & Hint */}
+        <div className="w-full max-w-[500px] mt-12 space-y-6">
+          <div className="w-full h-px bg-[#1a1a1a]" />
+          
+          {!hasWorkspaces && (
+            <p className="text-center text-xs text-[#2e2e2e]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              no brand voices yet — create one to unlock post generation
+            </p>
+          )}
+        </div>
+
+      </main>
     </div>
   );
 }

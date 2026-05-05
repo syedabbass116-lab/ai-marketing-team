@@ -373,7 +373,7 @@ export default function Billing({
               'Content library storage',
               'Email support',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
             processingPayment={processingPayment}
           />
           <PlanCard
@@ -390,7 +390,7 @@ export default function Billing({
               'Priority support',
               'Export posts',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
             processingPayment={processingPayment}
           />
           <PlanCard
@@ -406,7 +406,7 @@ export default function Billing({
               'Dedicated support',
               'Custom integrations',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
             processingPayment={processingPayment}
           />
         </div>
