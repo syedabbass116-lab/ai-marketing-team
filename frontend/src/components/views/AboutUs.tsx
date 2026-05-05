@@ -19,17 +19,17 @@ export default function AboutUs() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-12">
-        <div className="flex items-center gap-4 mb-4">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="mb-8 sm:mb-12">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
           <img
             src={logo}
             alt="Ghostwrites logo"
-            className="h-16 w-16 object-contain"
+            className="h-12 w-12 sm:h-16 sm:w-16 object-contain"
           />
-          <h1 className="text-4xl font-bold text-white">About Us</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white">About Us</h1>
         </div>
-        <p className="text-xl text-gray-400 mb-6">
+        <p className="text-lg sm:text-xl text-gray-400 mb-4 sm:mb-6">
           We build AI tools that help people get things done.
         </p>
         <p className="text-gray-300 leading-relaxed">
@@ -42,9 +42,9 @@ export default function AboutUs() {
 
       {/* What We Believe */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
-        <h2 className="text-2xl font-semibold text-white mb-4">What We Believe</h2>
-        <div className="bg-black/30 border border-white/10 rounded-lg p-6 mb-6">
-          <p className="text-lg text-white italic mb-4">
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4">What We Believe</h2>
+        <div className="bg-black/30 border border-white/10 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <p className="text-base sm:text-lg text-white italic mb-4">
             "AI shouldn't feel like a tool you operate. It should feel like a thinking partner you rely on."
           </p>
           <p className="text-gray-300">
@@ -55,19 +55,19 @@ export default function AboutUs() {
 
       {/* The Product */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
-        <h2 className="text-2xl font-semibold text-white mb-4">The Product</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4">The Product</h2>
         <p className="text-gray-300 leading-relaxed mb-6">
           Our ghostwriting app helps founders, creators, and professionals show up online—consistently.
         </p>
         <p className="text-gray-300 leading-relaxed mb-6">
           It turns your ideas into content that:
         </p>
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
           <div className="bg-black/30 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white font-medium">sounds like you</h4>
+            <h4 className="text-white font-medium text-sm sm:text-base">sounds like you</h4>
           </div>
           <div className="bg-black/30 border border-white/10 rounded-lg p-4">
-            <h4 className="text-white font-medium">is clear and structured</h4>
+            <h4 className="text-white font-medium text-sm sm:text-base">is clear and structured</h4>
           </div>
           <div className="bg-black/30 border border-white/10 rounded-lg p-4">
             <h4 className="text-white font-medium">is ready to publish</h4>
@@ -84,7 +84,7 @@ export default function AboutUs() {
         <p className="text-gray-300 leading-relaxed mb-6">
           We're building a system around how people think and create:
         </p>
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <div className="bg-black/30 border border-white/10 rounded-lg p-6">
             <h4 className="text-lg font-semibold text-white mb-2">AI Content Assistant</h4>
             <p className="text-gray-400 text-sm">Social media, on autopilot</p>
@@ -106,7 +106,7 @@ export default function AboutUs() {
       {/* Founder Section */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
         <h2 className="text-2xl font-semibold text-white mb-6">Founder</h2>
-        <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
           <div className="flex-1 order-2 md:order-1">
             <p className="text-gray-300 leading-relaxed mb-4">
               Founded in April 2026 by Mohd Abbas.
@@ -135,7 +135,7 @@ export default function AboutUs() {
           <img
             src={founder}
             alt="Mohd Abbas - Founder"
-            className="w-48 h-48 rounded-full object-cover border-2 border-white/30 flex-shrink-0 order-1 md:order-2 mr-24 mb-10"
+            className="w-32 h-32 sm:w-48 sm:h-48 rounded-full object-cover border-2 border-white/30 flex-shrink-0 order-1 sm:order-2 mr-16 sm:mr-24 mb-8 sm:mb-10"
           />
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function AboutUs() {
       {/* What Matters */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
         <h2 className="text-2xl font-semibold text-white mb-4">What Matters</h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-black/30 border border-white/10 rounded-lg p-4">
             <h4 className="text-white font-medium">Clarity over noise</h4>
           </div>
@@ -168,7 +168,7 @@ export default function AboutUs() {
       </section>
 
       {/* Final Line */}
-      <section className="bg-gradient-to-r from-blue-500/20 to-violet-500/20 border border-blue-500/30 rounded-xl p-8 mb-12">
+      <section className="bg-gradient-to-r from-blue-500/20 to-violet-500/20 border border-blue-500/30 rounded-xl p-6 sm:p-8 mb-8 sm:mb-12">
         <h2 className="text-2xl font-semibold text-white mb-4">Final Line</h2>
         <p className="text-gray-300 leading-relaxed">
           If you have ideas worth sharing,
@@ -177,7 +177,7 @@ export default function AboutUs() {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center bg-white/5 border border-white/10 rounded-xl p-8">
+      <section className="text-center bg-white/5 border border-white/10 rounded-xl p-6 sm:p-8">
         <button
           onClick={handleGoogleSignIn}
           disabled={signingIn}
