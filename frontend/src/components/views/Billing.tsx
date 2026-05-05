@@ -303,7 +303,7 @@ export default function Billing({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <PlanCard
             name="Starter"
-            price="$29"
+            price="$1"
             period="month"
             postsPerMonth={50}
             platforms={3}
@@ -318,12 +318,11 @@ export default function Billing({
           />
           <PlanCard
             name="Professional"
-            price="$79"
+            price="$1"
             period="month"
             postsPerMonth={200}
             platforms={6}
             popular
-            current
             features={[
               'All 6 platforms',
               'Monthly post limit',
@@ -336,7 +335,7 @@ export default function Billing({
           />
           <PlanCard
             name="Enterprise"
-            price="$199"
+            price="$1"
             period="month"
             postsPerMonth={500}
             platforms={6}
