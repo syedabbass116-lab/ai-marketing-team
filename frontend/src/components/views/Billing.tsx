@@ -145,7 +145,15 @@ export default function Billing({
 
       const orderData = await orderResponse.json();
       console.log('Order data received:', orderData);
-      
+      const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      console.log("Initializing Razorpay with Key:", rzpKey);
+
+      if (!rzpKey) {
+        alert("CRITICAL ERROR: Razorpay Key ID is missing! Check your environment variables.");
+        setProcessingPayment(false);
+        return;
+      }
+
       // Step 2: Load Razorpay script
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';

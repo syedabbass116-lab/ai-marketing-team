@@ -18,6 +18,15 @@ export default function PayButton({ amount, name, description }) {
     setLoading(true);
     
     try {
+      const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      console.log("Initializing Razorpay with Key:", rzpKey);
+
+      if (!rzpKey) {
+        alert("CRITICAL ERROR: Razorpay Key ID is missing! Check your environment variables.");
+        setLoading(false);
+        return;
+      }
+
       const loaded = await loadRazorpay();
       if (!loaded) {
         alert("Failed to load Razorpay. Please refresh and try again.");
