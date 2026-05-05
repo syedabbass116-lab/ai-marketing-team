@@ -371,8 +371,12 @@ class SchedulePostRequest(BaseModel):
 
 class ChatCommandRequest(BaseModel):
     message: str
-    platform: str = "linkedin"
+    platform: str | None = "linkedin"
+    client_drafts: dict[str, str] | None = None
     brand_settings: dict | None = None
+    user_name: str | None = "there"
+    voice_id: str | None = None
+    workspace_id: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -1032,9 +1036,34 @@ def chat_command(payload: ChatCommandRequest):
     if payload.brand_settings:
         conversation_state["brand_settings"] = payload.brand_settings
 
-    brand_settings = payload.brand_settings or conversation_state.get(
-        "brand_settings") or {}
+    # Logic: If voice_id is provided, fetch full details from DB
+    brand_settings = payload.brand_settings or {}
+    
+    if payload.voice_id:
+        try:
+            print(f"Backend: Fetching voice details for ID {payload.voice_id}")
+            voice_res = supabase_db.table("brand_settings").select("*").eq("id", payload.voice_id).single().execute()
+            if voice_res.data:
+                db_voice = voice_res.data
+                brand_settings = {
+                    "brandName": db_voice.get("brand_name"),
+                    "brandDescription": db_voice.get("brand_description"),
+                    "brandVoice": db_voice.get("brand_voice"),
+                    "tone": db_voice.get("tone"),
+                    "targetAudience": db_voice.get("target_audience"),
+                    "writingStyleLinkedin": db_voice.get("writing_style_linkedin"),
+                    "writingStyleTwitter": db_voice.get("writing_style_twitter"),
+                    "writingStyleThreads": db_voice.get("writing_style_threads"),
+                    "keyTopics": db_voice.get("key_topics")
+                }
+        except Exception as e:
+            print(f"Backend: Error fetching voice ID {payload.voice_id}: {e}")
+
+    if not brand_settings and conversation_state.get("brand_settings"):
+         brand_settings = conversation_state.get("brand_settings")
+
     brand_prompt = ""
+
     if isinstance(brand_settings, dict) and brand_settings:
         lines = ["--- BRAND SETTINGS ---"]
         if brand_settings.get("brandName"):

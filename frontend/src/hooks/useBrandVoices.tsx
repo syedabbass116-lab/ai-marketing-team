@@ -26,7 +26,13 @@ export function useBrandVoices(workspaceId?: string) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = useCallback(async () => {
-    if (!workspaceId) return;
+    if (!workspaceId) {
+      console.log('useBrandVoices: No workspaceId provided to hook, clearing profiles.');
+      setProfiles([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     console.log('useBrandVoices: Fetching profiles for workspace', workspaceId);
     try {
@@ -40,7 +46,8 @@ export function useBrandVoices(workspaceId?: string) {
         console.error('useBrandVoices: Fetch error:', error);
         throw error;
       }
-      console.log('useBrandVoices: Profiles loaded:', data?.length);
+      
+      console.log(`useBrandVoices: Successfully loaded ${data?.length || 0} profiles for ${workspaceId}`);
       setProfiles(data || []);
     } catch (err) {
       console.error('Error fetching profiles:', err);
@@ -50,8 +57,13 @@ export function useBrandVoices(workspaceId?: string) {
   }, [workspaceId]);
 
   useEffect(() => {
-    fetchProfiles();
-  }, [fetchProfiles]);
+    let isMounted = true;
+    if (workspaceId) {
+      fetchProfiles();
+    }
+    return () => { isMounted = false; };
+  }, [workspaceId, fetchProfiles]);
+
 
   const addProfile = async (profile: Partial<BrandProfile>) => {
     if (!workspaceId) {
