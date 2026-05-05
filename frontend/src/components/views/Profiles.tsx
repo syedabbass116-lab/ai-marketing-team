@@ -67,18 +67,25 @@ export default function Profiles() {
   }
 
   return (
+  const PROFILE_LIMIT = 5;
+  const isLimitReached = profiles.length >= PROFILE_LIMIT;
+
+  return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">Brand Profiles</h1>
-          <p className="text-sm text-white/40">Manage your team's unique brand voices in {activeWorkspace?.name}</p>
+          <p className="text-sm text-white/40">
+            {profiles.length} of {PROFILE_LIMIT} identities used in {activeWorkspace?.name}
+          </p>
         </div>
         <Button 
           icon={<Plus className="w-4 h-4" />} 
           onClick={() => setIsAdding(true)}
-          disabled={!activeWorkspace}
+          disabled={!activeWorkspace || isLimitReached}
+          variant={isLimitReached ? "ghost" : "primary"}
         >
-          New Profile
+          {isLimitReached ? "Limit Reached" : "New Profile"}
         </Button>
       </div>
 

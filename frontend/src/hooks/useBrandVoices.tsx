@@ -61,9 +61,14 @@ export function useBrandVoices(workspaceId?: string) {
       throw new Error("User session not found. Please log in again.");
     }
     
+    if (profiles.length >= 5) {
+      throw new Error("Maximum of 5 brand profiles reached for this workspace.");
+    }
+    
     console.log('useBrandVoices: Attempting to add profile', { ...profile, workspace_id: workspaceId });
     
     try {
+
       const payload = { 
         ...profile, 
         workspace_id: workspaceId, 
