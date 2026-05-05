@@ -73,7 +73,11 @@ def verify_payment(data: VerifyRequest):
 
 @app.get("/")
 async def root():
-    return {"message": "Razorpay API is running"}
+    return {"status": "running"}
+
+@app.get("/test")
+def home():
+    return {"status": "running"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,11 +1,17 @@
-FROM python:3.11
+# Use Python image
+FROM python:3.10
 
+# Set working directory
 WORKDIR /app
 
-COPY requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt
-
+# Copy files
 COPY . .
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Install dependencies
+RUN pip install -r requirements.txt
+
+# Expose port (IMPORTANT)
+EXPOSE 10000
+
+# Start FastAPI (CRITICAL)
+CMD ["uvicorn", "razorpay_integration:app", "--host", "0.0.0.0", "--port", "10000"]
