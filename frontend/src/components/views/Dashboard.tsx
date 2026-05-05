@@ -256,12 +256,13 @@ export default function Dashboard({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Ghostwrites</h1>
-        <p className="text-gray-400 text-sm">
-          Choose a platform, enter your idea, and the generated draft will
-          appear below.
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">Ghostwrites</h1>
+          <p className="text-gray-400 text-sm">
+            {activeWorkspace?.name || 'Workspace'} — Choose a platform and enter your idea.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 p-1 bg-white/5 rounded-full w-fit border border-white/5 backdrop-blur-md">
