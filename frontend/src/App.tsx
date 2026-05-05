@@ -38,7 +38,7 @@ const emptyContentRecord = () => ({
 function AppContent() {
   const { usage, trialDaysLeft, hasTrialExpired, incrementUsage } = useUsageLimit();
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
-  const [activeView, setActiveView] = useState("dashboard");
+  const [activeView, setActiveView] = useState("home");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);

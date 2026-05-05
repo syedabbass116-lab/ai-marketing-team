@@ -39,8 +39,8 @@ export function useBrandVoices(workspaceId?: string) {
       const { data, error } = await supabase
         .from('brand_settings')
         .select('*')
-        .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false });
+        .eq('workspace_id', workspaceId);
+
 
       if (error) {
         console.error('useBrandVoices: Fetch error:', error);

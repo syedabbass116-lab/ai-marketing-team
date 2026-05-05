@@ -5,15 +5,17 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Settings,
   User,
   Wand2,
   ChevronDown,
+  Sparkles,
   Users as TeamIcon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWorkspace } from "../../context/WorkspaceContext";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import logo from "../../assets/logo.png";
 import chefDoodle from "../../ChefDoodle.png";
@@ -32,10 +34,9 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "generate", label: "Dashboard", icon: Wand2 },
+  { id: "home", label: "Home", icon: LayoutDashboard },
   { id: "profile", label: "Brand Identities", icon: User },
   { id: "library", label: "Content Library", icon: FolderOpen },
-  { id: "team", label: "Team Members", icon: TeamIcon },
   { id: "billing", label: "Subscription", icon: CreditCard },
 ];
 
@@ -53,6 +54,23 @@ export default function Sidebar({
   const [wsOpen, setWsOpen] = useState(false);
 
 
+
+  const wsRef = useRef<HTMLDivElement>(null);
+
+  // Close switcher on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wsRef.current && !wsRef.current.contains(event.target as Node)) {
+        setWsOpen(false);
+      }
+    }
+    if (wsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [wsOpen]);
 
   const handleLogout = async () => {
     console.log('Logout clicked, setting isLoggingOut to true');
@@ -92,6 +110,7 @@ export default function Sidebar({
         </div>
       )}
 
+
       {/* Hamburger toggle when closed */}
       {!isOpen && (
         <button
@@ -115,6 +134,8 @@ export default function Sidebar({
           onClick={onToggle}
         />
       )}
+
+
 
       <aside className={asideClass}>
         {/* Logo row */}
@@ -144,85 +165,121 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Workspace Switcher */}
+        {/* Identity Switcher */}
         <div className="px-3 py-4 border-b border-white/5">
           <div className="relative">
             <button 
               onClick={() => setWsOpen(!wsOpen)}
               className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.05] transition-all"
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <div className="w-5 h-5 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold text-blue-400">
-                    {activeWorkspace?.name?.charAt(0) || "W"}
-                  </span>
+
+
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Active Identity</p>
+                <div className="flex items-center gap-3">
+                  {activeWorkspace?.logo_url ? (
+                    <img src={activeWorkspace.logo_url} alt="" className="w-5 h-5 rounded-md object-cover border border-white/10" />
+                  ) : (
+                    <div className="w-5 h-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/20">
+                      {activeWorkspace?.name?.charAt(0) || "I"}
+                    </div>
+                  )}
+                  <h2 className="text-sm font-bold text-white truncate max-w-[120px]">
+                    {activeWorkspace?.name || "No Identity"}
+                  </h2>
                 </div>
-                <span className="text-xs font-semibold text-white/80 truncate">
-                  {activeWorkspace?.name || "Select Workspace"}
-                </span>
               </div>
-              <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${wsOpen ? 'rotate-180' : ''}`} />
+
+
+              <ChevronDown className={`w-4 h-4 text-white/20 transition-transform duration-300 ${wsOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {wsOpen && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-[100] py-1">
-                {(workspaces?.length ?? 0) > 0 ? (
-                  workspaces.map(ws => (
+              <div 
+                ref={wsRef}
+                className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-[100] py-2 overflow-hidden"
+              >
+
+
+                <div className="px-3 pb-2 mb-2 border-b border-white/5">
+                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Your Identities</p>
+                </div>
+
+                <div className="max-h-[240px] overflow-y-auto px-1">
+                  {(workspaces || [])
+                    .filter(ws => {
+                      // Show workspace if it has profiles, or if it's the active one, or if no workspaces have profiles yet
+                      const hasAnyBrandedWs = (workspaces || []).some(w => (w.profile_count ?? 0) > 0);
+                      if (!hasAnyBrandedWs) return true; // Show all if none are branded yet
+                      return (ws.profile_count ?? 0) > 0 || ws.id === activeWorkspace?.id;
+                    })
+                    .map(ws => (
+
                     <button
                       key={ws.id}
                       onClick={() => {
                         setActiveWorkspace(ws);
                         setWsOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
-                        activeWorkspace?.id === ws.id ? 'text-white bg-white/5' : 'text-white/40 hover:text-white hover:bg-white/5'
+                      className={`w-full text-left px-3 py-2.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                        activeWorkspace?.id === ws.id 
+                          ? 'text-white bg-blue-600/20' 
+                          : 'text-white/40 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <span className="truncate">{ws.name}</span>
-                      {activeWorkspace?.id === ws.id && <div className="w-1 h-1 rounded-full bg-blue-400" />}
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        {ws.logo_url ? (
+                          <img src={ws.logo_url} alt="" className="w-5 h-5 rounded object-cover" />
+                        ) : (
+                          <div className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-[10px] font-bold">
+                            {ws.name.charAt(0)}
+                          </div>
+                        )}
+                        <span className="truncate">{ws.name}</span>
+                      </div>
+                      {activeWorkspace?.id === ws.id && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      )}
                     </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-4 text-center">
-                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold mb-2">No Workspaces</p>
+                  ))}
+                  
+                  {/* Primary CTA */}
+                  <div className="mt-3 px-1">
                     <button 
-                      onClick={async () => {
-                        if (!user) return;
-                        try {
-                          console.log('Sidebar: Manually creating default workspace...');
-                          const workspaceName = user.email ? `${user.email.split('@')[0]}'s Workspace` : 'My Workspace';
-                          
-                          const { data: newWs, error: createError } = await supabase
-                            .from('workspaces')
-                            .insert([{ name: workspaceName, owner_id: user.id }])
-                            .select()
-                            .single();
-                          
-                          if (createError) throw createError;
-
-                          if (newWs) {
-                            const { error: linkError } = await supabase
-                              .from('workspace_members')
-                              .insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
-                            
-                            if (linkError) throw linkError;
-                            
-                            alert('Workspace created successfully!');
-                            window.location.reload();
-                          }
-                        } catch (err: any) {
-                          console.error('Sidebar: Creation failed:', err);
-                          alert(`Creation failed: ${err.message || 'Unknown error'}. Check if RLS is disabled in Supabase.`);
-                        }
+                      onClick={() => {
+                        localStorage.setItem('profile_action', 'add');
+                        onViewChange('profile');
+                        setWsOpen(false);
                       }}
-                      className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all text-xs font-bold shadow-lg shadow-blue-600/20 active:scale-95"
                     >
-                      + Create Default
+                      <Plus className="w-4 h-4" />
+                      <span>Add Brand Identity</span>
                     </button>
                   </div>
-                )}
+
+                  {/* Secondary Link */}
+                  <div className="px-2 pt-2 mt-1 border-t border-white/5">
+                    <button 
+                      onClick={() => {
+                        onViewChange('profile');
+                        setWsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-all text-xs font-bold group"
+                    >
+                      <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                      <span>Manage All Identities</span>
+                    </button>
+                  </div>
+
+
+                </div>
               </div>
             )}
+
+
+
+
 
           </div>
         </div>
@@ -230,7 +287,22 @@ export default function Sidebar({
 
         {/* Nav items */}
         <nav className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto pb-8 scrollbar-bw">
+          {/* Primary Action Button */}
+          <div className="mb-6 px-1">
+            <button 
+              onClick={() => onViewChange('dashboard')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+            >
+
+              <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform">
+                <Sparkles className="w-4 h-4 fill-white" />
+              </div>
+              <span className="text-sm font-black tracking-tight">Generate Post</span>
+            </button>
+          </div>
+
           {menuItems.map((item) => {
+
             const Icon = item.icon;
             const active = activeView === item.id;
             return (

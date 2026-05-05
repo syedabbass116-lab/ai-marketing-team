@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { supabase } from "../lib/supabase";
 
 export type ContentItem = {
@@ -7,50 +8,59 @@ export type ContentItem = {
   platform: string;
   text: string;
   created_at: string;
+  workspace_id?: string;
 };
 
 export function useLibrary() {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [library, setLibrary] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLibrary = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || !activeWorkspace?.id) {
+      setLibrary([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    console.log("🔍 Fetching library for user:", user.id);
+    console.log("🔍 Fetching library for workspace:", activeWorkspace.id);
     try {
       const { data, error } = await supabase
         .from("content_library")
         .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .eq("workspace_id", activeWorkspace.id);
 
       if (error) {
         console.error("❌ Supabase select error:", error);
         return;
       }
-      console.log("✅ Fetched data:", data);
       setLibrary(data || []);
     } catch (err) {
       console.error("❌ Catch error during fetch:", err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, activeWorkspace?.id]);
 
   useEffect(() => {
     fetchLibrary();
   }, [fetchLibrary]);
 
   async function saveToLibrary(platform: string, text: string) {
-    if (!user?.id) return;
-    console.log("💾 Attempting to save:", { platform, text, userId: user.id });
+    if (!user?.id || !activeWorkspace?.id) return;
     try {
       const { data, error } = await supabase
         .from("content_library")
-        .insert([{ user_id: user.id, platform, text }])
+        .insert([{ 
+          user_id: user.id, 
+          workspace_id: activeWorkspace.id,
+          platform, 
+          text 
+        }])
         .select()
         .single();
+
 
       if (error) {
         console.error("❌ Supabase insert error:", error);

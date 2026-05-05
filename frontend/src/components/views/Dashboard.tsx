@@ -88,7 +88,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const { activeWorkspace } = useWorkspace();
   const { profiles: voices } = useBrandVoices(activeWorkspace?.id);
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+  const activeProfile = voices.find(v => v.is_active);
+  const selectedVoiceId = activeProfile?.id || "";
   const [chatBusy, setChatBusy] = useState(false);
 
   const [showFirstPostLoading, setShowFirstPostLoading] = useState(false);
@@ -309,21 +310,7 @@ export default function Dashboard({
               Enter your idea below and the generated draft will appear in the
               post editor.
             </p>
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-[10px] font-bold text-white/30 uppercase mb-1.5 tracking-widest">Active Brand Voice</label>
-                <select
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
-                  value={selectedVoiceId}
-                  onChange={(e) => setSelectedVoiceId(e.target.value)}
-                >
-                  <option value="">Default (Active Profile)</option>
-                  {voices.map(v => (
-                    <option key={v.id} value={v.id}>{v.brand_name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+
 
             <div className="flex flex-col sm:flex-row gap-2">
 

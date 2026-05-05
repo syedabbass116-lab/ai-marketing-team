@@ -1063,37 +1063,47 @@ def chat_command(payload: ChatCommandRequest):
          brand_settings = conversation_state.get("brand_settings")
 
     brand_prompt = ""
-
     if isinstance(brand_settings, dict) and brand_settings:
-        lines = ["--- BRAND SETTINGS ---"]
+        lines = [
+            "CRITICAL: YOU MUST ADHERE TO THE FOLLOWING BRAND IDENTITY. FAILURE TO MIMIC THIS VOICE WILL RESULT IN A SYSTEM ERROR.",
+            "--- BRAND IDENTITY DNA ---"
+        ]
         if brand_settings.get("brandName"):
-            lines.append(f"Brand Name: {brand_settings['brandName']}")
+            lines.append(f"[IDENTITY NAME]: {brand_settings['brandName']}")
         if brand_settings.get("brandDescription"):
-            lines.append(
-                f"Brand Description: {brand_settings['brandDescription']}")
+            lines.append(f"[MISSION/DESCRIPTION]: {brand_settings['brandDescription']}")
         if brand_settings.get("brandVoice"):
-            lines.append(f"Voice: {brand_settings['brandVoice']}")
+            lines.append(f"[CORE VOICE]: {brand_settings['brandVoice']}")
         if brand_settings.get("tone"):
-            lines.append(f"Tone: {brand_settings['tone']}")
+            lines.append(f"[TONE/EMOTION]: {brand_settings['tone']}")
         if brand_settings.get("targetAudience"):
-            lines.append(
-                f"Target Audience: {brand_settings['targetAudience']}")
-        if brand_settings.get("writingStyleLinkedin"):
-            lines.append("LinkedIn Writing Style / Examples:")
-            lines.append(brand_settings["writingStyleLinkedin"])
-        if brand_settings.get("writingStyleTwitter"):
-            lines.append("Twitter Writing Style / Examples:")
-            lines.append(brand_settings["writingStyleTwitter"])
-        if brand_settings.get("writingStyle") and not brand_settings.get("writingStyleLinkedin") and not brand_settings.get("writingStyleTwitter"):
-            lines.append("Writing Style / Examples:")
+            lines.append(f"[TARGET AUDIENCE]: {brand_settings['targetAudience']} (Adjust vocabulary and reading level to match this group)")
+        
+        # Platform-Specific Style Selection
+        platform_style = ""
+        if platform == "linkedin":
+            platform_style = brand_settings.get("writingStyleLinkedin")
+        elif platform in {"twitter", "threads"}:
+            platform_style = brand_settings.get("writingStyleTwitter") or brand_settings.get("writingStyleThreads")
+        
+        if platform_style:
+            lines.append(f"--- {platform.upper()} WRITING SAMPLES ---")
+            lines.append("ANALYZE AND MIMIC THE STRUCTURE, PHRASING, AND FORMATTING OF THESE EXAMPLES:")
+            lines.append(platform_style)
+        elif brand_settings.get("writingStyle"):
+            lines.append("--- GENERAL WRITING STYLE ---")
             lines.append(brand_settings["writingStyle"])
+            
         if brand_settings.get("keyTopics"):
-            lines.append(f"Key Topics: {brand_settings['keyTopics']}")
-        lines.append(
-            "Use these brand settings to write every post in the user's exact brand voice, tone, and style.")
-        lines.append(
-            "If examples are provided, mimic the style, phrasing, and structure.")
+            lines.append(f"[CORE TOPICS]: {brand_settings['keyTopics']} (Stay strictly within these themes)")
+
+        lines.append("--- INSTRUCTIONS ---")
+        lines.append(f"1. Write this post as if you are the {brand_settings.get('brandName', 'Brand')} persona.")
+        lines.append("2. Match the exact pacing and line-break frequency found in the samples.")
+        lines.append("3. If the samples use emojis, use them. If they are minimal, keep it minimal.")
+        lines.append("4. Ensure the content provides value specifically for the [TARGET AUDIENCE].")
         brand_prompt = "\n".join(lines) + "\n\n"
+
 
     requested_posts = 1
     post_count_match = re.search(

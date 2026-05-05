@@ -1,7 +1,8 @@
 import { Check, CreditCard, Download, Zap } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
 interface ContentItem {
   id: string;
@@ -197,9 +198,18 @@ export default function Billing({
 
               const verifyData = await verifyResponse.json();
               console.log('Payment verified:', verifyData);
+
+              // Record in billing history
+              await supabase.from('billing_history').insert({
+                user_id: usage?.user_id,
+                plan_name: planName,
+                amount: `$${amount}`,
+                status: 'Paid',
+                date: new Date().toISOString()
+              });
+
               alert('Payment successful! Plan upgraded.');
-              // You can redirect or update UI here
-              window.location.reload(); // Refresh to show updated plan
+              window.location.reload(); 
             } catch (error) {
               console.error('Verification error:', error);
               alert('Payment verification failed. Please contact support.');
@@ -257,9 +267,22 @@ export default function Billing({
     }
   });
 
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const { data } = await supabase
+        .from('billing_history')
+        .select('*')
+        .order('date', { ascending: false });
+      if (data) setHistory(data);
+    };
+    fetchHistory();
+  }, []);
+
   const libraryTotal = Object.values(platformUsage).reduce((sum, count) => sum + count, 0);
   const totalUsed = usage?.posts_generated ?? libraryTotal;
-  const monthlyLimit = usage?.is_pro ? 1000 : 50; // Dynamic limit based on plan
+  const monthlyLimit = usage?.posts_limit || 10; 
   const percentUsed = Math.min(100, Math.round((totalUsed / monthlyLimit) * 100));
 
   const platformList = Object.entries(platformUsage).map(([key, count]) => ({
@@ -289,19 +312,19 @@ export default function Billing({
       <Card className="border-white/20">
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-white mb-4">Posts Generated This Month</h3>
-          <div className="flex items-end gap-4">
-            <div>
+          <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
+            <div className="flex-shrink-0">
               <div className="text-4xl font-black text-white">{totalUsed}</div>
               <div className="text-xs text-white/50">of {monthlyLimit} available</div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
                   style={{ width: `${percentUsed}%` }}
                 />
               </div>
-              <div className="text-xs text-white/50 mt-2">{percentUsed}% used</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-2">{percentUsed}% of monthly credits used</div>
             </div>
           </div>
         </div>
@@ -348,7 +371,7 @@ export default function Billing({
             price="$49"
             period="month"
             postsPerMonth={100}
-            platforms={6}
+            platforms={3}
             popular
             features={[
               '3 Brand Voices',
@@ -365,7 +388,7 @@ export default function Billing({
             price="$99"
             period="month"
             postsPerMonth={300}
-            platforms={6}
+            platforms={3}
             features={[
               '5 Brand Voices',
               '300 posts per month',
@@ -379,70 +402,36 @@ export default function Billing({
         </div>
       </div>
 
-      {/* Payment Method */}
-      <Card>
-        <h3 className="text-sm font-semibold text-white/80 uppercase tracking-widest mb-4">
-          Payment Method
-        </h3>
-        <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-white/40" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Visa ending in 4242</p>
-              <p className="text-xs text-white/30">Expires 12/2025</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => alert('Card update functionality coming soon!')}>Update</Button>
-        </div>
-        
-        <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
-              <span className="text-xs font-bold text-blue-400">₹</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Razorpay</p>
-              <p className="text-xs text-white/30">Pay via UPI, Cards, NetBanking</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => alert('Razorpay is configured and ready! Use the Upgrade buttons above to test payments.')}>Configure</Button>
-        </div>
-        
-        <Button variant="secondary" size="sm" onClick={() => alert('Payment methods are managed through Razorpay checkout. Use the Upgrade buttons above to add a payment method.')}>Add Payment Method</Button>
-      </Card>
-
       {/* Billing History */}
       <Card>
         <h3 className="text-sm font-semibold text-white/80 uppercase tracking-widest mb-4">
           Billing History
         </h3>
         <div className="space-y-2">
-          {[
-            { date: 'Mar 1, 2024', amount: '$79.00', status: 'Paid' },
-            { date: 'Feb 1, 2024', amount: '$79.00', status: 'Paid' },
-            { date: 'Jan 1, 2024', amount: '$79.00', status: 'Paid' },
-          ].map((invoice, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg hover:bg-white/[0.05] transition-colors"
-            >
-              <div>
-                <p className="text-sm font-medium text-white">{invoice.date}</p>
-                <p className="text-xs text-white/30">Professional Plan</p>
+          {history.length > 0 ? (
+            history.map((invoice, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg hover:bg-white/[0.05] transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white">{new Date(invoice.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-white/30">{invoice.plan_name} Plan</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-semibold text-white">{invoice.amount}</span>
+                  <span className="text-[10px] px-2 py-1 bg-white/10 text-white/60 rounded tracking-widest uppercase">
+                    {invoice.status}
+                  </span>
+                  <Button variant="ghost" size="sm" icon={<Download className="w-3 h-3" />}>
+                    PDF
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-white">{invoice.amount}</span>
-                <span className="text-[10px] px-2 py-1 bg-white/10 text-white/60 rounded tracking-widest uppercase">
-                  {invoice.status}
-                </span>
-                <Button variant="ghost" size="sm" icon={<Download className="w-3 h-3" />}>
-                  PDF
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-xs text-white/30 py-4 text-center">No payment history available.</p>
+          )}
         </div>
       </Card>
     </div>

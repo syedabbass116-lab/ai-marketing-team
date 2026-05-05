@@ -7,6 +7,8 @@ interface Workspace {
   name: string;
   plan: string;
   owner_id: string;
+  logo_url?: string;
+  profile_count?: number;
 }
 
 interface WorkspaceContextType {
@@ -15,6 +17,7 @@ interface WorkspaceContextType {
   setActiveWorkspace: (workspace: Workspace) => void;
   loading: boolean;
   refreshWorkspaces: () => Promise<void>;
+  createWorkspace: (name: string) => Promise<Workspace | null>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -89,16 +92,58 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
 
         console.log('WorkspaceContext: Workspaces loaded:', wsData?.length);
-        setWorkspaces(wsData || []);
+        
+        // 2. Fetch profile counts for these workspaces
+        const { data: profilesData } = await supabase
+          .from('brand_settings')
+          .select('workspace_id');
+        
+        const workspacesWithCount = (wsData || []).map(ws => ({
+          ...ws,
+          profile_count: profilesData?.filter(p => p.workspace_id === ws.id).length || 0
+        }));
+
+        setWorkspaces(workspacesWithCount);
         
         const savedWsId = localStorage.getItem('activeWorkspaceId');
-        const savedWs = wsData?.find(w => w.id === savedWsId);
-        setActiveWorkspace(savedWs || (wsData && wsData.length > 0 ? wsData[0] : null));
+        const savedWs = workspacesWithCount.find(w => w.id === savedWsId);
+        setActiveWorkspace(savedWs || (workspacesWithCount.length > 0 ? workspacesWithCount[0] : null));
       }
     } catch (err) {
       console.error('WorkspaceContext: Critical error in fetchWorkspaces:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createWorkspace = async (name: string): Promise<Workspace | null> => {
+    if (!user?.id) return null;
+    
+    try {
+      // 1. Create workspace
+      const { data: newWs, error: createError } = await supabase
+        .from('workspaces')
+        .insert([{ name, owner_id: user.id }])
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+
+      if (newWs) {
+        // 2. Link member
+        const { error: linkError } = await supabase
+          .from('workspace_members')
+          .insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+        
+        if (linkError) throw linkError;
+
+        await fetchWorkspaces();
+        return newWs;
+      }
+      return null;
+    } catch (err) {
+      console.error('WorkspaceContext: createWorkspace failed:', err);
+      throw err;
     }
   };
 
@@ -118,7 +163,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       activeWorkspace, 
       setActiveWorkspace, 
       loading,
-      refreshWorkspaces: fetchWorkspaces 
+      refreshWorkspaces: fetchWorkspaces,
+      createWorkspace
     }}>
       {children}
     </WorkspaceContext.Provider>
