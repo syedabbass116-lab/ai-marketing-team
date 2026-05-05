@@ -167,7 +167,7 @@ export default function Sidebar({
             
             {wsOpen && (
               <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-[100] py-1">
-                {workspaces.length > 0 ? (
+                {(workspaces?.length ?? 0) > 0 ? (
                   workspaces.map(ws => (
                     <button
                       key={ws.id}

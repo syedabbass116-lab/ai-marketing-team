@@ -99,7 +99,7 @@ export default function ContentLibrary({ library, onDelete }: Props) {
             onClick={() => setSelectedPlatform(null)}
             className={selectedPlatform === null ? "bg-white/10" : ""}
           >
-            All ({library.length})
+            All ({(library?.length ?? 0)})
           </Button>
         </div>
       </div>

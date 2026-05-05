@@ -45,8 +45,9 @@ export default function Profiles() {
     try {
       await addProfile({
         ...newProfile,
-        is_active: profiles.length === 0
+        is_active: (profiles?.length ?? 0) === 0
       });
+
       setIsAdding(false);
       setNewProfile({ 
         brand_name: '', brand_description: '', brand_voice: 'professional', tone: 'friendly',
@@ -67,17 +68,19 @@ export default function Profiles() {
   }
 
   const PROFILE_LIMIT = 5;
-  const isLimitReached = profiles.length >= PROFILE_LIMIT;
+  const isLimitReached = (profiles?.length ?? 0) >= PROFILE_LIMIT;
 
   return (
+
 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">Brand Profiles</h1>
           <p className="text-sm text-white/40">
-            {profiles.length} of {PROFILE_LIMIT} identities used in {activeWorkspace?.name}
+            {(profiles?.length ?? 0)} of {PROFILE_LIMIT} identities used in {activeWorkspace?.name}
           </p>
+
         </div>
         <Button 
           icon={<Plus className="w-4 h-4" />} 
@@ -259,7 +262,8 @@ export default function Profiles() {
           </Card>
         ))}
 
-        {profiles.length === 0 && !isAdding && (
+        {(profiles?.length ?? 0) === 0 && !isAdding && (
+
           <div className="col-span-full py-12 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-xl">
             <User className="w-12 h-12 text-white/10 mx-auto mb-4" />
             <h3 className="text-white font-medium mb-1">No identities yet</h3>
