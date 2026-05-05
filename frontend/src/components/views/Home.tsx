@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Sparkles, ArrowRight, FolderOpen, Check } from "lucide-react";
+import { Sparkles, ArrowRight, FolderOpen } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import { useAuth } from "../../context/AuthContext";
@@ -9,69 +8,89 @@ type HomeProps = {
   onOpenLibrary: () => void;
 };
 
-export default function GhostwriteHero() {
-  const handleGeneratePost = () => {
-    // Navigate to generate content page
-    window.location.href = '/generate';
-  };
-
-  const handleOpenLibrary = () => {
-    // Navigate to content library page
-    window.location.href = '/library';
-  };
+export default function Home({ onStartGenerate, onOpenLibrary }: HomeProps) {
+  const { user } = useAuth();
+  const fullName = user?.user_metadata?.full_name || "";
+  const firstName = fullName ? fullName.split(' ')[0] : (user?.email?.split('@')[0] || "there");
+  const username = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-4">
-      {/* Background grid */}
-      <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-      {/* Card */}
-      <div className="relative max-w-xl w-full rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 text-center shadow-[0_0_80px_rgba(99,102,241,0.15)]">
-
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1 mb-6 rounded-full border border-white/10 bg-white/5 text-sm text-white/70">
-          ✦ GHOSTWRITE
-        </div>
-
-        {/* Heading */}
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
-          Hii Abbas what <br />
-          would you like to post <br />
-          today?
-        </h1>
-
-        {/* Subtext */}
-        <p className="text-white/50 text-base mb-8">
-          Generate posts and manage your content library — all in one place.
-        </p>
-
-        {/* Primary Button */}
-        <button 
-          onClick={handleGeneratePost}
-          className="w-full mb-4 py-4 rounded-xl bg-white text-black font-medium flex items-center justify-center gap-2 hover:bg-white/90 transition"
-        >
-          → Generate your first post
-        </button>
-
-        {/* Secondary Button */}
-        <button 
-          onClick={handleOpenLibrary}
-          className="w-full py-4 rounded-xl border border-white/20 text-white/80 hover:bg-white/5 transition"
-        >
-          Open Content Library
-        </button>
-
-        {/* Ghostwrites Link */}
-        <div className="mt-6 text-center">
-          <a 
-            href="https://www.ghostwrites.vercel.app" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-white/60 text-sm hover:text-white/80 transition-colors underline decoration-white/20 hover:decoration-white/40"
+    <div className="space-y-8">
+      {/* Hero card */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#1f1f1f] bg-[#0a0a0a] px-8 py-12 text-center">
+        {/* Radial glow */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255,255,255,0.06), transparent)",
+          }}
+        />
+        <div className="relative max-w-2xl mx-auto space-y-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/50 text-xs tracking-widest uppercase">
+            <Sparkles className="w-3 h-3" />
+            Ghostwrite
+          </div>
+          <h1
+            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight"
           >
-            Visit Ghostwrites →
-          </a>
+            Hii {username} what would<br />you like to post today?
+          </h1>
+          <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed">
+            Generate posts and manage your content library — all in one place.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-2 justify-center">
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<ArrowRight className="w-4 h-4" />}
+              onClick={onStartGenerate}
+            >
+              Generate your first post
+            </Button>
+            <Button variant="secondary" size="lg" onClick={onOpenLibrary}>
+              Open Content Library
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Quick-access cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card hover>
+          <div className="space-y-3" onClick={onStartGenerate}>
+            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-white/60" />
+            </div>
+            <h3
+              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-sm font-bold text-white tracking-tight"
+            >
+              Generate Content
+            </h3>
+            <p className="text-xs text-white/40 leading-relaxed">
+              AI-powered posts written in your brand voice, ready to publish.
+            </p>
+          </div>
+        </Card>
+
+        <Card hover>
+          <div className="space-y-3" onClick={onOpenLibrary}>
+            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <FolderOpen className="w-4 h-4 text-white/60" />
+            </div>
+            <h3
+              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-sm font-bold text-white tracking-tight"
+            >
+              Content Library
+            </h3>
+            <p className="text-xs text-white/40 leading-relaxed">
+              Save and reuse your best-performing post ideas across platforms.
+            </p>
+          </div>
+        </Card>
       </div>
     </div>
   );

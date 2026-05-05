@@ -1,5 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -31,7 +30,7 @@
   --color-subtle: rgba(255, 255, 255, 0.03);
 
   --font-heading: "Montserrat", system-ui, sans-serif;
-  --font-body: "Poppins", system-ui, sans-serif;
+  --font-body: "Montserrat", system-ui, sans-serif;
 
   --radius-sm: 6px;
   --radius-md: 10px;
