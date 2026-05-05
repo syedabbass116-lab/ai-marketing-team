@@ -125,6 +125,11 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
       setSigningIn(true);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
       });
       if (error) throw error;
     } catch (err) {

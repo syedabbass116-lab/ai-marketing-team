@@ -74,6 +74,9 @@ export default function AuthPage({ onBack }: AuthPageProps) {
         provider,
         options: {
           redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       });
       if (error) throw error;
