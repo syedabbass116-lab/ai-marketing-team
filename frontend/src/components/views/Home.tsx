@@ -15,9 +15,7 @@ export default function GhostwriteHero() {
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-      {/* Gradient glow */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 blur-2xl opacity-20 rounded-2xl"></div>
-
+      
       {/* Card */}
       <div className="relative max-w-xl w-full rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-8 text-center shadow-[0_0_80px_rgba(99,102,241,0.15)]">
 

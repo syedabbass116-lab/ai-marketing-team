@@ -191,12 +191,7 @@ function AppContent() {
     }
     switch (activeView) {
       case "dashboard":
-        return (
-          <Home
-            onStartGenerate={() => setActiveView("generate")}
-            onOpenLibrary={() => setActiveView("library")}
-          />
-        );
+        return <Landing />;
       case "generate":
         return (
           <Dashboard
@@ -220,12 +215,7 @@ function AppContent() {
       case "profile":
         return <Profile />;
       default:
-        return (
-          <Home
-            onStartGenerate={() => setActiveView("generate")}
-            onOpenLibrary={() => setActiveView("library")}
-          />
-        );
+        return <Landing />;
     }
   };
 
