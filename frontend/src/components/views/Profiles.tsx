@@ -66,11 +66,11 @@ export default function Profiles() {
     );
   }
 
-  return (
   const PROFILE_LIMIT = 5;
   const isLimitReached = profiles.length >= PROFILE_LIMIT;
 
   return (
+
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
