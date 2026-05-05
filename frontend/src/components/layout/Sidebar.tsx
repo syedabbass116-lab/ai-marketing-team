@@ -11,6 +11,7 @@ import {
   Wand2,
   ChevronDown,
   Sparkles,
+  PenTool,
   Users as TeamIcon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -35,6 +36,7 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { id: "home", label: "Home", icon: LayoutDashboard },
+  { id: "generate", label: "Generate Post", icon: PenTool },
   { id: "profile", label: "Brand Identities", icon: User },
   { id: "library", label: "Content Library", icon: FolderOpen },
   { id: "billing", label: "Subscription", icon: CreditCard },
@@ -287,19 +289,6 @@ export default function Sidebar({
 
         {/* Nav items */}
         <nav className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto pb-8 scrollbar-bw">
-          {/* Primary Action Button */}
-          <div className="mb-6 px-1">
-            <button 
-              onClick={() => onViewChange('dashboard')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
-            >
-
-              <div className="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform">
-                <Sparkles className="w-4 h-4 fill-white" />
-              </div>
-              <span className="text-sm font-black tracking-tight">Generate Post</span>
-            </button>
-          </div>
 
           {menuItems.map((item) => {
 
