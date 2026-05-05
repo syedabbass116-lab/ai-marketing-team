@@ -145,8 +145,11 @@ export default function Sidebar({
 
         {/* Workspace Switcher */}
         <div className="px-3 py-4 border-b border-white/5">
-          <div className="relative group/ws">
-            <button className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.05] transition-all">
+          <div className="relative">
+            <button 
+              onClick={() => setWsOpen(!wsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.05] transition-all"
+            >
               <div className="flex items-center gap-2 overflow-hidden">
                 <div className="w-5 h-5 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-[10px] font-bold text-blue-400">
@@ -157,21 +160,28 @@ export default function Sidebar({
                   {activeWorkspace?.name || "Select Workspace"}
                 </span>
               </div>
-              <ChevronDown className="w-3 h-3 text-white/30" />
+              <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${wsOpen ? 'rotate-180' : ''}`} />
             </button>
             
-            {/* Dropdown (Simplified for now) */}
-            <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl opacity-0 invisible group-hover/ws:opacity-100 group-hover/ws:visible transition-all z-50">
-              {workspaces.map(ws => (
-                <button
-                  key={ws.id}
-                  onClick={() => setActiveWorkspace(ws)}
-                  className="w-full text-left px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/5 first:rounded-t-lg last:rounded-b-lg"
-                >
-                  {ws.name}
-                </button>
-              ))}
-            </div>
+            {wsOpen && (
+              <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-50 py-1">
+                {workspaces.map(ws => (
+                  <button
+                    key={ws.id}
+                    onClick={() => {
+                      setActiveWorkspace(ws);
+                      setWsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
+                      activeWorkspace?.id === ws.id ? 'text-white bg-white/5' : 'text-white/40 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="truncate">{ws.name}</span>
+                    {activeWorkspace?.id === ws.id && <div className="w-1 h-1 rounded-full bg-blue-400" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
