@@ -122,13 +122,16 @@ export default function Billing({
       console.log('Backend URL:', BACKEND_URL);
       
       // Step 1: Create order from backend
+      // We convert $1 to 95 INR for testing
+      const inrAmount = amount * 95; 
+      
       const orderResponse = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: amount * 100, // Convert to paise
+          amount: inrAmount * 100, // Convert to paise (80 * 100)
           currency: 'INR',
           user_id: usage?.clerk_user_id || '',
           receipt: `${planName.toLowerCase()}_${Date.now()}`
@@ -348,12 +351,21 @@ export default function Billing({
       </Card>
 
       {/* Pricing Plans */}
-      <div>
-        <h2 className="text-lg font-bold text-white mb-4">Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Simple Pricing</h2>
+        <p className="text-sm text-white/40 max-w-md mx-auto">
+          Choose the plan that's right for your growth. Prices are in <span className="text-white">USD</span>. 
+          <br />
+          <span className="text-[10px] uppercase font-black tracking-widest text-blue-400 mt-2 block">
+            🇮🇳 Indian users will be charged at a fixed rate of ₹95/$1
+          </span>
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <PlanCard
             name="Starter"
-            price="$19"
+            price="$1"
             period="month"
             postsPerMonth={30}
             platforms={3}
@@ -363,12 +375,12 @@ export default function Billing({
               'Content library storage',
               'Email support',
             ]}
-            onUpgrade={handleRazorpayPayment}
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
             processingPayment={processingPayment}
           />
           <PlanCard
             name="Pro"
-            price="$49"
+            price="$1"
             period="month"
             postsPerMonth={100}
             platforms={3}
@@ -380,12 +392,12 @@ export default function Billing({
               'Priority support',
               'Export posts',
             ]}
-            onUpgrade={handleRazorpayPayment}
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
             processingPayment={processingPayment}
           />
           <PlanCard
             name="Elite"
-            price="$99"
+            price="$1"
             period="month"
             postsPerMonth={300}
             platforms={3}
@@ -396,7 +408,7 @@ export default function Billing({
               'Dedicated support',
               'Custom integrations',
             ]}
-            onUpgrade={handleRazorpayPayment}
+            onUpgrade={(name) => handleRazorpayPayment(name, 1)} // $1 -> ₹80
             processingPayment={processingPayment}
           />
         </div>
