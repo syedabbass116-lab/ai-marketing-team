@@ -368,7 +368,7 @@ export default function Billing({
               <p className="text-xs text-white/30">Expires 12/2025</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm">Update</Button>
+          <Button variant="ghost" size="sm" onClick={() => alert('Card update functionality coming soon!')}>Update</Button>
         </div>
         
         <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg mb-4">
@@ -381,10 +381,10 @@ export default function Billing({
               <p className="text-xs text-white/30">Pay via UPI, Cards, NetBanking</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm">Configure</Button>
+          <Button variant="ghost" size="sm" onClick={() => alert('Razorpay is configured and ready! Use the Upgrade buttons above to test payments.')}>Configure</Button>
         </div>
         
-        <Button variant="secondary" size="sm">Add Payment Method</Button>
+        <Button variant="secondary" size="sm" onClick={() => alert('Payment methods are managed through Razorpay checkout. Use the Upgrade buttons above to add a payment method.')}>Add Payment Method</Button>
       </Card>
 
       {/* Billing History */}
