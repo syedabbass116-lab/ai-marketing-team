@@ -188,17 +188,32 @@ export default function Sidebar({
                     <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold mb-2">No Workspaces</p>
                     <button 
                       onClick={async () => {
-                        // Trigger a default creation
-                        if (user) {
-                           const { data: newWs } = await supabase
+                        if (!user) return;
+                        try {
+                          console.log('Sidebar: Manually creating default workspace...');
+                          const workspaceName = user.email ? `${user.email.split('@')[0]}'s Workspace` : 'My Workspace';
+                          
+                          const { data: newWs, error: createError } = await supabase
                             .from('workspaces')
-                            .insert([{ name: `${user.email?.split('@')[0]}'s Workspace`, owner_id: user.id }])
+                            .insert([{ name: workspaceName, owner_id: user.id }])
                             .select()
                             .single();
+                          
+                          if (createError) throw createError;
+
                           if (newWs) {
-                            await supabase.from('workspace_members').insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+                            const { error: linkError } = await supabase
+                              .from('workspace_members')
+                              .insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+                            
+                            if (linkError) throw linkError;
+                            
+                            alert('Workspace created successfully!');
                             window.location.reload();
                           }
+                        } catch (err: any) {
+                          console.error('Sidebar: Creation failed:', err);
+                          alert(`Creation failed: ${err.message || 'Unknown error'}. Check if RLS is disabled in Supabase.`);
                         }
                       }}
                       className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline"
