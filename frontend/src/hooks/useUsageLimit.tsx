@@ -26,7 +26,7 @@ export function useUsageLimit() {
       let { data, error } = await supabase
         .from("user_usage")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("clerk_user_id", user.id)
         .single();
 
       if (error) {
@@ -34,7 +34,7 @@ export function useUsageLimit() {
           // First time user — create their row
           const { data: newData, error: insertError } = await supabase
             .from("user_usage")
-            .insert({ user_id: user.id })
+            .insert({ clerk_user_id: user.id })
             .select()
             .single();
 
@@ -66,7 +66,7 @@ export function useUsageLimit() {
       const { data, error } = await supabase
         .from("user_usage")
         .update({ posts_generated: usage.posts_generated + 1 })
-        .eq("user_id", user.id)
+        .eq("clerk_user_id", user.id)
         .select()
         .single();
 
