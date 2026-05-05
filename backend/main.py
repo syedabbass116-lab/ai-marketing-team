@@ -3,11 +3,17 @@ import json
 import re
 import importlib
 from datetime import datetime
-
 import requests
 from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import razorpay
+import hmac
+import hashlib
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from agents.repurpose_agent import repurpose
 from agents.content_agent import (
     linkedin_post,
@@ -268,33 +274,42 @@ def health_trailing_slash():
     return {"status": "ok"}
 
 
+# CORS configuration
 allowed_origins = [
-    # Vercel frontend (production)
-    "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
-    "https://ghostwrites.vercel.app/",
-    # Local development
+    "https://ghostwrites.vercel.app",
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
     "http://localhost:5174",
-    "http://127.0.0.1:5174",
     "http://localhost:5175",
-    "http://127.0.0.1:5175",
     "http://localhost:5176",
-    "http://127.0.0.1:5176",
     "http://localhost:5177",
-    "http://127.0.0.1:5177",
-];
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ghostwrites.vercel.app",  # your frontend
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Razorpay client
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+class OrderRequest(BaseModel):
+    amount: int
+    currency: str = "INR"
+
+class VerifyRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
 
 class RepurposeRequest(BaseModel):
     content: str
@@ -1402,3 +1417,46 @@ def generate(topic: str, platform: str = "all", count: int = 1):
         return {
             "error": str(e)
         }
+
+@app.post("/api/create-order")
+def create_order(data: OrderRequest):
+    if not client:
+        raise HTTPException(status_code=500, detail="Razorpay client not configured")
+    
+    if data.amount < 100:
+        raise HTTPException(status_code=400, detail="Amount must be at least 100 paise")
+    
+    try:
+        order = client.order.create({
+            "amount": data.amount,
+            "currency": data.currency,
+            "receipt": f"receipt_{os.urandom(4).hex()}"
+        })
+        return {
+            "order_id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/verify-payment")
+def verify_payment(data: VerifyRequest):
+    if not RAZORPAY_KEY_SECRET:
+        raise HTTPException(status_code=500, detail="Razorpay secret not configured")
+        
+    if not all([data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    body = f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
+    expected = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(),
+        body.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    if expected == data.razorpay_signature:
+        return {"success": True, "payment_id": data.razorpay_payment_id}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+

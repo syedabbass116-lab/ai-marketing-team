@@ -113,7 +113,7 @@ export default function Billing({
   const handleRazorpayPayment = async (planName: string, amount: number) => {
     setProcessingPayment(true);
     
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     
     try {
       console.log('Starting payment process for:', planName, amount);
