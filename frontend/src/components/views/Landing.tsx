@@ -256,7 +256,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               </button>
               <button
                 onClick={onSignIn}
-                className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white px-3 py-2 text-xs font-medium transition-all duration-300 hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 hover:shadow-lg hover:scale-105 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm"
+                className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm"
               >
                 Sign up with Email
               </button>
@@ -265,7 +265,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               Already have an account?{" "}
               <button
                 onClick={onSignIn}
-                className="font-medium text-white underline decoration-white/20 hover:decoration-white bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 px-3 py-1 rounded-full transition-all duration-300 hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 hover:shadow-lg hover:scale-105"
+                className="font-medium text-white underline decoration-white/20 hover:decoration-white"
               >
                 Sign in with Email
               </button>
@@ -413,7 +413,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
                 id="cta-google-signin"
                 onClick={handleGoogleSignIn}
                 disabled={signingIn}
-                className="inline-flex items-center justify-center gap-2 rounded-full font-medium h-11 px-6 text-sm bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white border-transparent hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-full font-medium h-11 px-6 text-sm bg-black text-white border border-black hover:bg-gray-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {signingIn ? (
                   <span className="h-3.5 w-3.5 rounded-full border-2 border-white/20 border-t-white animate-spin" />

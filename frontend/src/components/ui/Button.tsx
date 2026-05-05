@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'gradient';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
   icon?: ReactNode;
@@ -31,9 +31,6 @@ export default function Button({
     /** Danger — keep red but desaturated */
     danger:
       'bg-white text-red-600 border border-[#3a3a3a] hover:bg-red-50',
-    /** Blue to Indigo to Violet gradient */
-    gradient:
-      'bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white border-transparent hover:from-blue-600 hover:via-indigo-600 hover:to-violet-600 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300',
   };
 
   const sizes = {
