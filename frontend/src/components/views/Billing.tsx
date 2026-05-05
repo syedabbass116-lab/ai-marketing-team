@@ -412,7 +412,6 @@ export default function Billing({
             processingPayment={processingPayment}
           />
         </div>
-      </div>
 
       {/* Billing History */}
       <Card>
