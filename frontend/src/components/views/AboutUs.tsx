@@ -1,5 +1,6 @@
-import { Users, Target, Lightbulb, Award, Rocket, Heart } from "lucide-react";
+import { Target, Lightbulb, Award, Rocket } from "lucide-react";
 import logo from "../../assets/logo.png";
+import founder from "../../assets/founder.jpeg";
 
 export default function AboutUs() {
   const values = [
@@ -58,7 +59,14 @@ export default function AboutUs() {
       {/* What We're Building */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-white mb-4">What We're Building</h2>
+          <div className="flex items-center gap-4 mb-4">
+            <img
+              src={logo}
+              alt="Ghostwrites logo"
+              className="h-16 w-16 object-contain"
+            />
+            <h2 className="text-2xl font-semibold text-white">What We're Building</h2>
+          </div>
           <p className="text-gray-300 leading-relaxed mb-6">
             At our core, we believe:
           </p>
@@ -143,14 +151,22 @@ export default function AboutUs() {
                     <span className="text-blue-400 mt-1">•</span>
                     <span>has worked on B2B outreach, pre-sales, and collaborated with founders in the UK and US</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>has a proven track record of building successful products</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>has a proven track record of building successful products</span>
+                  </li>
                 </ul>
               </div>
               <div className="w-32 h-32 bg-gradient-to-br from-white/20 to-white/10 rounded-lg border border-white/20 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500/30 to-violet-500/30 rounded-full border border-white/30 flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">Founder</span>
-                  </div>
-                </div>
+                <img
+                  src={founder}
+                  alt="Mohd Abbas - Founder"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-white/30"
+                />
               </div>
             </div>
           </div>
