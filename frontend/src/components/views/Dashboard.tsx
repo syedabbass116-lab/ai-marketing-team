@@ -193,8 +193,10 @@ export default function Dashboard({
     }
 
     try {
+      const drafts = buildClientDraftsPayload(
+        content,
         activePlatform,
-        editablePost,
+        editablePost
       );
       const data = await onChatCommand(outgoing, activePlatform, drafts, activeWorkspace?.id, selectedVoiceId);
 
