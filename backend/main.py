@@ -29,11 +29,31 @@ app = FastAPI()
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ghostwrites.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177",
+    ],
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Razorpay initialization
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+    print("WARNING: Razorpay LIVE keys are missing from environment variables!")
+
+client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
 
 @app.get("/test-cors")
 def test_cors():
@@ -289,13 +309,7 @@ def health_trailing_slash():
     return {"status": "ok"}
 
 
-# Razorpay client
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
-
-client = None
-if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
-    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+# Order models
 
 class OrderRequest(BaseModel):
     amount: int
@@ -1426,8 +1440,10 @@ def create_order(data: OrderRequest):
         order = client.order.create({
             "amount": data.amount,
             "currency": data.currency,
-            "receipt": f"receipt_{os.urandom(4).hex()}"
+            "receipt": f"receipt_{os.urandom(4).hex()}",
+            "payment_capture": 1
         })
+
         print(f"Razorpay Order Created: {order}")
         return {
             "order_id": order["id"],
