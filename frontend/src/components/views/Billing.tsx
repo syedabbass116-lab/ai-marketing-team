@@ -155,7 +155,7 @@ export default function Billing({
       script.onload = () => {
         // Step 3: Open Razorpay modal with order_id
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SlkKwYIOooZtJP',
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: orderData.amount,
           currency: orderData.currency,
           name: 'Ghostwrites',
