@@ -114,42 +114,23 @@ export default function Billing({
     setProcessingPayment(true);
     
     try {
-      // Check if backend is accessible first
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const healthCheck = await fetch('http://localhost:8000/', {
-        method: 'GET',
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!healthCheck.ok) {
-        throw new Error('Backend server not responding properly');
-      }
+      console.log('Starting payment process for:', planName, amount);
       
       // Step 1: Create order from backend
-      let orderResponse;
-      try {
-        orderResponse = await fetch('http://localhost:8000/api/create-order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: amount * 100, // Convert to paise
-            currency: 'INR',
-            receipt: `${planName.toLowerCase()}_${Date.now()}`
-          })
-        });
-      } catch (fetchError) {
-        console.error('Network error:', fetchError);
-        alert('Cannot connect to payment server. Please ensure backend is running on localhost:8000');
-        setProcessingPayment(false);
-        return;
-      }
+      const orderResponse = await fetch('http://localhost:8000/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount * 100, // Convert to paise
+          currency: 'INR',
+          receipt: `${planName.toLowerCase()}_${Date.now()}`
+        })
+      });
 
+      console.log('Order response status:', orderResponse?.status);
+      
       if (!orderResponse || !orderResponse.ok) {
         const errorText = orderResponse ? await orderResponse.text() : 'No response';
         console.error('Order creation failed:', errorText);
@@ -158,15 +139,8 @@ export default function Billing({
         return;
       }
 
-      let orderData;
-      try {
-        orderData = await orderResponse.json();
-      } catch (jsonError) {
-        console.error('Failed to parse response:', jsonError);
-        alert('Invalid response from payment server');
-        setProcessingPayment(false);
-        return;
-      }
+      const orderData = await orderResponse.json();
+      console.log('Order data received:', orderData);
       
       // Step 2: Load Razorpay script
       const script = document.createElement('script');
