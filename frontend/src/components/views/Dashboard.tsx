@@ -6,6 +6,9 @@ import Card from "../ui/Card";
 import Textarea from "../ui/Textarea";
 import PlatformPreview from "./PlatformPreview";
 import LoadingOverlay from "../ui/LoadingOverlay";
+import { useWorkspace } from "../../context/WorkspaceContext";
+import { useBrandVoices } from "../../hooks/useBrandVoices";
+
 
 type ContentType = {
   linkedin?: string;
@@ -30,7 +33,10 @@ type DashboardProps = {
     message: string,
     platform?: string,
     clientDrafts?: Record<string, string> | null,
+    workspaceId?: string,
+    voiceId?: string,
   ) => Promise<Record<string, unknown>>;
+
   onPostAction: (
     action: "approve" | "edit",
     editContent?: string,
@@ -80,7 +86,11 @@ export default function Dashboard({
   setChatInput: setChatText,
   usage,
 }: DashboardProps) {
+  const { activeWorkspace } = useWorkspace();
+  const { profiles: voices } = useBrandVoices(activeWorkspace?.id);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
   const [chatBusy, setChatBusy] = useState(false);
+
   const [showFirstPostLoading, setShowFirstPostLoading] = useState(false);
   const [chatErr, setChatErr] = useState<string | null>(null);
   const [activePlatform, setActivePlatform] =
@@ -183,12 +193,11 @@ export default function Dashboard({
     }
 
     try {
-      const drafts = buildClientDraftsPayload(
-        content,
         activePlatform,
         editablePost,
       );
-      const data = await onChatCommand(outgoing, activePlatform, drafts);
+      const data = await onChatCommand(outgoing, activePlatform, drafts, activeWorkspace?.id, selectedVoiceId);
+
       if (data.action === "generate_post") {
         hydrateDraftFromResponse(data);
         setChatStep("approval");
@@ -297,7 +306,24 @@ export default function Dashboard({
               Enter your idea below and the generated draft will appear in the
               post editor.
             </p>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-[10px] font-bold text-white/30 uppercase mb-1.5 tracking-widest">Active Brand Voice</label>
+                <select
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-white/30"
+                  value={selectedVoiceId}
+                  onChange={(e) => setSelectedVoiceId(e.target.value)}
+                >
+                  <option value="">Default (Active Profile)</option>
+                  {voices.map(v => (
+                    <option key={v.id} value={v.id}>{v.brand_name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-2">
+
               <input
                 type="text"
                 value={chatText}

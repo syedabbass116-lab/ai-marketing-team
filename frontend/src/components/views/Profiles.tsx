@@ -3,9 +3,13 @@ import { User, Plus, Trash2, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { useBrandVoices, BrandProfile } from '../../hooks/useBrandVoices';
+import { useWorkspace } from '../../context/WorkspaceContext';
+
 
 export default function Profiles() {
-  const { profiles, loading, addProfile, deleteProfile, setActiveProfile } = useBrandVoices();
+  const { activeWorkspace } = useWorkspace();
+  const { profiles, loading, addProfile, deleteProfile, setActiveProfile } = useBrandVoices(activeWorkspace?.id);
+
   const [isAdding, setIsAdding] = useState(false);
   const [newProfile, setNewProfile] = useState({
     brand_name: '',

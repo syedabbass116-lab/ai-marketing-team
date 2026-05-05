@@ -330,19 +330,33 @@ class OrderRequest(BaseModel):
     amount: int
     currency: str = "INR"
     user_id: str
+    workspace_id: str
 
 class VerifyRequest(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
     user_id: str
+    workspace_id: str
     plan_name: str
 
 class GenerateRequest(BaseModel):
     user_id: str
+    workspace_id: str
+    voice_id: str = None
     topic: str
     platform: str = "all"
     count: int = 1
+
+class WorkspaceCreate(BaseModel):
+    name: str
+    owner_id: str
+
+class UserInvite(BaseModel):
+    workspace_id: str
+    email: str
+    role: str = "member"
+
 
 
 class RepurposeRequest(BaseModel):
@@ -1408,82 +1422,73 @@ def generate(req: GenerateRequest):
         raise HTTPException(status_code=500, detail="Database not configured")
 
     try:
-        # 1. Fetch User Usage and Plan
-        user_id = req.user_id
-        usage_res = supabase_db.table("user_usage").select("*").eq("clerk_user_id", user_id).single().execute()
-        if not usage_res.data:
-            # Create default usage if not found
-            usage_res = supabase_db.table("user_usage").insert({
-                "clerk_user_id": user_id,
-                "plan_name": "Free",
-                "posts_limit": 10,
-                "voices_limit": 1
-            }).execute()
+        # 1. Fetch Workspace and Verify Usage
+        ws_res = supabase_db.table("workspaces").select("*").eq("id", req.workspace_id).single().execute()
+        if not ws_res.data:
+            raise HTTPException(status_code=404, detail="Workspace not found")
         
-        usage = usage_res.data
+        usage_res = supabase_db.table("user_usage").select("*").eq("workspace_id", req.workspace_id).single().execute()
+        usage = usage_res.data or {}
         posts_generated = usage.get("posts_generated", 0)
         posts_limit = usage.get("posts_limit", 10)
 
         if posts_generated >= posts_limit:
-            raise HTTPException(status_code=403, detail="Usage limit reached. Please upgrade your plan.")
+            raise HTTPException(status_code=403, detail="Workspace usage limit reached.")
 
-        # 2. Fetch Active Brand Voice
-        voice_res = supabase_db.table("brand_settings").select("*").eq("user_id", user_id).eq("is_active", True).execute()
-        if not voice_res.data:
-            # Fallback to any voice if no active one found
-            voice_res = supabase_db.table("brand_settings").select("*").eq("user_id", user_id).limit(1).execute()
+        # 2. Fetch Selected Brand Voice
+        voice_id = req.voice_id
+        if voice_id:
+            voice_res = supabase_db.table("brand_settings").select("*").eq("id", voice_id).single().execute()
+        else:
+            voice_res = supabase_db.table("brand_settings").select("*").eq("workspace_id", req.workspace_id).eq("is_active", True).execute()
+            if not voice_res.data:
+                voice_res = supabase_db.table("brand_settings").select("*").eq("workspace_id", req.workspace_id).limit(1).execute()
         
-        brand_voice = voice_res.data[0] if voice_res.data else {}
-        voice_name = brand_voice.get("brand_name", "Default")
+        brand_voice = voice_res.data if isinstance(voice_res.data, dict) else (voice_res.data[0] if voice_res.data else {})
+        
+        brand_name = brand_voice.get("brand_name", "Default")
         tone = brand_voice.get("tone", "Professional")
+        audience = brand_voice.get("target_audience", "General")
         style = brand_voice.get("brand_voice", "Clear and concise")
 
-        # 3. Construct Specialized Ghostwriter Prompt
-        base_prompt = f"""You are a social media ghostwriter.
-You must write posts in the EXACT selected brand voice.
-You may receive multiple brand voices, but ONLY use the active one.
+        # 3. World-Class Ghostwriter Prompt
+        base_prompt = f"""You are a world-class ghostwriter for SaaS users.
+Write content in EXACT brand voice below:
 
----
-ACTIVE BRAND VOICE:
-Name: {voice_name}
+Brand Name: {brand_name}
 Tone: {tone}
-Style: {style}
+Target Audience: {audience}
+Writing Style: {style}
 
----
-RULES:
-- Always follow the tone strictly
-- Match writing style exactly
-- Never mix brand voices
-- Keep formatting platform-specific (LinkedIn / X / Threads)
-- Write like a real human, not AI
+STRICT RULES:
+- Do NOT break character
+- Keep tone consistent
+- Make content feel human, not AI
+- Follow platform format strictly
 
----
-USER REQUEST:
-Write content about: {req.topic}
-Platform: {req.platform}
-Count: {req.count}
-
----
-OUTPUT:
-Return ONLY the post text.
+PLATFORMS:
+LinkedIn: Hook → Problem → Insight → Value → CTA
+Twitter: 1/ Hook, 2/ Problem, 3/ Agitate, 4/ Solution, 5/ Proof, 6/ Tip, 7/ CTA
+Threads: Conversational, engaging, short lines, end with question
 """
 
         # 4. Generate Content
         count = max(1, min(req.count, 10))
+        prompt_suffix = f"\nUSER REQUEST: Write content about: {req.topic}\nPlatform: {req.platform}\nOUTPUT: Return ONLY the post text."
         
         if req.platform == "all":
             result = {
-                "linkedin": generate_text(base_prompt + "\nFormat: LinkedIn post"),
-                "twitter": generate_text(base_prompt + "\nFormat: Twitter thread"),
-                "threads": generate_text(base_prompt + "\nFormat: Threads post"),
+                "linkedin": generate_text(base_prompt + "\nFormat: LinkedIn post" + prompt_suffix),
+                "twitter": generate_text(base_prompt + "\nFormat: Twitter thread" + prompt_suffix),
+                "threads": generate_text(base_prompt + "\nFormat: Threads post" + prompt_suffix),
             }
         else:
-            result = {req.platform: generate_text(base_prompt + f"\nFormat: {req.platform} content")}
+            result = {req.platform: generate_text(base_prompt + f"\nFormat: {req.platform} content" + prompt_suffix)}
 
-        # 5. Increment Usage
+        # 5. Increment Workspace Usage
         supabase_db.table("user_usage").update({
             "posts_generated": posts_generated + 1
-        }).eq("clerk_user_id", user_id).execute()
+        }).eq("workspace_id", req.workspace_id).execute()
 
         for key in ("linkedin", "twitter", "threads"):
             val = result.get(key)
@@ -1497,6 +1502,7 @@ Return ONLY the post text.
     except Exception as e:
         print(f"Generation Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1545,19 +1551,63 @@ def verify_payment(data: VerifyRequest):
         hashlib.sha256
     ).hexdigest()
     
-    if expected == data.razorpay_signature:
-        # Update User Plan in Supabase
-        if supabase_db:
-            plan = PLANS.get(data.plan_name, PLANS["Free"])
-            supabase_db.table("user_usage").update({
-                "plan_name": data.plan_name,
-                "posts_limit": plan["posts_limit"],
-                "voices_limit": plan["voices_limit"],
-                "is_pro": True if data.plan_name != "Free" else False
-            }).eq("clerk_user_id", data.user_id).execute()
+# Workspace Management
+@app.post("/workspaces/create")
+def create_workspace(req: WorkspaceCreate):
+    try:
+        # Create workspace
+        ws_res = supabase_db.table("workspaces").insert({
+            "name": req.name,
+            "owner_id": req.owner_id
+        }).execute()
+        workspace = ws_res.data[0]
+        
+        # Add owner as member
+        supabase_db.table("workspace_members").insert({
+            "workspace_id": workspace["id"],
+            "user_id": req.owner_id,
+            "role": "owner"
+        }).execute()
+        
+        # Initialize usage
+        supabase_db.table("user_usage").insert({
+            "workspace_id": workspace["id"],
+            "clerk_user_id": req.owner_id, # Link for legacy support
+            "plan_name": "Free",
+            "posts_limit": 10
+        }).execute()
+        
+        return workspace
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workspaces/list/{user_id}")
+def list_workspaces(user_id: str):
+    try:
+        members_res = supabase_db.table("workspace_members").select("workspace_id, role").eq("user_id", user_id).execute()
+        ws_ids = [m["workspace_id"] for m in members_res.data]
+        
+        if not ws_ids:
+            return []
             
-        return {"success": True, "payment_id": data.razorpay_payment_id}
-    else:
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        workspaces_res = supabase_db.table("workspaces").select("*").in_("id", ws_ids).execute()
+        return workspaces_res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/workspaces/invite")
+def invite_user(req: UserInvite):
+    try:
+        # Check if user already in workspace
+        # In a real app, you'd send an email invite. Here we add directly for simplicity.
+        res = supabase_db.table("workspace_members").insert({
+            "workspace_id": req.workspace_id,
+            "user_id": req.email, # Using email as placeholder for ID until they join
+            "role": req.role
+        }).execute()
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 

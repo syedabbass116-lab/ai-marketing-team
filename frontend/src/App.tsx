@@ -17,6 +17,10 @@ import AboutUs from "./components/views/AboutUs";
 import FAQ from "./components/views/FAQ";
 import { useUsageLimit } from "./hooks/useUsageLimit";
 import { useLibrary } from "./hooks/useLibrary";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
+import Team from "./components/views/Team";
+import Profiles from "./components/views/Profiles";
+
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -100,14 +104,23 @@ function AppContent() {
       message: string,
       platform: string = "linkedin",
       clientDrafts?: Record<string, string> | null,
+      workspaceId?: string,
+      voiceId?: string,
     ) => {
+
       if (!API_BASE_URL) {
         throw new Error(
           "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
         );
       }
-      const body: Record<string, unknown> = { message, platform };
+      const body: Record<string, unknown> = { 
+        message, 
+        platform,
+        workspace_id: workspaceId,
+        voice_id: voiceId
+      };
       if (clientDrafts) body.client_drafts = clientDrafts;
+
 
       if (user) {
         body.user_name = user.user_metadata?.full_name || user.email?.split('@')[0] || "there";
@@ -218,8 +231,11 @@ function AppContent() {
       case "billing":
         return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
       case "profile":
-        return <Profile />;
+        return <Profiles />;
+      case "team":
+        return <Team />;
       default:
+
         return (
           <Home
             onStartGenerate={() => setActiveView("generate")}
@@ -274,7 +290,12 @@ function App() {
   }
 
   // Show app if user is logged in
-  return <AppContent />;
+  return (
+    <WorkspaceProvider>
+      <AppContent />
+    </WorkspaceProvider>
+  );
 }
+
 
 export default App;

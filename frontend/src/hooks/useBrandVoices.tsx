@@ -11,19 +11,19 @@ export interface BrandProfile {
   created_at: string;
 }
 
-export function useBrandVoices() {
+export function useBrandVoices(workspaceId?: string) {
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<BrandProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = useCallback(async () => {
-    if (!user?.id) return;
+    if (!workspaceId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('brand_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -33,20 +33,22 @@ export function useBrandVoices() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [workspaceId]);
+
 
   useEffect(() => {
     fetchProfiles();
   }, [fetchProfiles]);
 
   const addProfile = async (profile: Partial<BrandProfile>) => {
-    if (!user?.id) return;
+    if (!workspaceId || !user?.id) return;
     try {
       const { data, error } = await supabase
         .from('brand_settings')
-        .insert([{ ...profile, user_id: user.id }])
+        .insert([{ ...profile, workspace_id: workspaceId, created_by: user.id }])
         .select()
         .single();
+
 
       if (error) throw error;
       setProfiles([data, ...profiles]);

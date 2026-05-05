@@ -8,9 +8,13 @@ import {
   Settings,
   User,
   Wand2,
+  ChevronDown,
+  Users as TeamIcon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 import { useState } from "react";
+
 import logo from "../../assets/logo.png";
 import chefDoodle from "../../ChefDoodle.png";
 
@@ -34,7 +38,9 @@ const menuItems: MenuItem[] = [
   { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "profile", label: "Brand Profiles", icon: User },
+  { id: "team", label: "Team Management", icon: TeamIcon },
 ];
+
 
 export default function Sidebar({
   activeView,
@@ -43,7 +49,9 @@ export default function Sidebar({
   onToggle,
 }: SidebarProps) {
   const { user, signOut } = useAuth();
+  const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
 
   const handleLogout = async () => {
     console.log('Logout clicked, setting isLoggingOut to true');
@@ -134,6 +142,39 @@ export default function Sidebar({
             <PanelLeftClose className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </button>
         </div>
+
+        {/* Workspace Switcher */}
+        <div className="px-3 py-4 border-b border-white/5">
+          <div className="relative group/ws">
+            <button className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.05] transition-all">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="w-5 h-5 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-blue-400">
+                    {activeWorkspace?.name?.charAt(0) || "W"}
+                  </span>
+                </div>
+                <span className="text-xs font-semibold text-white/80 truncate">
+                  {activeWorkspace?.name || "Select Workspace"}
+                </span>
+              </div>
+              <ChevronDown className="w-3 h-3 text-white/30" />
+            </button>
+            
+            {/* Dropdown (Simplified for now) */}
+            <div className="absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl opacity-0 invisible group-hover/ws:opacity-100 group-hover/ws:visible transition-all z-50">
+              {workspaces.map(ws => (
+                <button
+                  key={ws.id}
+                  onClick={() => setActiveWorkspace(ws)}
+                  className="w-full text-left px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/5 first:rounded-t-lg last:rounded-b-lg"
+                >
+                  {ws.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
 
         {/* Nav items */}
         <nav className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto pb-8 scrollbar-bw">
