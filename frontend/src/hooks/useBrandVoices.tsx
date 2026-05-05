@@ -19,6 +19,7 @@ export function useBrandVoices(workspaceId?: string) {
   const fetchProfiles = useCallback(async () => {
     if (!workspaceId) return;
     setLoading(true);
+    console.log('useBrandVoices: Fetching profiles for workspace', workspaceId);
     try {
       const { data, error } = await supabase
         .from('brand_settings')
@@ -26,7 +27,11 @@ export function useBrandVoices(workspaceId?: string) {
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('useBrandVoices: Fetch error:', error);
+        throw error;
+      }
+      console.log('useBrandVoices: Profiles loaded:', data?.length);
       setProfiles(data || []);
     } catch (err) {
       console.error('Error fetching profiles:', err);
@@ -34,7 +39,6 @@ export function useBrandVoices(workspaceId?: string) {
       setLoading(false);
     }
   }, [workspaceId]);
-
 
   useEffect(() => {
     fetchProfiles();
@@ -47,16 +51,23 @@ export function useBrandVoices(workspaceId?: string) {
     if (!user?.id) {
       throw new Error("User session not found. Please log in again.");
     }
+    
+    console.log('useBrandVoices: Attempting to add profile', { ...profile, workspace_id: workspaceId });
+    
     try {
-
+      const payload = { ...profile, workspace_id: workspaceId, created_by: user.id };
       const { data, error } = await supabase
         .from('brand_settings')
-        .insert([{ ...profile, workspace_id: workspaceId, created_by: user.id }])
+        .insert([payload])
         .select()
         .single();
 
-
-      if (error) throw error;
+      if (error) {
+        console.error('useBrandVoices: Add error details:', error);
+        throw error;
+      }
+      
+      console.log('useBrandVoices: Profile added successfully:', data);
       setProfiles([data, ...profiles]);
       return data;
     } catch (err) {

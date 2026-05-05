@@ -1,42 +1,55 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { supabase } from "../lib/supabase";
+
 
 const FREE_LIMIT = 3; // free posts per user
 const TRIAL_DAYS = 7; // trial duration
 
 export function useUsageLimit() {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [usage, setUsage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (activeWorkspace?.id) {
       fetchUsage();
     }
-  }, [user]);
+  }, [activeWorkspace?.id]);
+
 
   async function fetchUsage() {
-    if (!user?.id) {
+    if (!activeWorkspace?.id) {
       setLoading(false);
       return;
     }
 
     try {
+      console.log('useUsageLimit: Fetching usage for workspace', activeWorkspace.id);
       let { data, error } = await supabase
         .from("user_usage")
         .select("*")
-        .eq("clerk_user_id", user.id)
+        .eq("workspace_id", activeWorkspace.id)
         .single();
+
 
       if (error) {
         if (error.code === "PGRST116") {
-          // First time user — create their row
+          // First time workspace usage row
+          console.log('useUsageLimit: No usage record found, creating for workspace', activeWorkspace.id);
           const { data: newData, error: insertError } = await supabase
             .from("user_usage")
-            .insert({ clerk_user_id: user.id })
+            .insert({ 
+              workspace_id: activeWorkspace.id,
+              clerk_user_id: user?.id,
+              plan_name: 'Free',
+              posts_limit: 10
+            })
             .select()
             .single();
+
 
           if (insertError) {
             console.error("Error creating user record:", insertError);
@@ -60,15 +73,16 @@ export function useUsageLimit() {
   }
 
   async function incrementUsage() {
-    if (!user?.id || !usage) return;
+    if (!activeWorkspace?.id || !usage) return;
 
     try {
       const { data, error } = await supabase
         .from("user_usage")
-        .update({ posts_generated: usage.posts_generated + 1 })
-        .eq("clerk_user_id", user.id)
+        .update({ posts_generated: (usage.posts_generated || 0) + 1 })
+        .eq("workspace_id", activeWorkspace.id)
         .select()
         .single();
+
 
       if (error) {
         console.error("Error incrementing usage:", error);
