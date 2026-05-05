@@ -64,12 +64,18 @@ export function useBrandVoices(workspaceId?: string) {
     console.log('useBrandVoices: Attempting to add profile', { ...profile, workspace_id: workspaceId });
     
     try {
-      const payload = { ...profile, workspace_id: workspaceId, created_by: user.id };
+      const payload = { 
+        ...profile, 
+        workspace_id: workspaceId, 
+        created_by: user.id,
+        user_id: user.id // Added for backward compatibility with existing DB constraints
+      };
       const { data, error } = await supabase
         .from('brand_settings')
         .insert([payload])
         .select()
         .single();
+
 
       if (error) {
         console.error('useBrandVoices: Add error details:', error);
