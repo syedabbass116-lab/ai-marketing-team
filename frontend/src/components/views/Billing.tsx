@@ -131,9 +131,10 @@ export default function Billing({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: inrAmount * 100, // Convert to paise (80 * 100)
+          amount: inrAmount * 100, // Convert to paise
           currency: 'INR',
-          user_id: usage?.clerk_user_id || '',
+          user_id: usage?.user_id || '',
+          workspace_id: usage?.workspace_id || '',
           receipt: `${planName.toLowerCase()}_${Date.now()}`
         })
       });
@@ -187,7 +188,8 @@ export default function Billing({
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  user_id: usage?.clerk_user_id || '',
+                  user_id: usage?.user_id || '',
+                  workspace_id: usage?.workspace_id || '',
                   plan_name: planName
                 })
               });
@@ -354,11 +356,7 @@ export default function Billing({
       <div className="text-center mb-8">
         <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Simple Pricing</h2>
         <p className="text-sm text-white/40 max-w-md mx-auto">
-          Choose the plan that's right for your growth. Prices are in <span className="text-white">USD</span>. 
-          <br />
-          <span className="text-[10px] uppercase font-black tracking-widest text-blue-400 mt-2 block">
-            🇮🇳 Indian users will be charged at a fixed rate of ₹95/$1
-          </span>
+          Choose the plan that's right for your growth.
         </p>
       </div>
 
