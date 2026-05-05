@@ -115,23 +115,43 @@ export default function Billing({
     
     try {
       // Step 1: Create order from backend
-      const orderResponse = await fetch('http://localhost:8000/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: amount * 100, // Convert to paise
-          currency: 'INR',
-          receipt: `${planName.toLowerCase()}_${Date.now()}`
-        })
-      });
-
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create order');
+      let orderResponse;
+      try {
+        orderResponse = await fetch('http://localhost:8000/api/create-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amount * 100, // Convert to paise
+            currency: 'INR',
+            receipt: `${planName.toLowerCase()}_${Date.now()}`
+          })
+        });
+      } catch (fetchError) {
+        console.error('Network error:', fetchError);
+        alert('Cannot connect to payment server. Please ensure backend is running on localhost:8000');
+        setProcessingPayment(false);
+        return;
       }
 
-      const orderData = await orderResponse.json();
+      if (!orderResponse || !orderResponse.ok) {
+        const errorText = orderResponse ? await orderResponse.text() : 'No response';
+        console.error('Order creation failed:', errorText);
+        alert(`Failed to create order: ${errorText}`);
+        setProcessingPayment(false);
+        return;
+      }
+
+      let orderData;
+      try {
+        orderData = await orderResponse.json();
+      } catch (jsonError) {
+        console.error('Failed to parse response:', jsonError);
+        alert('Invalid response from payment server');
+        setProcessingPayment(false);
+        return;
+      }
       
       // Step 2: Load Razorpay script
       const script = document.createElement('script');
@@ -164,15 +184,18 @@ export default function Billing({
                 })
               });
 
-              if (verifyResponse.ok) {
-                const verifyData = await verifyResponse.json();
-                console.log('Payment verified:', verifyData);
-                alert('Payment successful! Plan upgraded.');
-                // You can redirect or update UI here
-                window.location.reload(); // Refresh to show updated plan
-              } else {
-                throw new Error('Payment verification failed');
+              if (!verifyResponse || !verifyResponse.ok) {
+                const errorText = verifyResponse ? await verifyResponse.text() : 'No response';
+                console.error('Verification failed:', errorText);
+                alert(`Payment verification failed: ${errorText}`);
+                return;
               }
+
+              const verifyData = await verifyResponse.json();
+              console.log('Payment verified:', verifyData);
+              alert('Payment successful! Plan upgraded.');
+              // You can redirect or update UI here
+              window.location.reload(); // Refresh to show updated plan
             } catch (error) {
               console.error('Verification error:', error);
               alert('Payment verification failed. Please contact support.');
