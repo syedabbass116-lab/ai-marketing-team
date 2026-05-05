@@ -1428,12 +1428,14 @@ def create_order(data: OrderRequest):
             "currency": data.currency,
             "receipt": f"receipt_{os.urandom(4).hex()}"
         })
+        print(f"Razorpay Order Created: {order}")
         return {
             "order_id": order["id"],
             "amount": order["amount"],
             "currency": order["currency"]
         }
     except Exception as e:
+        print(f"Razorpay Order Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/verify-payment")

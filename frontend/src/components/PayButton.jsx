@@ -2,7 +2,8 @@ import { useState } from 'react';
 
 export default function PayButton({ amount, name, description }) {
   const [loading, setLoading] = useState(false);
-  const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "").replace(/\.+$/, "");
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/+$/, "").replace(/\.+$/, "");
+  console.log("Razorpay Key ID:", import.meta.env.VITE_RAZORPAY_KEY_ID);
 
   const loadRazorpay = () => new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
