@@ -113,11 +113,14 @@ export default function Billing({
   const handleRazorpayPayment = async (planName: string, amount: number) => {
     setProcessingPayment(true);
     
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    
     try {
       console.log('Starting payment process for:', planName, amount);
+      console.log('Backend URL:', BACKEND_URL);
       
       // Step 1: Create order from backend
-      const orderResponse = await fetch('http://localhost:8000/api/create-order', {
+      const orderResponse = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +164,7 @@ export default function Billing({
           handler: async function (response: any) {
             // Step 4: Verify payment with backend
             try {
-              const verifyResponse = await fetch('http://localhost:8000/api/verify-payment', {
+              const verifyResponse = await fetch(`${BACKEND_URL}/api/verify-payment`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
