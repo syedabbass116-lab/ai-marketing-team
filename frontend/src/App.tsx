@@ -34,7 +34,7 @@ const emptyContentRecord = () => ({
 function AppContent() {
   const { usage, trialDaysLeft, hasTrialExpired, incrementUsage } = useUsageLimit();
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
-  const [activeView, setActiveView] = useState("dashboard");
+  const [activeView, setActiveView] = useState("landing");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -190,6 +190,8 @@ function AppContent() {
       return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
     }
     switch (activeView) {
+      case "landing":
+        return <Landing />;
       case "dashboard":
         return <Landing />;
       case "generate":
