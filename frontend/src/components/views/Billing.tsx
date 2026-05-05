@@ -1,7 +1,7 @@
 import { Check, CreditCard, Download, Zap } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import { useUsageLimit } from '../../hooks/useUsageLimit';
+import { useState } from 'react';
 
 interface ContentItem {
   id: string;
@@ -19,9 +19,11 @@ interface PlanCardProps {
   features: string[];
   current?: boolean;
   popular?: boolean;
+  onUpgrade?: (planName: string, amount: number) => void;
+  processingPayment?: boolean;
 }
 
-function PlanCard({ name, price, period, postsPerMonth, platforms, features, current, popular }: PlanCardProps) {
+function PlanCard({ name, price, period, postsPerMonth, platforms, features, current, popular, onUpgrade, processingPayment }: PlanCardProps) {
   return (
     <Card className={popular ? 'border-white/30' : ''}>
       {popular && (
@@ -48,9 +50,10 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
         <Button
           variant={current ? 'secondary' : 'primary'}
           className="w-full"
-          disabled={current}
+          disabled={current || processingPayment}
+          onClick={() => !current && onUpgrade && onUpgrade(name, parseInt(price.replace('$', '')))}
         >
-          {current ? 'Current Plan' : 'Upgrade'}
+          {processingPayment ? 'Processing...' : current ? 'Current Plan' : 'Upgrade'}
         </Button>
       </div>
 
@@ -105,6 +108,114 @@ export default function Billing({
   trialDaysLeft, 
   hasTrialExpired 
 }: BillingProps) {
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  const handleRazorpayPayment = async (planName: string, amount: number) => {
+    setProcessingPayment(true);
+    
+    try {
+      // Step 1: Create order from backend
+      const orderResponse = await fetch('http://localhost:8000/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount * 100, // Convert to paise
+          currency: 'INR',
+          receipt: `${planName.toLowerCase()}_${Date.now()}`
+        })
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const orderData = await orderResponse.json();
+      
+      // Step 2: Load Razorpay script
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        // Step 3: Open Razorpay modal with order_id
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SlkKwYIOooZtJP',
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'Ghostwrites',
+          description: `${planName} Plan Subscription`,
+          order_id: orderData.order_id,
+          image: 'https://your-logo-url.com/logo.png', // Add your logo URL
+          handler: async function (response: any) {
+            // Step 4: Verify payment with backend
+            try {
+              const verifyResponse = await fetch('http://localhost:8000/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+
+              if (verifyResponse.ok) {
+                const verifyData = await verifyResponse.json();
+                console.log('Payment verified:', verifyData);
+                alert('Payment successful! Plan upgraded.');
+                // You can redirect or update UI here
+                window.location.reload(); // Refresh to show updated plan
+              } else {
+                throw new Error('Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Verification error:', error);
+              alert('Payment verification failed. Please contact support.');
+            }
+          },
+          prefill: {
+            name: 'User Name',
+            email: 'user@example.com',
+            contact: '+919999999999'
+          },
+          theme: {
+            color: '#3399cc'
+          },
+          modal: {
+            ondismiss: function() {
+              console.log('Payment modal dismissed');
+              setProcessingPayment(false);
+            },
+            escape: true,
+            backdropclose: false
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          console.error('Payment failed:', response.error);
+          alert(`Payment failed: ${response.error.description}`);
+          setProcessingPayment(false);
+        });
+        rzp.open();
+      };
+
+      script.onerror = () => {
+        console.error('Failed to load Razorpay');
+        alert('Payment gateway unavailable. Please try again.');
+        setProcessingPayment(false);
+      };
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment failed. Please try again.');
+      setProcessingPayment(false);
+    }
+  };
 
   // Calculate real usage from library
   const platformUsage: Record<string, number> = {
@@ -202,6 +313,8 @@ export default function Billing({
               'Content library storage',
               'Email support',
             ]}
+            onUpgrade={handleRazorpayPayment}
+            processingPayment={processingPayment}
           />
           <PlanCard
             name="Professional"
@@ -218,6 +331,8 @@ export default function Billing({
               'Priority support',
               'Export posts',
             ]}
+            onUpgrade={handleRazorpayPayment}
+            processingPayment={processingPayment}
           />
           <PlanCard
             name="Enterprise"
@@ -233,6 +348,8 @@ export default function Billing({
               'Custom integrations',
               'Team management',
             ]}
+            onUpgrade={handleRazorpayPayment}
+            processingPayment={processingPayment}
           />
         </div>
       </div>
@@ -254,6 +371,20 @@ export default function Billing({
           </div>
           <Button variant="ghost" size="sm">Update</Button>
         </div>
+        
+        <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-blue-600/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
+              <span className="text-xs font-bold text-blue-400">₹</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">Razorpay</p>
+              <p className="text-xs text-white/30">Pay via UPI, Cards, NetBanking</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm">Configure</Button>
+        </div>
+        
         <Button variant="secondary" size="sm">Add Payment Method</Button>
       </Card>
 
