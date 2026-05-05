@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "./context/AuthContext";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
@@ -32,56 +32,16 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { usage, trialDaysLeft, loading: usageLoading, hasTrialExpired, incrementUsage } = useUsageLimit();
+  const { usage, trialDaysLeft, hasTrialExpired, incrementUsage } = useUsageLimit();
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
   const [activeView, setActiveView] = useState("dashboard");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const { user } = useAuth();
-  const [brandSettings, setBrandSettings] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [genChatStep, setGenChatStep] = useState("start");
   const [genChatInput, setGenChatInput] = useState("");
 
-  useEffect(() => {
-    async function loadBrandSettings() {
-      if (!user) {
-        setBrandSettings(null);
-        localStorage.removeItem("brandSettings");
-        return;
-      }
-      
-      try {
-        const { supabase } = await import("./lib/supabase");
-        const { data, error } = await supabase
-          .from('brand_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') throw error;
-
-        if (data) {
-          const settings = {
-            brandName: data.brand_name,
-            brandDescription: data.brand_description,
-            brandVoice: data.brand_voice,
-            tone: data.tone,
-            targetAudience: data.target_audience,
-            writingStyleLinkedin: data.writing_style_linkedin,
-            writingStyleTwitter: data.writing_style_twitter,
-            keyTopics: data.key_topics
-          };
-          setBrandSettings(settings);
-          localStorage.setItem("brandSettings", JSON.stringify(settings));
-        }
-      } catch (err) {
-        console.error("Error loading brand settings in App:", err);
-      }
-    }
-
-    loadBrandSettings();
-  }, [user]);
-
+  
   const saveContent = async (platform: string, text: string) => {
     try {
       await saveToLibrary(platform, text);
@@ -259,16 +219,6 @@ function AppContent() {
         return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
       case "profile":
         return <Profile />;
-      case "contact":
-        return <ContactUs />;
-      case "privacy":
-        return <PrivacyPolicy />;
-      case "terms":
-        return <TermsOfService />;
-      case "about":
-        return <AboutUs />;
-      case "faq":
-        return <FAQ />;
       default:
         return (
           <Home

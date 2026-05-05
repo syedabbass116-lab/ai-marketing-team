@@ -8,10 +8,6 @@ import {
   Settings,
   User,
   Wand2,
-  HelpCircle,
-  FileText,
-  Phone,
-  Info,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
@@ -38,11 +34,6 @@ const menuItems: MenuItem[] = [
   { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "profile", label: "Profile", icon: User },
-  { id: "faq", label: "FAQ", icon: HelpCircle },
-  { id: "contact", label: "Contact Us", icon: Phone },
-  { id: "about", label: "About Us", icon: Info },
-  { id: "privacy", label: "Privacy Policy", icon: FileText },
-  { id: "terms", label: "Terms of Service", icon: FileText },
 ];
 
 export default function Sidebar({
