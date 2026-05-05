@@ -243,8 +243,8 @@ export default function TermsOfService() {
               If you have any questions about these Terms of Service, please contact us:
             </p>
             <div className="space-y-2">
-              <p>Email: legal@ghostwrites.ai</p>
-              <p>Address: 123 AI Street, Tech City, TC 12345</p>
+              <p>Email: abbhasan098@gmail.com</p>
+              <p>Address: Lucknow, India</p>
             </div>
           </div>
         </section>

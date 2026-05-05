@@ -192,8 +192,8 @@ export default function PrivacyPolicy() {
               please contact us at:
             </p>
             <div className="space-y-2">
-              <p>Email: privacy@ghostwrites.ai</p>
-              <p>Address: 123 AI Street, Tech City, TC 12345</p>
+              <p>Email: abbhasan098@gmail.com</p>
+              <p>Address: Lucknow, India</p>
             </div>
           </div>
         </section>
