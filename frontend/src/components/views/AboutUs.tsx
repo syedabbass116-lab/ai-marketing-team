@@ -1,193 +1,213 @@
 import { Users, Target, Lightbulb, Award, Rocket, Heart } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 export default function AboutUs() {
-  const teamMembers = [
-    {
-      name: "Alex Chen",
-      role: "CEO & Co-Founder",
-      description: "Former AI researcher at Google, passionate about democratizing content creation."
-    },
-    {
-      name: "Sarah Johnson",
-      role: "CTO & Co-Founder", 
-      description: "Machine learning expert with 10+ years building scalable AI systems."
-    },
-    {
-      name: "Mike Williams",
-      role: "Head of Product",
-      description: "Product leader focused on user experience and innovative AI solutions."
-    },
-    {
-      name: "Emily Davis",
-      role: "Head of Design",
-      description: "Creative director bringing beautiful interfaces to complex AI tools."
-    }
-  ];
-
   const values = [
     {
-      icon: Target,
-      title: "Mission-Driven",
-      description: "We're on a mission to make quality content creation accessible to everyone."
+      icon: Rocket,
+      title: "Speed without sacrificing quality",
+      description: "We build tools that help you create faster while maintaining the highest standards."
     },
     {
       icon: Lightbulb,
-      title: "Innovation First",
-      description: "Pushing the boundaries of AI to solve real-world content challenges."
+      title: "Simplicity over complexity",
+      description: "Our approach focuses on making powerful tools that are intuitive and easy to use."
     },
     {
-      icon: Users,
-      title: "User-Centric",
-      description: "Every decision we make starts with how it impacts our users."
+      icon: Target,
+      title: "Real-world usefulness over hype",
+      description: "Every feature we build solves actual problems people face in their daily work."
+    }
+  ];
+
+  const products = [
+    {
+      title: "AI Content Assistant",
+      description: "Social media, on autopilot"
     },
     {
-      icon: Heart,
-      title: "Community Focused",
-      description: "Building a supportive community of creators and marketers."
+      title: "AI Advisor", 
+      description: "Structured thinking for better decisions"
+    },
+    {
+      title: "AI Voice Companion",
+      description: "Natural, real conversations with AI"
     }
   ];
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-12">
-        <h1 className="text-4xl font-bold text-white mb-4">About Ghostwrites</h1>
-        <p className="text-xl text-gray-400">
-          Empowering creators and marketers with AI-powered content generation
+        <h1 className="text-4xl font-bold text-white mb-4">About Us</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <img
+            src={logo}
+            alt="Ghostwrites logo"
+            className="h-20 w-20 object-contain"
+          />
+          <p className="text-xl text-gray-400">
+            We build AI tools that actually get used.
+          </p>
+        </div>
+        <p className="text-gray-300 leading-relaxed">
+          Not kind that look impressive in demos and fall apart in real workflows—
+          but tools that help people think, create, and move faster.
         </p>
       </div>
 
-      {/* Hero Section */}
+      {/* What We're Building */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="text-2xl font-semibold text-white mb-4">Our Story</h2>
-            <p className="text-gray-300 leading-relaxed mb-4">
-              Ghostwrites was born from a simple observation: creating compelling marketing content is 
-              time-consuming and challenging for many businesses and creators. We saw an opportunity to 
-              leverage cutting-edge AI technology to make this process faster, easier, and more effective.
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-white mb-4">What We're Building</h2>
+          <p className="text-gray-300 leading-relaxed mb-6">
+            At our core, we believe:
+          </p>
+          <div className="bg-black/30 border border-white/10 rounded-lg p-6 mb-6">
+            <p className="text-lg text-white italic mb-4">
+              "AI shouldn't feel like a tool. It should feel like a thinking partner."
             </p>
-            <p className="text-gray-300 leading-relaxed">
-              Founded in 2024, we've helped thousands of users generate millions of words of content, 
-              from LinkedIn posts to Twitter threads, enabling them to focus on what matters most - growing 
-              their business and connecting with their audience.
+            <p className="text-gray-300">
+              That idea drives everything we build—from content systems to decision-making tools.
             </p>
           </div>
-          <div className="flex justify-center">
-            <div className="w-64 h-64 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center border border-white/10">
-              <Rocket className="w-24 h-24 text-white" />
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-white mb-4">The Product</h3>
+          <p className="text-gray-300 leading-relaxed mb-6">
+            Our ghostwriting app is built for founders, creators, and professionals who want to show up online—without spending hours writing.
+            It helps you:
+          </p>
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-medium mb-2">turn ideas into high-quality posts</h4>
+            </div>
+            <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-medium mb-2">write in your own voice</h4>
+            </div>
+            <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-medium mb-2">stay consistent on LinkedIn, X, and Threads</h4>
+            </div>
+            <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-medium mb-2">Not generic outputs.</h4>
             </div>
           </div>
+          <div className="bg-gradient-to-r from-blue-500/20 to-violet-500/20 border border-blue-500/30 rounded-lg p-4">
+            <p className="text-white font-medium">
+              Content that sounds like you—clear, sharp, and worth reading.
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-white mb-4">Beyond Content</h3>
+          <p className="text-gray-300 leading-relaxed mb-6">
+            We're building more than one tool—we're building a system for how people think and create:
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {products.map((product, index) => (
+              <div key={index} className="bg-black/30 border border-white/10 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-white mb-2">{product.title}</h4>
+                <p className="text-gray-400 text-sm">{product.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-4">Each product is designed to solve real problems—not just showcase AI.</h3>
         </div>
       </section>
 
-      {/* Mission & Vision */}
+      {/* Founder Section */}
       <section className="grid md:grid-cols-2 gap-8 mb-8">
         <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-white mb-3">Our Mission</h3>
-          <p className="text-gray-300 leading-relaxed">
-            To democratize content creation by providing accessible, intelligent, and user-friendly AI tools 
-            that help individuals and businesses communicate their ideas effectively across all platforms.
-          </p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-white mb-3">Our Vision</h3>
-          <p className="text-gray-300 leading-relaxed">
-            A world where anyone can create compelling, professional content regardless of their writing 
-            experience or technical expertise, where AI amplifies human creativity rather than replaces it.
-          </p>
-        </div>
-      </section>
-
-      {/* Values */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-white mb-6">Our Values</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {values.map((value, index) => {
-            const Icon = value.icon;
-            return (
-              <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-6">
-                <Icon className="w-8 h-8 text-white mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">{value.title}</h3>
-                <p className="text-gray-400 text-sm">{value.description}</p>
+          <h2 className="text-2xl font-semibold text-white mb-4">Founder</h2>
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-white mb-2">Founded in April 2026 by Mohd Abbas.</h3>
+            <div className="flex items-start gap-6 mb-4">
+              <div className="flex-1">
+                <p className="text-gray-300 leading-relaxed mb-4">
+                  Built by someone who:
+                </p>
+                <ul className="space-y-3 text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>has spent years experimenting with AI systems</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>understands both product and distribution</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>has worked on B2B outreach, pre-sales, and collaborated with founders in the UK and US</span>
+                  </li>
+                </ul>
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-gradient-to-r from-white/10 to-white/5 border border-white/10 rounded-xl p-8 mb-12">
-        <div className="grid md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div className="text-3xl font-bold text-white mb-2">50K+</div>
-            <div className="text-gray-400">Active Users</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-white mb-2">10M+</div>
-            <div className="text-gray-400">Words Generated</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-white mb-2">99.9%</div>
-            <div className="text-gray-400">Uptime</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-white mb-2">4.9★</div>
-            <div className="text-gray-400">User Rating</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-white mb-6">Meet Our Team</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member, index) => (
-            <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-white/20 to-white/10 rounded-full mb-4 border border-white/20"></div>
-              <h3 className="text-lg font-semibold text-white mb-1">{member.name}</h3>
-              <p className="text-sm text-white/60 mb-3">{member.role}</p>
-              <p className="text-gray-400 text-sm">{member.description}</p>
+              <div className="w-32 h-32 bg-gradient-to-br from-white/20 to-white/10 rounded-lg border border-white/20 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500/30 to-violet-500/30 rounded-full border border-white/30 flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">Founder</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
+          <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+            <p className="text-gray-300 italic">
+              This isn't just about building tools—it's about building things people actually use.
+            </p>
+          </div>
+        </div>
+        
+        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Award className="w-6 h-6 text-white" />
+            <h3 className="text-xl font-semibold text-white">What We Care About</h3>
+          </div>
+          <div className="space-y-4">
+            {values.map((value, index) => {
+              const Icon = value.icon;
+              return (
+                <div key={index} className="flex items-start gap-3">
+                  <Icon className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-white font-medium mb-1">{value.title}</h4>
+                    <p className="text-gray-400 text-sm">{value.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Technology */}
-      <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-12">
-        <div className="flex items-center gap-3 mb-6">
-          <Award className="w-6 h-6 text-white" />
-          <h2 className="text-2xl font-semibold text-white">Our Technology</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div>
-            <h3 className="text-lg font-medium text-white mb-2">Advanced AI Models</h3>
-            <p className="text-gray-400 text-sm">
-              We leverage state-of-the-art language models fine-tuned specifically for marketing and social media content.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium text-white mb-2">Brand Intelligence</h3>
-            <p className="text-gray-400 text-sm">
-              Our AI learns your brand voice and style to maintain consistency across all generated content.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium text-white mb-2">Platform Optimization</h3>
-            <p className="text-gray-400 text-sm">
-              Content is optimized for each platform's unique requirements, from LinkedIn's professional tone to Twitter's character limits.
-            </p>
-          </div>
-        </div>
+      {/* What's Next */}
+      <section className="bg-white/5 border border-white/10 rounded-xl p-8 mb-8">
+        <h2 className="text-2xl font-semibold text-white mb-4">What's Next</h2>
+        <p className="text-gray-300 leading-relaxed mb-6">
+          We're actively building, improving, and working with people who want to use AI to do meaningful work.
+          Open to collaborations, projects, and conversations with founders in the AI space.
+        </p>
+      </section>
+
+      {/* Final Line */}
+      <section className="bg-gradient-to-r from-blue-500/20 to-violet-500/20 border border-blue-500/30 rounded-xl p-8 mb-12">
+        <h2 className="text-2xl font-semibold text-white mb-4">Final Line</h2>
+        <p className="text-gray-300 leading-relaxed mb-6">
+          If you're building something—or thinking about it—
+          we'd love to be part of that journey.
+        </p>
       </section>
 
       {/* Call to Action */}
-      <section className="text-center bg-gradient-to-r from-white/10 to-white/5 border border-white/10 rounded-xl p-8">
-        <h2 className="text-2xl font-semibold text-white mb-4">Join Our Journey</h2>
+      <section className="text-center bg-white/5 border border-white/10 rounded-xl p-8">
+        <h2 className="text-2xl font-semibold text-white mb-4">Start Building with AI</h2>
         <p className="text-gray-300 mb-6">
-          We're just getting started. Join thousands of creators and marketers who are already using Ghostwrites 
-          to transform their content strategy.
+          Join thousands of creators and professionals using tools that actually work.
         </p>
-        <button className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-colors">
+        <button className="px-8 py-3 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-colors">
           Get Started Free
         </button>
       </section>
