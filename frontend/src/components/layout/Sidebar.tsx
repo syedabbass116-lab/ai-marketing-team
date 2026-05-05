@@ -51,6 +51,8 @@ export default function Sidebar({
   const { user, signOut } = useAuth();
   const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [wsOpen, setWsOpen] = useState(false);
+
 
 
   const handleLogout = async () => {
