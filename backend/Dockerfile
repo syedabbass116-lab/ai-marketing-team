@@ -10,8 +10,8 @@ COPY . .
 # Install dependencies
 RUN pip install -r requirements.txt
 
-# Expose port (IMPORTANT)
-EXPOSE 10000
+# Expose port (Render will override this, but good for local)
+EXPOSE 8000
 
-# Start FastAPI (CRITICAL)
-CMD ["uvicorn", "razorpay_integration:app", "--host", "0.0.0.0", "--port", "10000"]
+# Start FastAPI (CRITICAL: Using main:app and environment PORT)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

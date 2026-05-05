@@ -1,4 +1,5 @@
 import os
+print("RUNNING MAIN BACKEND FILE")
 import json
 import re
 import importlib
@@ -28,19 +29,16 @@ app = FastAPI()
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ghostwrites.vercel.app",
-        "https://ghostwrites.vercel.app/",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/test-cors")
+def test_cors():
+    return {"message": "CORS working"}
+
 
 # Last generated post text (for "schedule this" commands). In-memory only.
 last_generated_post: str | None = None
