@@ -114,6 +114,21 @@ export default function Billing({
     setProcessingPayment(true);
     
     try {
+      // Check if backend is accessible first
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const healthCheck = await fetch('http://localhost:8000/', {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!healthCheck.ok) {
+        throw new Error('Backend server not responding properly');
+      }
+      
       // Step 1: Create order from backend
       let orderResponse;
       try {
