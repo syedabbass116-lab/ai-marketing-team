@@ -19,6 +19,10 @@ export default function Profiles() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeWorkspace) {
+      alert('Please select or create a workspace first using the switcher in the sidebar.');
+      return;
+    }
     try {
       await addProfile({
         ...newProfile,
@@ -26,8 +30,9 @@ export default function Profiles() {
       });
       setIsAdding(false);
       setNewProfile({ brand_name: '', brand_voice: '', tone: 'Professional' });
-    } catch (err) {
-      alert('Failed to add profile');
+    } catch (err: any) {
+      console.error('Failed to add profile:', err);
+      alert(`Failed to add profile: ${err.message || 'Unknown error'}`);
     }
   };
 

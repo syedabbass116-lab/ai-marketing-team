@@ -41,8 +41,14 @@ export function useBrandVoices(workspaceId?: string) {
   }, [fetchProfiles]);
 
   const addProfile = async (profile: Partial<BrandProfile>) => {
-    if (!workspaceId || !user?.id) return;
+    if (!workspaceId) {
+      throw new Error("No active workspace selected. Please select a workspace in the sidebar first.");
+    }
+    if (!user?.id) {
+      throw new Error("User session not found. Please log in again.");
+    }
     try {
+
       const { data, error } = await supabase
         .from('brand_settings')
         .insert([{ ...profile, workspace_id: workspaceId, created_by: user.id }])
