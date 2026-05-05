@@ -12,8 +12,23 @@ import razorpay
 import hmac
 import hashlib
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
+
+# Supabase initialization
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase_db: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+# Subscription Plans
+PLANS = {
+    "Free": {"posts_limit": 10, "voices_limit": 1, "price_paise": 0},
+    "Starter": {"posts_limit": 30, "voices_limit": 1, "price_paise": 1900},
+    "Pro": {"posts_limit": 100, "voices_limit": 3, "price_paise": 4900},
+    "Elite": {"posts_limit": 300, "voices_limit": 5, "price_paise": 9900},
+}
+
 
 from agents.repurpose_agent import repurpose
 from agents.content_agent import (
@@ -314,11 +329,20 @@ def health_trailing_slash():
 class OrderRequest(BaseModel):
     amount: int
     currency: str = "INR"
+    user_id: str
 
 class VerifyRequest(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+    user_id: str
+    plan_name: str
+
+class GenerateRequest(BaseModel):
+    user_id: str
+    topic: str
+    platform: str = "all"
+    count: int = 1
 
 
 class RepurposeRequest(BaseModel):
@@ -1377,42 +1401,89 @@ def generate_carousel(req: CarouselRequest):
         ) from exc
 
 
-@app.get("/generate")
-def generate(topic: str, platform: str = "all", count: int = 1):
+@app.post("/generate")
+def generate(req: GenerateRequest):
     global last_generated_post
+    if not supabase_db:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
     try:
-        count = max(1, min(count, 10))
+        # 1. Fetch User Usage and Plan
+        user_id = req.user_id
+        usage_res = supabase_db.table("user_usage").select("*").eq("clerk_user_id", user_id).single().execute()
+        if not usage_res.data:
+            # Create default usage if not found
+            usage_res = supabase_db.table("user_usage").insert({
+                "clerk_user_id": user_id,
+                "plan_name": "Free",
+                "posts_limit": 10,
+                "voices_limit": 1
+            }).execute()
+        
+        usage = usage_res.data
+        posts_generated = usage.get("posts_generated", 0)
+        posts_limit = usage.get("posts_limit", 10)
 
-        def generate_variants(fn):
-            if count == 1:
-                return fn(topic)
-            return "\n\n---\n\n".join(fn(topic) for _ in range(count))
+        if posts_generated >= posts_limit:
+            raise HTTPException(status_code=403, detail="Usage limit reached. Please upgrade your plan.")
 
-        if platform == "all":
+        # 2. Fetch Active Brand Voice
+        voice_res = supabase_db.table("brand_settings").select("*").eq("user_id", user_id).eq("is_active", True).execute()
+        if not voice_res.data:
+            # Fallback to any voice if no active one found
+            voice_res = supabase_db.table("brand_settings").select("*").eq("user_id", user_id).limit(1).execute()
+        
+        brand_voice = voice_res.data[0] if voice_res.data else {}
+        voice_name = brand_voice.get("brand_name", "Default")
+        tone = brand_voice.get("tone", "Professional")
+        style = brand_voice.get("brand_voice", "Clear and concise")
+
+        # 3. Construct Specialized Ghostwriter Prompt
+        base_prompt = f"""You are a social media ghostwriter.
+You must write posts in the EXACT selected brand voice.
+You may receive multiple brand voices, but ONLY use the active one.
+
+---
+ACTIVE BRAND VOICE:
+Name: {voice_name}
+Tone: {tone}
+Style: {style}
+
+---
+RULES:
+- Always follow the tone strictly
+- Match writing style exactly
+- Never mix brand voices
+- Keep formatting platform-specific (LinkedIn / X / Threads)
+- Write like a real human, not AI
+
+---
+USER REQUEST:
+Write content about: {req.topic}
+Platform: {req.platform}
+Count: {req.count}
+
+---
+OUTPUT:
+Return ONLY the post text.
+"""
+
+        # 4. Generate Content
+        count = max(1, min(req.count, 10))
+        
+        if req.platform == "all":
             result = {
-                "linkedin": linkedin_post(topic, posts=count),
-                "twitter": twitter_thread(topic, tweets=count),
-                "threads": generate_variants(threads_post),
+                "linkedin": generate_text(base_prompt + "\nFormat: LinkedIn post"),
+                "twitter": generate_text(base_prompt + "\nFormat: Twitter thread"),
+                "threads": generate_text(base_prompt + "\nFormat: Threads post"),
             }
-        elif platform == "linkedin":
-            result = {"linkedin": linkedin_post(topic, posts=count)}
-        elif platform == "twitter":
-            result = {"twitter": twitter_thread(topic, tweets=count)}
         else:
-            simple_generators = {
-                "threads": threads_post,
-            }
+            result = {req.platform: generate_text(base_prompt + f"\nFormat: {req.platform} content")}
 
-            if platform not in simple_generators:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Unsupported platform: {platform}. "
-                        f"Supported: all, linkedin, twitter, threads"
-                    ),
-                )
-
-            result = {platform: generate_variants(simple_generators[platform])}
+        # 5. Increment Usage
+        supabase_db.table("user_usage").update({
+            "posts_generated": posts_generated + 1
+        }).eq("clerk_user_id", user_id).execute()
 
         for key in ("linkedin", "twitter", "threads"):
             val = result.get(key)
@@ -1421,6 +1492,11 @@ def generate(topic: str, platform: str = "all", count: int = 1):
                 break
 
         return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Generation Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -1470,7 +1546,18 @@ def verify_payment(data: VerifyRequest):
     ).hexdigest()
     
     if expected == data.razorpay_signature:
+        # Update User Plan in Supabase
+        if supabase_db:
+            plan = PLANS.get(data.plan_name, PLANS["Free"])
+            supabase_db.table("user_usage").update({
+                "plan_name": data.plan_name,
+                "posts_limit": plan["posts_limit"],
+                "voices_limit": plan["voices_limit"],
+                "is_pro": True if data.plan_name != "Free" else False
+            }).eq("clerk_user_id", data.user_id).execute()
+            
         return {"success": True, "payment_id": data.razorpay_payment_id}
     else:
         raise HTTPException(status_code=400, detail="Invalid signature")
+
 

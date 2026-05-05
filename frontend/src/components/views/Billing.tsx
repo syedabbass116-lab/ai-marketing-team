@@ -129,6 +129,7 @@ export default function Billing({
         body: JSON.stringify({
           amount: amount * 100, // Convert to paise
           currency: 'INR',
+          user_id: usage?.clerk_user_id || '',
           receipt: `${planName.toLowerCase()}_${Date.now()}`
         })
       });
@@ -181,7 +182,9 @@ export default function Billing({
                 body: JSON.stringify({
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
+                  razorpay_signature: response.razorpay_signature,
+                  user_id: usage?.clerk_user_id || '',
+                  plan_name: planName
                 })
               });
 
@@ -327,13 +330,13 @@ export default function Billing({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <PlanCard
             name="Starter"
-            price="$1"
+            price="$19"
             period="month"
-            postsPerMonth={50}
+            postsPerMonth={30}
             platforms={3}
             features={[
-              'LinkedIn, Twitter, Instagram',
-              'Monthly post limit',
+              '1 Brand Voice',
+              '30 posts per month',
               'Content library storage',
               'Email support',
             ]}
@@ -341,15 +344,15 @@ export default function Billing({
             processingPayment={processingPayment}
           />
           <PlanCard
-            name="Professional"
-            price="$1"
+            name="Pro"
+            price="$49"
             period="month"
-            postsPerMonth={200}
+            postsPerMonth={100}
             platforms={6}
             popular
             features={[
-              'All 6 platforms',
-              'Monthly post limit',
+              '3 Brand Voices',
+              '100 posts per month',
               'Content library storage',
               'Priority support',
               'Export posts',
@@ -358,18 +361,17 @@ export default function Billing({
             processingPayment={processingPayment}
           />
           <PlanCard
-            name="Enterprise"
-            price="$1"
+            name="Elite"
+            price="$99"
             period="month"
-            postsPerMonth={500}
+            postsPerMonth={300}
             platforms={6}
             features={[
-              'All platforms unlimited',
-              'No monthly limits',
+              '5 Brand Voices',
+              '300 posts per month',
               'Advanced content library',
               'Dedicated support',
               'Custom integrations',
-              'Team management',
             ]}
             onUpgrade={handleRazorpayPayment}
             processingPayment={processingPayment}

@@ -84,10 +84,9 @@ export function useUsageLimit() {
     ? (new Date().getTime() - new Date(usage.trial_start_at).getTime()) > TRIAL_DAYS * 24 * 60 * 60 * 1000
     : false;
 
-  const canGenerate = usage?.is_pro || (!hasTrialExpired && usage?.posts_generated < FREE_LIMIT);
-  const postsLeft = usage?.is_pro
-    ? "∞"
-    : hasTrialExpired ? 0 : Math.max(0, FREE_LIMIT - (usage?.posts_generated || 0));
+  const canGenerate = usage?.posts_generated < usage?.posts_limit;
+  const postsLeft = usage?.posts_limit - usage?.posts_generated;
+
 
   const trialDaysLeft = usage?.trial_start_at
     ? Math.max(0, TRIAL_DAYS - Math.floor((new Date().getTime() - new Date(usage.trial_start_at).getTime()) / (24 * 60 * 60 * 1000)))
