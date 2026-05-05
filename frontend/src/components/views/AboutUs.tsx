@@ -27,7 +27,7 @@ export default function AboutUs() {
             alt="Ghostwrites logo"
             className="h-16 w-16 object-contain"
           />
-          <h1 className="text-5xl font-bold text-white">About Us</h1>
+          <h1 className="text-4xl font-bold text-white">About Us</h1>
         </div>
         <p className="text-xl text-gray-400 mb-6">
           We build AI tools that help people get things done.
