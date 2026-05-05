@@ -33,7 +33,7 @@ const menuItems: MenuItem[] = [
   { id: "library", label: "Content Library", icon: FolderOpen },
   { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "profile", label: "Profile", icon: User },
+  { id: "profile", label: "Brand Profiles", icon: User },
 ];
 
 export default function Sidebar({

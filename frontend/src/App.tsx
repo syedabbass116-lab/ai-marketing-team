@@ -8,7 +8,7 @@ import ContentLibrary from "./components/views/ContentLibrary";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
-import Profile from "./components/views/Profile";
+import Profile from "./components/views/Profiles";
 import AuthPage from "./components/views/AuthPage";
 import ContactUs from "./components/views/ContactUs";
 import PrivacyPolicy from "./components/views/PrivacyPolicy";
