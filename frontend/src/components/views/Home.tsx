@@ -10,6 +10,16 @@ type HomeProps = {
 };
 
 export default function GhostwriteHero() {
+  const handleGeneratePost = () => {
+    // Navigate to generate content page
+    window.location.href = '/generate';
+  };
+
+  const handleOpenLibrary = () => {
+    // Navigate to content library page
+    window.location.href = '/library';
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-4">
       {/* Background grid */}
@@ -37,12 +47,18 @@ export default function GhostwriteHero() {
         </p>
 
         {/* Primary Button */}
-        <button className="w-full mb-4 py-4 rounded-xl bg-white text-black font-medium flex items-center justify-center gap-2 hover:bg-white/90 transition">
+        <button 
+          onClick={handleGeneratePost}
+          className="w-full mb-4 py-4 rounded-xl bg-white text-black font-medium flex items-center justify-center gap-2 hover:bg-white/90 transition"
+        >
           → Generate your first post
         </button>
 
         {/* Secondary Button */}
-        <button className="w-full py-4 rounded-xl border border-white/20 text-white/80 hover:bg-white/5 transition">
+        <button 
+          onClick={handleOpenLibrary}
+          className="w-full py-4 rounded-xl border border-white/20 text-white/80 hover:bg-white/5 transition"
+        >
           Open Content Library
         </button>
       </div>
