@@ -271,7 +271,7 @@ def health_trailing_slash():
 allowed_origins = [
     # Vercel frontend (production)
     "https://ai-marketing-team-j85t-9jho2g8n3-syedabbass116-labs-projects.vercel.app",
-    "https://ai-marketing-team-alpha.vercel.app",
+    "https://ghostwrites.vercel.app/",
     # Local development
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -287,13 +287,14 @@ allowed_origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_origins=[
+        "https://ghostwrites.vercel.app",  # your frontend
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class RepurposeRequest(BaseModel):
     content: str
