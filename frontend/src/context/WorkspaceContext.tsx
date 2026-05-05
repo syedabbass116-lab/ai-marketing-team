@@ -26,8 +26,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchWorkspaces = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('WorkspaceContext: No user ID yet, skipping fetch.');
+      return;
+    }
     setLoading(true);
+    console.log('WorkspaceContext: Fetching workspaces for user', user.id);
+    
     try {
       // 1. Get workspace IDs from members table
       const { data: memberData, error: memberError } = await supabase
@@ -35,38 +40,63 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         .select('workspace_id')
         .eq('user_id', user.id);
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('WorkspaceContext: Error fetching members:', memberError);
+        throw memberError;
+      }
       
-      const wsIds = memberData.map(m => m.workspace_id);
+      console.log('WorkspaceContext: Member data found:', memberData);
+      const wsIds = memberData?.map(m => m.workspace_id) || [];
+      
       if (wsIds.length === 0) {
-        // Fallback: Check if user has an old record we can convert, or create a default one
+        console.log('WorkspaceContext: No workspaces found, creating default...');
+        const workspaceName = user.email ? `${user.email.split('@')[0]}'s Workspace` : 'My Workspace';
+        
         const { data: newWs, error: createError } = await supabase
           .from('workspaces')
-          .insert([{ name: `${user.email?.split('@')[0]}'s Workspace`, owner_id: user.id }])
+          .insert([{ name: workspaceName, owner_id: user.id }])
           .select()
           .single();
         
-        if (!createError && newWs) {
-          await supabase.from('workspace_members').insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+        if (createError) {
+          console.error('WorkspaceContext: Error creating default workspace:', createError);
+          throw createError;
+        }
+
+        if (newWs) {
+          console.log('WorkspaceContext: Default workspace created:', newWs.id);
+          const { error: linkError } = await supabase
+            .from('workspace_members')
+            .insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+          
+          if (linkError) {
+             console.error('WorkspaceContext: Error linking member to new workspace:', linkError);
+          }
+
           setWorkspaces([newWs]);
           setActiveWorkspace(newWs);
         }
       } else {
+        console.log('WorkspaceContext: Fetching workspace details for IDs:', wsIds);
         const { data: wsData, error: wsError } = await supabase
           .from('workspaces')
           .select('*')
           .in('id', wsIds);
         
-        if (wsError) throw wsError;
+        if (wsError) {
+          console.error('WorkspaceContext: Error fetching workspace details:', wsError);
+          throw wsError;
+        }
+
+        console.log('WorkspaceContext: Workspaces loaded:', wsData?.length);
         setWorkspaces(wsData || []);
         
-        // Auto-select first workspace or previously selected one from localStorage
         const savedWsId = localStorage.getItem('activeWorkspaceId');
         const savedWs = wsData?.find(w => w.id === savedWsId);
-        setActiveWorkspace(savedWs || (wsData ? wsData[0] : null));
+        setActiveWorkspace(savedWs || (wsData && wsData.length > 0 ? wsData[0] : null));
       }
     } catch (err) {
-      console.error('Error fetching workspaces:', err);
+      console.error('WorkspaceContext: Critical error in fetchWorkspaces:', err);
     } finally {
       setLoading(false);
     }
