@@ -22,7 +22,7 @@ export function useLibrary() {
       const { data, error } = await supabase
         .from("content_library")
         .select("*")
-        .eq("clerk_user_id", user.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -48,7 +48,7 @@ export function useLibrary() {
     try {
       const { data, error } = await supabase
         .from("content_library")
-        .insert([{ clerk_user_id: user.id, platform, text }])
+        .insert([{ user_id: user.id, platform, text }])
         .select()
         .single();
 
@@ -74,7 +74,7 @@ export function useLibrary() {
         .from("content_library")
         .delete()
         .eq("id", id)
-        .eq("clerk_user_id", user.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
       setLibrary((prev) => prev.filter((item) => item.id !== id));

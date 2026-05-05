@@ -26,32 +26,13 @@ from services.pixazo import generate_image_url
 app = FastAPI()
 
 # CORS configuration
-allowed_origins = [
-    "https://ghostwrites.vercel.app",
-    "https://ghostwrites.vercel.app/",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:5177",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.middleware("http")
-async def log_requests(request, call_next):
-    origin = request.headers.get("origin")
-    print(f"Request from origin: {origin}")
-    response = await call_next(request)
-    return response
-
 
 # Last generated post text (for "schedule this" commands). In-memory only.
 last_generated_post: str | None = None
