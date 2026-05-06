@@ -1583,6 +1583,7 @@ def verify_payment(data: VerifyRequest):
     if not all([data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature]):
         raise HTTPException(status_code=400, detail="Missing required fields")
     
+    # 1. Verify Signature
     body = f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
     expected = hmac.new(
         RAZORPAY_KEY_SECRET.encode(),
@@ -1590,6 +1591,49 @@ def verify_payment(data: VerifyRequest):
         hashlib.sha256
     ).hexdigest()
     
+    if expected != data.razorpay_signature:
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    
+    # 2. Update Subscription and Billing History in Supabase
+    if not supabase_db:
+        return {"success": True, "payment_id": data.razorpay_payment_id, "note": "DB not configured"}
+
+    try:
+        plan_details = PLANS.get(data.plan_name, PLANS["Free"])
+        posts_limit = plan_details["posts_limit"]
+        
+        # 1. Update user_usage table
+        supabase_db.table("user_usage").update({
+            "plan_name": data.plan_name,
+            "posts_limit": posts_limit,
+            "is_pro": True if data.plan_name != "Free" else False
+        }).eq("workspace_id", data.workspace_id).execute()
+        
+        # 2. Insert into billing_history
+        # Note: We use amount from request if possible, or from PLANS
+        billing_record = {
+            "user_id": data.user_id,
+            "plan_name": data.plan_name,
+            "amount": f"₹{plan_details['price_paise']/100}", # Using INR as per backend config
+            "status": "Paid",
+            "date": datetime.utcnow().isoformat()
+        }
+        supabase_db.table("billing_history").insert(billing_record).execute()
+        
+        print(f"Subscription and Billing updated for workspace {data.workspace_id} to {data.plan_name}")
+        
+        return {
+            "success": True, 
+            "payment_id": data.razorpay_payment_id,
+            "plan": data.plan_name,
+            "posts_limit": posts_limit
+        }
+    except Exception as e:
+        print(f"Error updating subscription/billing: {str(e)}")
+        # We don't raise 500 here if the payment was already successful, 
+        # but we should ideally log it for manual intervention.
+        # For now, return success: False with error detail.
+        return {"success": False, "error": str(e), "payment_id": data.razorpay_payment_id}
 # Workspace Management
 @app.post("/workspaces/create")
 def create_workspace(req: WorkspaceCreate):

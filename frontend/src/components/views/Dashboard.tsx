@@ -245,8 +245,8 @@ export default function Dashboard({
   const activeTabLabel =
     PLATFORM_TABS.find((t) => t.id === activePlatform)?.label ?? "Post";
 
-  const placeholder = chatBusy 
-    ? "Generating your post..." 
+  const placeholder = chatBusy
+    ? "Generating your post..."
     : `Tell me what you want to post on ${activeTabLabel}. I’ll draft it in the selected format.`;
 
   const selectPlatform = (p: DraftPlatform) => {
@@ -278,8 +278,8 @@ export default function Dashboard({
               disabled={chatBusy}
               className={`
                 relative flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight transition-all duration-300
-                ${isActive 
-                  ? "bg-white text-black shadow-[0_2px_10px_rgba(255,255,255,0.15)] scale-100" 
+                ${isActive
+                  ? "bg-white text-black shadow-[0_2px_10px_rgba(255,255,255,0.15)] scale-100"
                   : "text-white/40 hover:text-white/70 hover:bg-white/5 scale-95 hover:scale-100"
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
@@ -296,11 +296,11 @@ export default function Dashboard({
       </div>
 
       <div className="relative">
-        <LoadingOverlay 
-          isVisible={chatBusy} 
-          message="Ghostwrites is drafting your post..." 
+        <LoadingOverlay
+          isVisible={chatBusy}
+          message="Ghostwrites is drafting your post..."
         />
-        
+
         <div className="flex flex-col gap-6">
           <Card>
             <h2 className="text-sm font-semibold text-white mb-3">
@@ -345,102 +345,101 @@ export default function Dashboard({
 
           {/* Generated Post — below chat */}
           <Card className="relative overflow-hidden min-h-[400px]">
-          <div className="flex flex-col mb-6">
-            <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-white">
-                Generated post
-              </h2>
-              <p className="text-xs text-gray-500">
-                {activeTabLabel} draft — see live preview while you edit.
-              </p>
+            <div className="flex flex-col mb-6">
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold text-white">
+                  Generated post
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {activeTabLabel} draft — see live preview while you edit.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Editor */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-white/60 uppercase">Edit Content</label>
-                {editablePost.trim() && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (editablePost) {
-                        onSave(activePlatform, editablePost);
-                        setSaveSuccess(true);
-                        if (saveSuccessTimeoutRef.current) {
-                          clearTimeout(saveSuccessTimeoutRef.current);
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Editor */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white/60 uppercase">Edit Content</label>
+                  {editablePost.trim() && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (editablePost) {
+                          onSave(activePlatform, editablePost);
+                          setSaveSuccess(true);
+                          if (saveSuccessTimeoutRef.current) {
+                            clearTimeout(saveSuccessTimeoutRef.current);
+                          }
+                          saveSuccessTimeoutRef.current = setTimeout(() => {
+                            setSaveSuccess(false);
+                          }, 2000);
                         }
-                        saveSuccessTimeoutRef.current = setTimeout(() => {
-                          setSaveSuccess(false);
-                        }, 2000);
-                      }
-                    }}
-                    className={`transition-all duration-300 !py-1 !text-[10px] ${
-                      saveSuccess 
-                        ? "bg-green-600 border-green-600 text-white" 
-                        : "bg-white text-black hover:bg-gray-100"
-                    }`}
-                  >
-                    {saveSuccess ? "✓ Saved" : "Save Post"}
-                  </Button>
-                )}
+                      }}
+                      className={`transition-all duration-300 !py-1 !text-[10px] ${saveSuccess
+                          ? "bg-green-600 border-green-600 text-white"
+                          : "bg-white text-black hover:bg-gray-100"
+                        }`}
+                    >
+                      {saveSuccess ? "✓ Saved" : "Save Post"}
+                    </Button>
+                  )}
+                </div>
+                <Textarea
+                  rows={20}
+                  value={editablePost}
+                  onChange={(e) => setEditablePost(e.target.value)}
+                  placeholder="Your draft will appear here after you share an idea in chat."
+                  className="min-h-[500px] text-sm"
+                />
               </div>
-              <Textarea
-                rows={20}
-                value={editablePost}
-                onChange={(e) => setEditablePost(e.target.value)}
-                placeholder="Your draft will appear here after you share an idea in chat."
-                className="min-h-[500px] text-sm"
-              />
-            </div>
 
-            {/* Platform Preview */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/60 uppercase">Live Preview</label>
-              <div className="flex items-center justify-center min-h-[500px] bg-white/5 rounded-lg border border-white/10 overflow-auto">
-                {editablePost.trim() ? (
-                  <div className="p-4 max-w-full">
-                    <PlatformPreview platform={activePlatform} content={editablePost} />
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500">
-                    <p className="text-sm">Preview will appear here</p>
-                  </div>
-                )}
+              {/* Platform Preview */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-white/60 uppercase">Live Preview</label>
+                <div className="flex items-center justify-center min-h-[500px] bg-white/5 rounded-lg border border-white/10 overflow-auto">
+                  {editablePost.trim() ? (
+                    <div className="p-4 max-w-full">
+                      <PlatformPreview platform={activePlatform} content={editablePost} />
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      <p className="text-sm">Preview will appear here</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2 mt-4 items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={copySuccess ? null : <Copy className="w-4 h-4" />}
-              onClick={() => {
-                if (editablePost) {
-                  navigator.clipboard.writeText(editablePost);
-                  setCopySuccess(true);
-                  if (copySuccessTimeoutRef.current) {
-                    clearTimeout(copySuccessTimeoutRef.current);
+            <div className="flex flex-wrap gap-2 mt-4 items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copySuccess ? null : <Copy className="w-4 h-4" />}
+                onClick={() => {
+                  if (editablePost) {
+                    navigator.clipboard.writeText(editablePost);
+                    setCopySuccess(true);
+                    if (copySuccessTimeoutRef.current) {
+                      clearTimeout(copySuccessTimeoutRef.current);
+                    }
+                    copySuccessTimeoutRef.current = setTimeout(() => {
+                      setCopySuccess(false);
+                    }, 2000);
                   }
-                  copySuccessTimeoutRef.current = setTimeout(() => {
-                    setCopySuccess(false);
-                  }, 2000);
-                }
-              }}
-              disabled={!editablePost}
-              className={`transition-all duration-200 ${copySuccess ? 'text-green-400' : ''}`}
-            >
-              {copySuccess ? "✓ Copied" : "Copy"}
-            </Button>
-            {autoSaveBusy && (
-              <span className="text-xs text-gray-500">Saving edits…</span>
-            )}
-          </div>
-        </Card>
+                }}
+                disabled={!editablePost}
+                className={`transition-all duration-200 ${copySuccess ? 'text-green-400' : ''}`}
+              >
+                {copySuccess ? "✓ Copied" : "Copy"}
+              </Button>
+              {autoSaveBusy && (
+                <span className="text-xs text-gray-500">Saving edits…</span>
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

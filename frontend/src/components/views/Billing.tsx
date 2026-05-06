@@ -99,30 +99,23 @@ const PLATFORM_COLORS: Record<string, string> = {
 interface BillingProps {
   library?: ContentItem[];
   usage?: any;
-  trialDaysLeft?: number;
-  hasTrialExpired?: boolean;
 }
 
 export default function Billing({ 
   library = [], 
-  usage, 
-  trialDaysLeft, 
-  hasTrialExpired 
+  usage 
 }: BillingProps) {
-  const [processingPayment, setProcessingPayment] = useState(false);
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
   const handleRazorpayPayment = async (planName: string, amount: number) => {
-    setProcessingPayment(true);
+    setProcessingPlan(planName);
     
     const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000').replace(/\/+$/, "").replace(/\.+$/, "");
-    console.log("Razorpay Key ID:", import.meta.env.VITE_RAZORPAY_KEY_ID);
     
     try {
       console.log('Starting payment process for:', planName, amount);
-      console.log('Backend URL:', BACKEND_URL);
       
       // Step 1: Create order from backend
-      // We convert $1 to 95 INR for testing
       const inrAmount = amount * 95; 
       
       const orderResponse = await fetch(`${BACKEND_URL}/api/create-order`, {
@@ -139,13 +132,11 @@ export default function Billing({
         })
       });
 
-      console.log('Order response status:', orderResponse?.status);
-      
       if (!orderResponse || !orderResponse.ok) {
         const errorText = orderResponse ? await orderResponse.text() : 'No response';
         console.error('Order creation failed:', errorText);
         alert(`Failed to create order: ${errorText}`);
-        setProcessingPayment(false);
+        setProcessingPlan(null);
         return;
       }
 
@@ -156,106 +147,93 @@ export default function Billing({
 
       if (!rzpKey) {
         alert("CRITICAL ERROR: Razorpay Key ID is missing! Check your environment variables.");
-        setProcessingPayment(false);
+        setProcessingPlan(null);
         return;
       }
 
-      // Step 2: Load Razorpay script
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
+      // Step 2: Open Razorpay modal with order_id
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Ghostwrites',
+        description: `${planName} Plan Subscription`,
+        order_id: orderData.order_id,
+        image: 'https://your-logo-url.com/logo.png', // Add your logo URL
+        handler: async function (response: any) {
+          // Step 3: Verify payment with backend
+          try {
+            const verifyResponse = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                user_id: usage?.user_id || '',
+                workspace_id: usage?.workspace_id || '',
+                plan_name: planName
+              })
+            });
 
-      script.onload = () => {
-        // Step 3: Open Razorpay modal with order_id
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: 'Ghostwrites',
-          description: `${planName} Plan Subscription`,
-          order_id: orderData.order_id,
-          image: 'https://your-logo-url.com/logo.png', // Add your logo URL
-          handler: async function (response: any) {
-            // Step 4: Verify payment with backend
-            try {
-              const verifyResponse = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  user_id: usage?.user_id || '',
-                  workspace_id: usage?.workspace_id || '',
-                  plan_name: planName
-                })
-              });
-
-              if (!verifyResponse || !verifyResponse.ok) {
-                const errorText = verifyResponse ? await verifyResponse.text() : 'No response';
-                console.error('Verification failed:', errorText);
-                alert(`Payment verification failed: ${errorText}`);
-                return;
-              }
-
-              const verifyData = await verifyResponse.json();
-              console.log('Payment verified:', verifyData);
-
-              // Record in billing history
-              await supabase.from('billing_history').insert({
-                user_id: usage?.user_id,
-                plan_name: planName,
-                amount: `$${amount}`,
-                status: 'Paid',
-                date: new Date().toISOString()
-              });
-
-              alert('Payment successful! Plan upgraded.');
-              window.location.reload(); 
-            } catch (error) {
-              console.error('Verification error:', error);
-              alert('Payment verification failed. Please contact support.');
+            if (!verifyResponse || !verifyResponse.ok) {
+              const errorText = verifyResponse ? await verifyResponse.text() : 'No response';
+              console.error('Verification failed:', errorText);
+              alert(`Payment verification failed: ${errorText}`);
+              setProcessingPlan(null);
+              return;
             }
-          },
-          prefill: {
-            name: 'User Name',
-            email: 'user@example.com',
-            contact: '+919999999999'
-          },
-          theme: {
-            color: '#3399cc'
-          },
-          modal: {
-            ondismiss: function() {
-              console.log('Payment modal dismissed');
-              setProcessingPayment(false);
-            },
-            escape: true,
-            backdropclose: false
+
+            const verifyData = await verifyResponse.json();
+            console.log('Payment verified:', verifyData);
+
+            // Record in billing history
+            await supabase.from('billing_history').insert({
+              user_id: usage?.user_id,
+              plan_name: planName,
+              amount: `$${amount}`,
+              status: 'Paid',
+              date: new Date().toISOString()
+            });
+
+            alert('Payment successful! Plan upgraded.');
+            window.location.reload(); 
+          } catch (error) {
+            console.error('Verification error:', error);
+            alert('Payment verification failed. Please contact support.');
+            setProcessingPlan(null);
           }
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (response: any) {
-          console.error('Payment failed:', response.error);
-          alert(`Payment failed: ${response.error.description}`);
-          setProcessingPayment(false);
-        });
-        rzp.open();
+        },
+        prefill: {
+          name: '', // Optional: Add user name if available
+          email: '', // Optional: Add user email if available
+        },
+        theme: {
+          color: '#000000' // Sleek black theme like Apollo/Instantly
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment modal dismissed');
+            setProcessingPlan(null);
+          },
+          escape: true,
+          backdropclose: false
+        }
       };
 
-      script.onerror = () => {
-        console.error('Failed to load Razorpay');
-        alert('Payment gateway unavailable. Please try again.');
-        setProcessingPayment(false);
-      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setProcessingPlan(null);
+      });
+      rzp.open();
     } catch (error) {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
-      setProcessingPayment(false);
+      setProcessingPlan(null);
     }
   };
 
@@ -304,13 +282,6 @@ export default function Billing({
           <h1 className="text-3xl font-bold text-white mb-1">Billing & Usage</h1>
           <p className="text-sm text-white/40">Track your posts and platform usage</p>
         </div>
-        {!usage?.is_pro && (
-          <div className="text-right">
-            <span className={`text-[10px] px-2 py-1 rounded tracking-widest uppercase font-bold ${hasTrialExpired ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/60'}`}>
-              {hasTrialExpired ? 'Trial Expired' : `Trial: ${trialDaysLeft} days left`}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Current Usage Overview */}
@@ -374,7 +345,7 @@ export default function Billing({
               'Email support',
             ]}
             onUpgrade={(name) => handleRazorpayPayment(name, 1)}
-            processingPayment={processingPayment}
+            processingPayment={processingPlan === "Starter"}
           />
           <PlanCard
             name="Pro"
@@ -391,7 +362,7 @@ export default function Billing({
               'Export posts',
             ]}
             onUpgrade={(name) => handleRazorpayPayment(name, 1)}
-            processingPayment={processingPayment}
+            processingPayment={processingPlan === "Pro"}
           />
           <PlanCard
             name="Elite"
@@ -407,7 +378,7 @@ export default function Billing({
               'Custom integrations',
             ]}
             onUpgrade={(name) => handleRazorpayPayment(name, 1)}
-            processingPayment={processingPayment}
+            processingPayment={processingPlan === "Elite"}
           />
         </div>
 

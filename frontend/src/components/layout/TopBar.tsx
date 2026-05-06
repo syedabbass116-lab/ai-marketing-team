@@ -3,9 +3,10 @@ import Button from '../ui/Button';
 
 interface TopBarProps {
   sidebarOpen: boolean;
+  onViewChange: (view: string) => void;
 }
 
-export default function TopBar({ sidebarOpen }: TopBarProps) {
+export default function TopBar({ sidebarOpen, onViewChange }: TopBarProps) {
   return (
     <header
       className={`h-14 bg-black border-b border-white/10 fixed top-0 right-0 z-10
@@ -15,7 +16,12 @@ export default function TopBar({ sidebarOpen }: TopBarProps) {
       <div className="flex items-center gap-2">
         {/* Upgrade CTA - hidden on mobile to avoid overlap with sidebar toggle */}
         <div className="hidden sm:block">
-          <Button variant="primary" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />}>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            icon={<Sparkles className="w-3.5 h-3.5" />}
+            onClick={() => onViewChange('billing')}
+          >
             Upgrade
           </Button>
         </div>

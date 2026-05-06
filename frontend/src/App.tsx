@@ -200,7 +200,7 @@ function AppContent() {
 
   const renderView = () => {
     if (hasTrialExpired && activeView !== "billing") {
-      return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
+      return <Billing library={library} usage={usage} />;
     }
     switch (activeView) {
       case "generate":
@@ -220,7 +220,7 @@ function AppContent() {
       case "library":
         return <ContentLibrary library={library} onDelete={deleteContent} />;
       case "billing":
-        return <Billing library={library} usage={usage} trialDaysLeft={trialDaysLeft} hasTrialExpired={hasTrialExpired} />;
+        return <Billing library={library} usage={usage} />;
       case "profile":
         return <Profiles />;
       case "team":
@@ -253,7 +253,7 @@ function AppContent() {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((prev) => !prev)}
       />
-      <TopBar sidebarOpen={sidebarOpen} />
+      <TopBar sidebarOpen={sidebarOpen} onViewChange={setActiveView} />
 
       <main
         className={`pt-14 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'} h-full`}
