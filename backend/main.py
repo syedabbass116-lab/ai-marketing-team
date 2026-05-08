@@ -1685,6 +1685,7 @@ Threads: Conversational, engaging, short lines, end with question
 @app.post("/api/create-order")
 @limiter.limit("5/minute")
 def create_order(request: Request, data: OrderRequest):
+    logger.info(f"CREATE ORDER REQUEST: {data.dict()}")
     if not client:
         raise HTTPException(
             status_code=500, detail="Razorpay client not configured")
@@ -1715,6 +1716,7 @@ def create_order(request: Request, data: OrderRequest):
 @app.post("/api/verify-payment")
 @limiter.limit("5/minute")
 def verify_payment(request: Request, data: VerifyRequest):
+    logger.info(f"VERIFY PAYMENT REQUEST: {data.dict()}")
     if not RAZORPAY_KEY_SECRET:
         raise HTTPException(
             status_code=500, detail="Razorpay secret not configured")

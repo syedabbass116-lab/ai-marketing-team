@@ -5,10 +5,10 @@ import TopBar from "./components/layout/TopBar";
 import Dashboard from "./components/views/Dashboard";
 import Home from "./components/views/Home";
 import ContentLibrary from "./components/views/ContentLibrary";
+import Profiles from "./components/views/Profiles";
 import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
-import Profile from "./components/views/Profiles";
 import AuthPage from "./components/views/AuthPage";
 import ContactUs from "./components/views/ContactUs";
 import PrivacyPolicy from "./components/views/PrivacyPolicy";
@@ -19,7 +19,6 @@ import { useUsageLimit } from "./hooks/useUsageLimit";
 import { useLibrary } from "./hooks/useLibrary";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
 import Team from "./components/views/Team";
-import Profiles from "./components/views/Profiles";
 
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -48,10 +47,15 @@ function AppContent() {
   
   const saveContent = async (platform: string, text: string) => {
     try {
-      await saveToLibrary(platform, text);
+      const result = await saveToLibrary(platform, text);
+      if (!result) {
+        alert("Failed to save: No active brand identity selected. Please select or create one first.");
+        return;
+      }
       incrementUsage();
     } catch (err) {
       console.error("Failed to save content", err);
+      alert("Error saving post. Please try again.");
     }
   };
 
@@ -223,6 +227,8 @@ function AppContent() {
         return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
       case "profile":
         return <Profiles />;
+      case "brand":
+        return <BrandSettings />;
       case "team":
         return <Team />;
       case "home":

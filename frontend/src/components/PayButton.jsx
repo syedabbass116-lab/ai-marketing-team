@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function PayButton({ amount, name, description }) {
+export default function PayButton({ amount, name, description, userId, workspaceId }) {
   const [loading, setLoading] = useState(false);
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/+$/, "").replace(/\.+$/, "");
   console.log("Razorpay Key ID:", import.meta.env.VITE_RAZORPAY_KEY_ID);
@@ -15,6 +15,11 @@ export default function PayButton({ amount, name, description }) {
   });
 
   const handlePayment = async () => {
+    if (!userId || !workspaceId) {
+      alert("Please wait for the workspace to load before making a payment.");
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -37,10 +42,17 @@ export default function PayButton({ amount, name, description }) {
       const orderRes = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amount * 100 }),
+        body: JSON.stringify({ 
+          amount: amount * 100,
+          user_id: userId,
+          workspace_id: workspaceId
+        }),
       });
       
-      if (!orderRes.ok) throw new Error("Order creation failed");
+      if (!orderRes.ok) {
+        const errText = await orderRes.text();
+        throw new Error(`Order creation failed: ${errText}`);
+      }
       const { order_id, amount: orderAmount, currency } = await orderRes.json();
 
       const options = {
@@ -55,7 +67,12 @@ export default function PayButton({ amount, name, description }) {
             const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
+              body: JSON.stringify({
+                ...response,
+                user_id: userId,
+                workspace_id: workspaceId,
+                plan_name: name || "Starter" // Fallback plan name
+              }),
             });
             const result = await verifyRes.json();
             if (result.success) {

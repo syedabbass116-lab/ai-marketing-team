@@ -91,6 +91,10 @@ export function useUsageLimit() {
   const canGenerate = (usage?.posts_generated || 0) < (usage?.posts_limit || 10);
   const postsLeft = Math.max(0, (usage?.posts_limit || 10) - (usage?.posts_generated || 0));
 
-  return { usage, loading, canGenerate, postsLeft, incrementUsage, refreshUsage: fetchUsage };
+  // Dummy trial values to satisfy App.tsx destructuring
+  const trialDaysLeft = 7;
+  const hasTrialExpired = false;
+
+  return { usage, loading, canGenerate, postsLeft, incrementUsage, refreshUsage: fetchUsage, trialDaysLeft, hasTrialExpired };
 }
 

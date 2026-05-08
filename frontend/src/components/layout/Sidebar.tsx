@@ -38,6 +38,7 @@ const menuItems: MenuItem[] = [
   { id: "home", label: "Home", icon: LayoutDashboard },
   { id: "generate", label: "Generate Post", icon: PenTool },
   { id: "profile", label: "Brand Identities", icon: User },
+  { id: "brand", label: "Brand Settings", icon: Settings },
   { id: "library", label: "Content Library", icon: FolderOpen },
   { id: "billing", label: "Subscription", icon: CreditCard },
 ];

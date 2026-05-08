@@ -121,6 +121,17 @@ export default function Billing({
     try {
       console.log('Starting payment process for:', planName, amount);
       
+      const uId = user?.id || usage?.user_id || '';
+      const wId = activeWorkspace?.id || usage?.workspace_id || '';
+
+      console.log('Payment Context:', { uId, wId });
+
+      if (!uId || !wId) {
+        alert("Authentication error: Could not identify user or workspace. Please try logging in again.");
+        setProcessingPlan(null);
+        return;
+      }
+      
       // Step 1: Create order from backend
       const inrAmount = amount * 95; 
       
@@ -132,8 +143,8 @@ export default function Billing({
         body: JSON.stringify({
           amount: inrAmount * 100, // Convert to paise
           currency: 'INR',
-          user_id: user?.id || usage?.user_id || '',
-          workspace_id: activeWorkspace?.id || usage?.workspace_id || '',
+          user_id: uId,
+          workspace_id: wId,
           receipt: `${planName.toLowerCase()}_${Date.now()}`
         })
       });
@@ -178,8 +189,8 @@ export default function Billing({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                user_id: user?.id || usage?.user_id || '',
-                workspace_id: activeWorkspace?.id || usage?.workspace_id || '',
+                user_id: uId,
+                workspace_id: wId,
                 plan_name: planName
               })
             });
@@ -260,11 +271,21 @@ export default function Billing({
 
   useEffect(() => {
     const fetchHistory = async () => {
-      const { data } = await supabase
-        .from('billing_history')
-        .select('*')
-        .order('date', { ascending: false });
-      if (data) setHistory(data);
+      try {
+        const { data, error } = await supabase
+          .from('billing_history')
+          .select('*')
+          .order('date', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching billing history:', error);
+          // If table doesn't exist, Supabase might return 404 or a specific error code
+          return;
+        }
+        if (data) setHistory(data);
+      } catch (err) {
+        console.error('Unexpected error fetching history:', err);
+      }
     };
     fetchHistory();
   }, []);
