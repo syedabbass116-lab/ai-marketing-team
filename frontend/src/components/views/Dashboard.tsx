@@ -404,6 +404,7 @@ export default function Dashboard({
                         platform={activePlatform} 
                         content={editablePost} 
                         brandName={activeProfile?.brand_name}
+                        avatarUrl={activeProfile?.logo_url}
                       />
                     </div>
                   ) : (

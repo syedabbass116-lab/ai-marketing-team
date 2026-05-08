@@ -13,6 +13,7 @@ export interface BrandProfile {
   writing_style_twitter?: string;
   writing_style_threads?: string;
   key_topics?: string;
+  logo_url?: string;
   is_active: boolean;
   workspace_id: string;
   created_by: string;
