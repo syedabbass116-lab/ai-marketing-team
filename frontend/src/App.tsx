@@ -35,7 +35,7 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { usage, canGenerate, isNearLimit, incrementUsage } = useUsageLimit();
+  const { usage, canGenerate, isNearLimit, incrementUsage, hasTrialExpired } = useUsageLimit();
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
   const [activeView, setActiveView] = useState("home");
   const [content, setContent] = useState<Record<string, string> | null>(null);
