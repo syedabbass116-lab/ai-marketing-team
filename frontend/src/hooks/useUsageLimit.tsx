@@ -31,7 +31,7 @@ export function useUsageLimit() {
         .from("user_usage")
         .select("*")
         .eq("workspace_id", activeWorkspace.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Handle both standard PGRST116 (no rows) and 406 (Not Acceptable) which some configs return for empty .single()
@@ -48,7 +48,7 @@ export function useUsageLimit() {
               posts_generated: 0
             })
             .select()
-            .single();
+            .maybeSingle();
 
           if (insertError) {
             console.error("Error creating user record:", insertError);

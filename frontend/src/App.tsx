@@ -6,7 +6,6 @@ import Dashboard from "./components/views/Dashboard";
 import Home from "./components/views/Home";
 import ContentLibrary from "./components/views/ContentLibrary";
 import Profiles from "./components/views/Profiles";
-import BrandSettings from "./components/views/BrandSettings";
 import Billing from "./components/views/Billing";
 import Landing from "./components/views/Landing";
 import AuthPage from "./components/views/AuthPage";
@@ -227,8 +226,6 @@ function AppContent() {
         return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
       case "profile":
         return <Profiles />;
-      case "brand":
-        return <BrandSettings />;
       case "team":
         return <Team />;
       case "home":

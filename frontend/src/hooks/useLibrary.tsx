@@ -48,22 +48,29 @@ export function useLibrary() {
   }, [fetchLibrary]);
 
   async function saveToLibrary(platform: string, text: string) {
-    if (!user?.id || !activeWorkspace?.id) return;
+    if (!user?.id || !activeWorkspace?.id) {
+      console.log("❌ Cannot save: missing user or workspace", { userId: user?.id, wsId: activeWorkspace?.id });
+      return;
+    }
+    console.log("💾 Attempting to save to library:", { platform, textLength: text.length, workspaceId: activeWorkspace.id });
     try {
+      const payload = { 
+        user_id: user.id, 
+        workspace_id: activeWorkspace.id,
+        platform, 
+        content: text 
+      };
+      
       const { data, error } = await supabase
         .from("content_library")
-        .insert([{ 
-          user_id: user.id, 
-          workspace_id: activeWorkspace.id,
-          platform, 
-          content: text 
-        }])
+        .insert([payload])
         .select()
         .single();
 
 
       if (error) {
         console.error("❌ Supabase insert error:", error);
+        alert(`Failed to save: ${error.message}`);
         throw error;
       }
       console.log("🚀 Save success, new record:", data);
