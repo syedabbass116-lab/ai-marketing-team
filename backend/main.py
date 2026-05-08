@@ -1323,21 +1323,10 @@ Threads format:
 - Ends with a question or CTA to spark conversation.
 - No more than 2-3 hashtags.
 
-Return exactly one of:
+Return exactly:
 
 1) New post content:
 {{"action": "generate_post", "content": "<full generated post text>"}}
-
-2) Schedule a post:
-{{"action": "schedule_post", "content": "<post text>",
-    "date": "YYYY-MM-DD", "time": "HH:MM", "platform": "{platform}"}}
-
-If the user says "schedule this" / "schedule it", set "content" to empty string ""; the server will use the last generated post.
-
-Resolve relative dates (tomorrow, next Monday, April 15, etc.) to YYYY-MM-DD using today {today_utc}.
-
-If the user clearly wants to schedule but date or time cannot be determined, return:
-{{"action": "clarify", "message": "<one short question>"}}
 
 JSON only.""".strip()
 

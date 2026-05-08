@@ -38,12 +38,6 @@ const STEPS = [
     description: "Save your favorite generations to your personal library for future use or repurposing.",
     icon: <Library className="w-12 h-12 text-orange-400" />,
     color: "from-orange-500/20 to-yellow-500/20"
-  },
-  {
-    title: "Smart Scheduling",
-    description: "Schedule your content directly to your social platforms via our professional Zapier integration.",
-    icon: <Calendar className="w-12 h-12 text-emerald-400" />,
-    color: "from-emerald-500/20 to-teal-500/20"
   }
 ];
 
