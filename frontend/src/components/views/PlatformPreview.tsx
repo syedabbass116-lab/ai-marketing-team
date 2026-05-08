@@ -5,13 +5,15 @@ import chefDoodle from "../../ChefDoodle.png";
 interface PlatformPreviewProps {
   platform: string;
   content: string;
+  brandName?: string;
+  avatarUrl?: string;
 }
 
-export default function PlatformPreview({ platform, content }: PlatformPreviewProps) {
+export default function PlatformPreview({ platform, content, brandName, avatarUrl: customAvatar }: PlatformPreviewProps) {
   const { user } = useAuth();
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User Name';
-  const userHandle = user?.email?.split('@')[0] || 'username';
-  const avatarUrl = user?.user_metadata?.avatar_url || chefDoodle;
+  const userName = brandName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User Name';
+  const userHandle = brandName?.toLowerCase().replace(/\s+/g, '') || user?.email?.split('@')[0] || 'username';
+  const avatarUrl = customAvatar || user?.user_metadata?.avatar_url || chefDoodle;
 
   const truncateText = (text: string, limit: number) => {
     return text.length > limit ? text.substring(0, limit) + '...' : text;

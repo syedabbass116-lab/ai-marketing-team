@@ -400,7 +400,11 @@ export default function Dashboard({
                 <div className="flex items-center justify-center min-h-[500px] bg-white/5 rounded-lg border border-white/10 overflow-auto">
                   {editablePost.trim() ? (
                     <div className="p-4 max-w-full">
-                      <PlatformPreview platform={activePlatform} content={editablePost} />
+                      <PlatformPreview 
+                        platform={activePlatform} 
+                        content={editablePost} 
+                        brandName={activeProfile?.brand_name}
+                      />
                     </div>
                   ) : (
                     <div className="text-center text-gray-500">

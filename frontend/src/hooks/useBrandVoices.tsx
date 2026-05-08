@@ -88,11 +88,10 @@ export function useBrandVoices(workspaceId?: string) {
         created_by: user.id,
         user_id: user.id // Added for backward compatibility with existing DB constraints
       };
-      const { data, error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('brand_settings')
         .insert([payload])
-        .select()
-        .maybeSingle();
+        .select();
 
 
       if (error) {
@@ -100,6 +99,7 @@ export function useBrandVoices(workspaceId?: string) {
         throw error;
       }
       
+      const data = insertData && insertData.length > 0 ? insertData[0] : null;
       console.log('useBrandVoices: Profile added successfully:', data);
       setProfiles([data, ...profiles]);
       return data;
