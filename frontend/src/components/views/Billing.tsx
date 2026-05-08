@@ -99,11 +99,13 @@ const PLATFORM_COLORS: Record<string, string> = {
 interface BillingProps {
   library?: ContentItem[];
   usage?: any;
+  onContactClick?: () => void;
 }
 
 export default function Billing({ 
   library = [], 
-  usage 
+  usage,
+  onContactClick
 }: BillingProps) {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
@@ -414,6 +416,28 @@ export default function Billing({
           )}
         </div>
       </Card>
+      
+      {/* Contact Section */}
+      <div className="mt-12 p-6 bg-white/[0.03] border border-white/10 rounded-2xl text-center">
+        <h3 className="text-lg font-bold text-white mb-2">Need help with payments?</h3>
+        <p className="text-sm text-white/40 mb-4 max-w-md mx-auto">
+          If you face any issue regarding payment, please contact us. Our team is ready to assist you.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button 
+            variant="secondary" 
+            onClick={onContactClick}
+          >
+            Contact Support
+          </Button>
+          <a 
+            href="mailto:abbhasan098@gmail.com" 
+            className="text-xs text-white/30 hover:text-white/60 transition-colors"
+          >
+            abbhasan098@gmail.com
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

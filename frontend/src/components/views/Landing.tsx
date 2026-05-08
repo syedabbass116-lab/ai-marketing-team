@@ -8,7 +8,7 @@ import {
   Fingerprint,
   LayoutDashboard,
   Share2,
-  FolderOpen
+  FolderOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -21,7 +21,8 @@ import AboutUs from "./AboutUs";
 import FAQ from "./FAQ";
 
 function TypewriterPost() {
-  const fullText = "Stop guessing what to post. The best creators build a system. Here is how I scaled my personal brand using AI to automate my thought leadership... 🚀";
+  const fullText =
+    "Stop guessing what to post. The best creators build a system. Here is how I scaled my personal brand using AI to automate my thought leadership... 🚀";
   const [text, setText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
 
@@ -47,7 +48,8 @@ function TypewriterPost() {
 
   return (
     <p className="text-sm text-white/85 h-[80px] leading-relaxed">
-      {text}<span className="animate-pulse text-blue-400">|</span>
+      {text}
+      <span className="animate-pulse text-blue-400">|</span>
     </p>
   );
 }
@@ -93,28 +95,12 @@ const FEATURES = [
   },
 ];
 
-const STEPS = [
-  {
-    n: "01",
-    title: "Train your voice",
-    desc: "Drop in a few of your best posts. We learn how you write.",
-  },
-  {
-    n: "02",
-    title: "Generate posts",
-    desc: "Get a week of high-performing posts, drafted in your tone.",
-  },
-  {
-    n: "03",
-    title: "Schedule & post",
-    desc: "Approve, schedule, and stay consistent across every platform.",
-  },
-];
-
 export default function Landing({ onSignIn }: { onSignIn: () => void }) {
   const { user } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
-  const [currentPage, setCurrentPage] = useState<"landing" | "contact" | "privacy" | "terms" | "about" | "faq">("landing");
+  const [currentPage, setCurrentPage] = useState<
+    "landing" | "contact" | "privacy" | "terms" | "about" | "faq"
+  >("landing");
 
   if (user) {
     return null; // Will be handled by App.tsx routing
@@ -127,7 +113,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
         provider: "google",
         options: {
           queryParams: {
-            prompt: 'select_account',
+            prompt: "select_account",
           },
         },
       });
@@ -143,7 +129,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <button 
+          <button
             onClick={() => setCurrentPage("landing")}
             className="mb-6 text-white/60 hover:text-white transition-colors"
           >
@@ -159,7 +145,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <button 
+          <button
             onClick={() => setCurrentPage("landing")}
             className="mb-6 text-white/60 hover:text-white transition-colors"
           >
@@ -175,7 +161,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <button 
+          <button
             onClick={() => setCurrentPage("landing")}
             className="mb-6 text-white/60 hover:text-white transition-colors"
           >
@@ -191,7 +177,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <button 
+          <button
             onClick={() => setCurrentPage("landing")}
             className="mb-6 text-white/60 hover:text-white transition-colors"
           >
@@ -207,7 +193,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <button 
+          <button
             onClick={() => setCurrentPage("landing")}
             className="mb-6 text-white/60 hover:text-white transition-colors"
           >
@@ -237,9 +223,6 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           <div className="hidden items-center gap-8 text-sm text-gray-400 md:flex">
             <a href="#features" className="transition-colors hover:text-white">
               Features
-            </a>
-            <a href="#how" className="transition-colors hover:text-white">
-              How it works
             </a>
             <a href="#preview" className="transition-colors hover:text-white">
               Product
@@ -385,36 +368,6 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
         </div>
       </section>
 
-      {/* HOW */}
-      <section id="how" className="border-y border-white/10 bg-white/[0.02]">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">
-              How it works
-            </p>
-            <h2 className="mt-3 font-mono text-3xl font-bold tracking-tight sm:text-5xl">
-              From blank page to posted in minutes
-            </h2>
-          </div>
-          <div className="mt-12 grid gap-6 sm:mt-16 sm:gap-8 md:grid-cols-3">
-            {STEPS.map((s) => (
-              <div
-                key={s.n}
-                className="rounded-2xl border border-white/10 bg-black p-6 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 sm:p-8"
-              >
-                <p className="font-mono text-sm font-bold text-gray-500">
-                  {s.n}
-                </p>
-                <h3 className="mt-3 font-mono text-xl font-semibold">
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-gray-400">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* PRODUCT PREVIEW */}
       <section
         id="preview"
@@ -428,7 +381,8 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
             Everything you need to dominate social media
           </h2>
           <p className="text-base text-gray-400 sm:text-lg mb-12">
-            Ghostwrites isn't just a text generator. It is a fully-featured digital marketing agency built directly into your browser.
+            Ghostwrites isn't just a text generator. It is a fully-featured
+            digital marketing agency built directly into your browser.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
@@ -436,19 +390,27 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               <div className="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center mb-6">
                 <Fingerprint className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Multi-Brand Identities</h3>
+              <h3 className="text-xl font-bold text-white mb-3">
+                Multi-Brand Identities
+              </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Manage multiple brands or clients from one dashboard. Train a unique AI model for each identity by providing its core values, target audience, and specific writing samples. 
+                Manage multiple brands or clients from one dashboard. Train a
+                unique AI model for each identity by providing its core values,
+                target audience, and specific writing samples.
               </p>
             </div>
-            
+
             <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
               <div className="w-10 h-10 bg-purple-500/20 text-purple-400 rounded-lg flex items-center justify-center mb-6">
                 <LayoutDashboard className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Premium Command Center</h3>
+              <h3 className="text-xl font-bold text-white mb-3">
+                Premium Command Center
+              </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Track your monthly output, manage your subscription limits, and quickly jump between drafting new posts and reviewing your library of high-converting content.
+                Track your monthly output, manage your subscription limits, and
+                quickly jump between drafting new posts and reviewing your
+                library of high-converting content.
               </p>
             </div>
 
@@ -456,9 +418,14 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               <div className="w-10 h-10 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center mb-6">
                 <Share2 className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Platform Native Output</h3>
+              <h3 className="text-xl font-bold text-white mb-3">
+                Platform Native Output
+              </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Stop cross-posting the exact same text. Ghostwrites automatically formats your ideas into algorithm-friendly LinkedIn posts, punchy X (Twitter) threads, and engaging Threads.
+                Stop cross-posting the exact same text. Ghostwrites
+                automatically formats your ideas into algorithm-friendly
+                LinkedIn posts, punchy X (Twitter) threads, and engaging
+                Threads.
               </p>
             </div>
 
@@ -466,9 +433,13 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               <div className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center mb-6">
                 <FolderOpen className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Persistent Content Library</h3>
+              <h3 className="text-xl font-bold text-white mb-3">
+                Persistent Content Library
+              </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Never lose a good idea. Save your favorite generated posts directly to your secure cloud library, ready to be reviewed, edited, and published whenever you need them.
+                Never lose a good idea. Save your favorite generated posts
+                directly to your secure cloud library, ready to be reviewed,
+                edited, and published whenever you need them.
               </p>
             </div>
           </div>
@@ -522,32 +493,32 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
             <span>Ghostwrite</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">
-            <button 
-              onClick={() => setCurrentPage('privacy')}
+            <button
+              onClick={() => setCurrentPage("privacy")}
               className="transition-colors hover:text-white"
             >
               Privacy
             </button>
-            <button 
-              onClick={() => setCurrentPage('terms')}
+            <button
+              onClick={() => setCurrentPage("terms")}
               className="transition-colors hover:text-white"
             >
               Terms
             </button>
-            <button 
-              onClick={() => setCurrentPage('contact')}
+            <button
+              onClick={() => setCurrentPage("contact")}
               className="transition-colors hover:text-white"
             >
               Contact
             </button>
-            <button 
-              onClick={() => setCurrentPage('about')}
+            <button
+              onClick={() => setCurrentPage("about")}
               className="transition-colors hover:text-white"
             >
               About
             </button>
-            <button 
-              onClick={() => setCurrentPage('faq')}
+            <button
+              onClick={() => setCurrentPage("faq")}
               className="transition-colors hover:text-white"
             >
               FAQ

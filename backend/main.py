@@ -17,10 +17,20 @@ from pydantic import BaseModel, Field, validator
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-import razorpay
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+except ModuleNotFoundError:  # allows local dev without slowapi installed
+    Limiter = None
+    get_remote_address = None
+    RateLimitExceeded = Exception
+
+try:
+    import razorpay
+except ModuleNotFoundError:
+    razorpay = None
+
 import hmac
 import hashlib
 from dotenv import load_dotenv
@@ -177,65 +187,31 @@ def _platform_label(p: str) -> str:
 
 def _build_chat_system(platform: str) -> str:
     label = _platform_label(platform)
-    format_hint = {
-        "linkedin": """STRICT FORMAT:
-[Hook - 1 bold line that stops the scroll]
-[Blank line]
-[Problem - 2-3 lines about the pain your audience feels]
-[Blank line]
-[Story or insight - what changed / what you discovered]
-[Blank line]
-[Value - 3-5 short lines or a mini list]
-- Point 1
-- Point 2
-- Point 3
-[Blank line]
-[Conclusion - 1 punchy line]
-[Blank line]
-[CTA - one clear ask]
-[Blank line]
-#Hashtag1 #Hashtag2 #Hashtag3""",
-        "twitter": """STRICT FORMAT (Thread):
-1/ [Big hook tweet — make them want to read more]
-2/ [Problem]
-3/ [Agitate the problem]
-4/ [Your solution / story]
-5/ [Proof or result]
-6/ [Actionable tip]
-7/ [CTA — link, follow, retweet]""",
-        "threads": "Threads post: conversational, personal tone, strong hook, line breaks, question at end.",
-    }.get(platform, "social post")
-
-    return f"""You are a friendly, capable social media marketing assistant.
-
+    
+    return f"""You are an expert social media copywriter who has studied viral content across LinkedIn, Twitter/X, and Threads.
 The user is focused on **{label}** ({platform}).
 
 CRITICAL RULE 1: NEVER put the actual social media post text inside the "reply" field.
 - "reply" is ONLY for conversational messages.
 - The actual post content MUST go into "post_draft" or "post_drafts".
 
-CRITICAL RULE 2: You MUST follow these formats for EVERY generation:
+CRITICAL RULE 2: You MUST follow these expert rules for EVERY generation:
+- Hook first — The opening line must stop the scroll. Use a bold claim, surprising stat, or counterintuitive idea. Never start with "I".
+- Short sentences. One idea per line. Use white space generously.
+- Tell a story or make a point — Use a personal experience, analogy, or specific example. Avoid generic advice.
+- Build tension or curiosity in the middle to keep readers going.
+- End with a clear CTA — a question, a challenge, or a direct ask (follow, repost, comment).
+- No fluff, no filler. Every sentence must earn its place.
 
-FOR LINKEDIN:
-[Hook]
-[Blank Line]
-[Problem]
-[Blank Line]
-[Story/Insight]
-[Blank Line]
-[Value List]
-[Blank Line]
-[Conclusion]
-[Blank Line]
-[CTA]
-[Blank Line]
-#Hashtags
+PLATFORM SPECIFIC RULES:
+- For LinkedIn: Keep it under 1,300 characters for the "preview" cutoff. Use line breaks after every 1–2 sentences.
+- For Twitter/X: Stay under 280 characters OR write a punchy thread (number each tweet, end the last one with a summary + CTA).
+- For Threads: Conversational tone, feels like a thought shared with friends, can be slightly longer and raw.
 
-FOR TWITTER:
-Use a numbered thread (1/ to 7/) following the Hook -> Problem -> Agitate -> Solution -> Proof -> Tip -> CTA structure.
-
-SINGLE PLATFORM: put the full post in "post_draft" as plain text. Match: {format_hint}
-MULTI-PLATFORM: If they ask for multiple platforms, use "post_drafts" (JSON object with platform keys).
+FORMATTING:
+- SINGLE PLATFORM: put the full post in "post_draft" as plain text. 
+- MULTI-PLATFORM: If they ask for multiple platforms, use "post_drafts" (JSON object with platform keys).
+- ALWAYS provide 3 alternative hook options at the end of your "post_draft" or within each platform's draft.
 
 Respond ONLY with valid JSON."""
 
@@ -595,10 +571,19 @@ def _store_multi_drafts(multi: dict[str, str]) -> None:
 
 
 def _generate_linkedin_post(idea: str) -> str:
-    prompt = (
-        f"Write a high-quality LinkedIn post about: {idea}\n"
-        "Make it engaging, concise, and human."
-    )
+    prompt = f"""You are an expert social media copywriter who has studied viral content across LinkedIn. Write a high-quality LinkedIn post about: {idea}
+Follow these rules:
+
+Hook first — The opening line must stop the scroll. Use a bold claim, surprising stat, or counterintuitive idea. Never start with "I".
+Short sentences. One idea per line. Use white space generously.
+Tell a story or make a point — Use a personal experience, analogy, or specific example. Avoid generic advice.
+Build tension or curiosity in the middle to keep readers going.
+End with a clear CTA — a question, a challenge, or a direct ask.
+No fluff, no filler. Every sentence must earn its place.
+Keep it under 1,300 characters for the "preview" cutoff. Use line breaks after every 1–2 sentences.
+
+Also provide: 3 alternative hook options I can swap in.
+"""
     return generate_text(prompt).strip()
 
 
@@ -614,13 +599,15 @@ def _generate_for_platform(idea: str, platform: str) -> str:
         return youtube_script(idea).strip()
     if p == "facebook":
         return generate_text(
-            f"Write an engaging Facebook post about: {idea}\n"
-            "Warm, conversational tone. Output only the post text."
+            f"You are an expert social media copywriter. Write a high-quality Facebook post about: {idea}\n"
+            "Rules: Hook first, short sentences, storytelling, tension building, clear CTA.\n"
+            "Warm, conversational tone. Output the post plus 3 alternative hooks."
         ).strip()
     if p == "tiktok":
         return generate_text(
-            f"Write a TikTok caption or short voiceover script about: {idea}\n"
-            "Punchy lines, strong hook; optional hashtags at the end."
+            f"You are an expert social media copywriter. Write a viral TikTok caption/script about: {idea}\n"
+            "Rules: Punchy hook, 1 idea per line, white space, curiosity middle, clear CTA.\n"
+            "Output the caption plus 3 alternative hooks."
         ).strip()
     return linkedin_post(idea).strip()
 

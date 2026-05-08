@@ -200,7 +200,7 @@ function AppContent() {
 
   const renderView = () => {
     if (hasTrialExpired && activeView !== "billing") {
-      return <Billing library={library} usage={usage} />;
+      return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
     }
     switch (activeView) {
       case "generate":
@@ -220,7 +220,7 @@ function AppContent() {
       case "library":
         return <ContentLibrary library={library} onDelete={deleteContent} />;
       case "billing":
-        return <Billing library={library} usage={usage} />;
+        return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
       case "profile":
         return <Profiles />;
       case "team":

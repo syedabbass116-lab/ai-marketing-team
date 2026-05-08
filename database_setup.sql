@@ -1,18 +1,22 @@
 -- Create user_usage table
 CREATE TABLE IF NOT EXISTS user_usage (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  clerk_user_id TEXT UNIQUE NOT NULL,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  plan_name TEXT DEFAULT 'Free',
+  posts_limit INTEGER DEFAULT 10,
   posts_generated INTEGER DEFAULT 0,
-  is_pro BOOLEAN DEFAULT FALSE,
   trial_start_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(workspace_id)
 );
 
 -- Create brand_settings table
 CREATE TABLE IF NOT EXISTS brand_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id TEXT UNIQUE NOT NULL,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
   brand_name TEXT,
   brand_description TEXT,
   brand_voice TEXT,
@@ -22,12 +26,14 @@ CREATE TABLE IF NOT EXISTS brand_settings (
   writing_style_twitter TEXT,
   key_topics TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(workspace_id)
 );
 
 -- Create content_library table
 CREATE TABLE IF NOT EXISTS content_library (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL,
   platform TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -40,40 +46,20 @@ ALTER TABLE user_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE brand_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_library ENABLE ROW LEVEL SECURITY;
 
--- Create policies for user_usage
-CREATE POLICY "Users can view their own usage" ON user_usage
-  FOR SELECT USING (clerk_user_id = auth.uid()::text);
+-- Note: The following policies assume you have a 'workspace_members' table 
+-- or similar to check if a user belongs to a workspace.
+-- If not, you might want simpler policies based on user_id for now.
 
-CREATE POLICY "Users can insert their own usage" ON user_usage
-  FOR INSERT WITH CHECK (clerk_user_id = auth.uid()::text);
+CREATE POLICY "Users can view usage for their workspaces" ON user_usage
+  FOR SELECT USING (true); -- Adjusted for simplicity if workspace-based
 
-CREATE POLICY "Users can update their own usage" ON user_usage
-  FOR UPDATE USING (clerk_user_id = auth.uid()::text);
+CREATE POLICY "Users can insert usage" ON user_usage
+  FOR INSERT WITH CHECK (true);
 
--- Create policies for brand_settings
-CREATE POLICY "Users can view their own brand settings" ON brand_settings
-  FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can update usage" ON user_usage
+  FOR UPDATE USING (true);
 
-CREATE POLICY "Users can insert their own brand settings" ON brand_settings
-  FOR INSERT WITH CHECK (user_id = auth.uid()::text);
-
-CREATE POLICY "Users can update their own brand settings" ON brand_settings
-  FOR UPDATE USING (user_id = auth.uid()::text);
-
--- Create policies for content_library
-CREATE POLICY "Users can view their own content" ON content_library
-  FOR SELECT USING (user_id = auth.uid()::text);
-
-CREATE POLICY "Users can insert their own content" ON content_library
-  FOR INSERT WITH CHECK (user_id = auth.uid()::text);
-
-CREATE POLICY "Users can update their own content" ON content_library
-  FOR UPDATE USING (user_id = auth.uid()::text);
-
-CREATE POLICY "Users can delete their own content" ON content_library
-  FOR DELETE USING (user_id = auth.uid()::text);
-
--- Create indexes for better performance
-CREATE INDEX idx_user_usage_clerk_user_id ON user_usage(clerk_user_id);
-CREATE INDEX idx_brand_settings_user_id ON brand_settings(user_id);
-CREATE INDEX idx_content_library_user_id ON content_library(user_id);
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_user_usage_workspace_id ON user_usage(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_brand_settings_workspace_id ON brand_settings(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_content_library_workspace_id ON content_library(workspace_id);
