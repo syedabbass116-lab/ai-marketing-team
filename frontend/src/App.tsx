@@ -16,6 +16,7 @@ import AboutUs from "./components/views/AboutUs";
 import FAQ from "./components/views/FAQ";
 import { useUsageLimit } from "./hooks/useUsageLimit";
 import { useLibrary } from "./hooks/useLibrary";
+import FeatureWalkthrough from "./components/FeatureWalkthrough";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
 import Team from "./components/views/Team";
 
@@ -243,6 +244,7 @@ function AppContent() {
 
   return (
     <div className={`min-h-screen text-white ${activeView === 'home' ? 'bg-[#0a0a0a]' : 'bg-black bg-dot-grid'}`}>
+      <FeatureWalkthrough />
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
