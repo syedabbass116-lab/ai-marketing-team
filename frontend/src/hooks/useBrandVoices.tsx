@@ -92,7 +92,7 @@ export function useBrandVoices(workspaceId?: string) {
         .from('brand_settings')
         .insert([payload])
         .select()
-        .single();
+        .maybeSingle();
 
 
       if (error) {

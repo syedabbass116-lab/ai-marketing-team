@@ -64,8 +64,7 @@ export function useLibrary() {
       const { data, error } = await supabase
         .from("content_library")
         .insert([payload])
-        .select()
-        .single();
+        .select();
 
 
       if (error) {
@@ -73,11 +72,13 @@ export function useLibrary() {
         alert(`Failed to save: ${error.message}`);
         throw error;
       }
-      console.log("🚀 Save success, new record:", data);
+      
+      const insertedRow = data && data.length > 0 ? data[0] : null;
+      console.log("🚀 Save success, new record:", insertedRow);
       
       // Force refresh the whole library from DB to ensure sync
       await fetchLibrary();
-      return data;
+      return insertedRow || true; // Return true if row is null but no error
     } catch (err) {
       console.error("❌ Catch error during save:", err);
       throw err;

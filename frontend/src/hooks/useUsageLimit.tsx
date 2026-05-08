@@ -79,7 +79,7 @@ export function useUsageLimit() {
         .update({ posts_generated: (usage.posts_generated || 0) + 1 })
         .eq("workspace_id", activeWorkspace.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setUsage(data);
