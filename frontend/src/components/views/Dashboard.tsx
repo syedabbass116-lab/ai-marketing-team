@@ -47,6 +47,9 @@ type DashboardProps = {
   chatInput: string;
   setChatInput: Dispatch<SetStateAction<string>>;
   usage?: any;
+  canGenerate?: boolean;
+  isNearLimit?: boolean;
+  onUpgrade?: () => void;
 };
 
 function buildClientDraftsPayload(
@@ -85,6 +88,9 @@ export default function Dashboard({
   chatInput: chatText,
   setChatInput: setChatText,
   usage,
+  canGenerate = true,
+  isNearLimit = false,
+  onUpgrade
 }: DashboardProps) {
   const { activeWorkspace } = useWorkspace();
   const { profiles: voices } = useBrandVoices(activeWorkspace?.id);
@@ -313,24 +319,23 @@ export default function Dashboard({
 
 
             <div className="flex flex-col sm:flex-row gap-2">
-
               <input
                 type="text"
                 value={chatText}
                 onChange={(e) => setChatText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !chatBusy) handleNlChat();
+                  if (e.key === "Enter" && !chatBusy && canGenerate) handleNlChat();
                 }}
-                placeholder={placeholder}
-                className="flex-1 px-3 py-2 rounded-lg border border-white/10 bg-black text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-white/30"
-                disabled={chatBusy}
+                placeholder={!canGenerate ? "Post limit reached. Please upgrade to continue." : placeholder}
+                className={`flex-1 px-3 py-2 rounded-lg border border-white/10 bg-black text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-white/30 ${!canGenerate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={chatBusy || !canGenerate}
               />
               <Button
-                variant="secondary"
-                onClick={handleNlChat}
-                disabled={chatBusy || !chatText.trim()}
+                variant={!canGenerate ? "primary" : "secondary"}
+                onClick={!canGenerate ? onUpgrade : handleNlChat}
+                disabled={chatBusy || (canGenerate && !chatText.trim())}
               >
-                {chatBusy ? "…" : "Generate"}
+                {chatBusy ? "…" : !canGenerate ? "Upgrade Plan" : "Generate"}
               </Button>
               <Button
                 variant="ghost"
@@ -340,6 +345,22 @@ export default function Dashboard({
                 Reset
               </Button>
             </div>
+            
+            {isNearLimit && canGenerate && (
+              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-between">
+                <p className="text-xs text-amber-500 font-medium">Few credits left! Upgrade your plan to ensure uninterrupted generation.</p>
+                <button onClick={onUpgrade} className="text-xs font-bold text-amber-500 hover:underline">Upgrade Now</button>
+              </div>
+            )}
+
+            {!canGenerate && (
+              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+                <p className="text-sm text-red-500 font-bold mb-2">Monthly Post Limit Reached</p>
+                <p className="text-xs text-red-400/80 mb-4">You've reached your post generation limit for this month. Upgrade to continue crafting high-conversion content.</p>
+                <Button variant="primary" size="sm" onClick={onUpgrade}>View Plans & Upgrade</Button>
+              </div>
+            )}
+
             {chatErr && <p className="text-sm text-red-400 mt-2">{chatErr}</p>}
           </Card>
 

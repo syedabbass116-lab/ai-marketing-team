@@ -35,7 +35,7 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { usage, trialDaysLeft, hasTrialExpired, incrementUsage } = useUsageLimit();
+  const { usage, canGenerate, isNearLimit, incrementUsage } = useUsageLimit();
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
   const [activeView, setActiveView] = useState("home");
   const [content, setContent] = useState<Record<string, string> | null>(null);
@@ -212,6 +212,9 @@ function AppContent() {
             chatInput={genChatInput}
             setChatInput={setGenChatInput}
             usage={usage}
+            canGenerate={canGenerate}
+            isNearLimit={isNearLimit}
+            onUpgrade={() => setActiveView('billing')}
           />
         );
       case "library":
@@ -236,6 +239,9 @@ function AppContent() {
             chatInput={genChatInput}
             setChatInput={setGenChatInput}
             usage={usage}
+            canGenerate={canGenerate}
+            isNearLimit={isNearLimit}
+            onUpgrade={() => setActiveView('billing')}
           />
         );
     }

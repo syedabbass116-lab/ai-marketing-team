@@ -45,7 +45,7 @@ export function useUsageLimit() {
               workspace_id: activeWorkspace.id,
               user_id: user?.id,
               plan_name: 'Free',
-              posts_limit: 10,
+              posts_limit: 15,
               posts_generated: 0
             })
             .select();
@@ -88,13 +88,24 @@ export function useUsageLimit() {
     }
   }
 
-  const canGenerate = (usage?.posts_generated || 0) < (usage?.posts_limit || 10);
-  const postsLeft = Math.max(0, (usage?.posts_limit || 10) - (usage?.posts_generated || 0));
+  const isNearLimit = (usage?.posts_generated || 0) >= 10 && (usage?.posts_generated || 0) < (usage?.posts_limit || 15);
+  const canGenerate = (usage?.posts_generated || 0) < (usage?.posts_limit || 15);
+  const postsLeft = Math.max(0, (usage?.posts_limit || 15) - (usage?.posts_generated || 0));
 
   // Dummy trial values to satisfy App.tsx destructuring
   const trialDaysLeft = 7;
   const hasTrialExpired = false;
 
-  return { usage, loading, canGenerate, postsLeft, incrementUsage, refreshUsage: fetchUsage, trialDaysLeft, hasTrialExpired };
+  return { 
+    usage, 
+    loading, 
+    canGenerate, 
+    isNearLimit, 
+    postsLeft, 
+    incrementUsage, 
+    refreshUsage: fetchUsage, 
+    trialDaysLeft, 
+    hasTrialExpired 
+  };
 }
 

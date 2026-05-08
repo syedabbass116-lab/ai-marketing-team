@@ -281,7 +281,7 @@ export default function Profiles() {
   }
 
   const plan = usage?.plan_name || 'Free';
-  const PROFILE_LIMIT = plan === 'Elite' ? 5 : plan === 'Pro' ? 3 : 1;
+  const PROFILE_LIMIT = plan === 'Agency' ? 5 : plan === 'Pro' ? 3 : 1;
   const isLimitReached = (globalProfiles?.length ?? 0) >= PROFILE_LIMIT;
 
   return (

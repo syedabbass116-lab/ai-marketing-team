@@ -361,25 +361,27 @@ export default function Billing({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           <PlanCard
             name="Starter"
-            price="$1"
+            price="$19"
             period="month"
             postsPerMonth={30}
             platforms={3}
+            current={usage?.plan_name === 'Starter'}
             features={[
               '1 Brand Voice',
               '30 posts per month',
               'Content library storage',
               'Email support',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
+            onUpgrade={(name) => handleRazorpayPayment(name, 19)}
             processingPayment={processingPlan === "Starter"}
           />
           <PlanCard
             name="Pro"
-            price="$1"
+            price="$49"
             period="month"
             postsPerMonth={100}
             platforms={3}
+            current={usage?.plan_name === 'Pro'}
             popular
             features={[
               '3 Brand Voices',
@@ -388,24 +390,25 @@ export default function Billing({
               'Priority support',
               'Export posts',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
+            onUpgrade={(name) => handleRazorpayPayment(name, 49)}
             processingPayment={processingPlan === "Pro"}
           />
           <PlanCard
-            name="Elite"
-            price="$1"
+            name="Agency"
+            price="$129"
             period="month"
-            postsPerMonth={300}
+            postsPerMonth={250}
             platforms={3}
+            current={usage?.plan_name === 'Agency'}
             features={[
               '5 Brand Voices',
-              '300 posts per month',
+              '250 posts per month',
               'Advanced content library',
               'Dedicated support',
               'Custom integrations',
             ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 1)}
-            processingPayment={processingPlan === "Elite"}
+            onUpgrade={(name) => handleRazorpayPayment(name, 129)}
+            processingPayment={processingPlan === "Agency"}
           />
         </div>
 

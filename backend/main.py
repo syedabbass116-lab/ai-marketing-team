@@ -64,10 +64,10 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Subscription Plans
 PLANS = {
-    "Free": {"posts_limit": 10, "voices_limit": 1, "price_paise": 0},
-    "Starter": {"posts_limit": 30, "voices_limit": 1, "price_paise": 1900},
-    "Pro": {"posts_limit": 100, "voices_limit": 3, "price_paise": 4900},
-    "Elite": {"posts_limit": 300, "voices_limit": 5, "price_paise": 9900},
+    "Free": {"posts_limit": 15, "voices_limit": 1, "price_paise": 0},
+    "Starter": {"posts_limit": 30, "voices_limit": 1, "price_paise": 180500},
+    "Pro": {"posts_limit": 100, "voices_limit": 3, "price_paise": 465500},
+    "Agency": {"posts_limit": 250, "voices_limit": 5, "price_paise": 1225500},
 }
 
 
@@ -1143,6 +1143,20 @@ def chat_command(payload: ChatCommandRequest):
     if not msg:
         raise HTTPException(status_code=400, detail="message is required")
 
+    # 1. Fetch Workspace and Verify Usage
+    if payload.workspace_id:
+        usage_res = supabase_db.table("user_usage").select(
+            "*").eq("workspace_id", payload.workspace_id).execute()
+        
+        usage = usage_res.data[0] if usage_res.data else {}
+        posts_generated = usage.get("posts_generated", 0)
+        posts_limit = usage.get("posts_limit", 15)
+
+        if posts_generated >= posts_limit:
+            raise HTTPException(
+                status_code=403, detail="Workspace usage limit reached. Please upgrade your plan.")
+
+
     if re.search(r"schedule\s+this", msg.lower()) and not last_generated_post:
         raise HTTPException(
             status_code=400,
@@ -1352,6 +1366,17 @@ JSON only.""".strip()
             raise HTTPException(
                 status_code=500, detail="Generated content was empty")
         last_generated_post = content.strip()
+        
+        # Increment usage count in the database
+        if payload.workspace_id and supabase_db:
+            try:
+                usage_res = supabase_db.table("user_usage").select("posts_generated").eq("workspace_id", payload.workspace_id).execute()
+                if usage_res.data:
+                    current = usage_res.data[0].get("posts_generated", 0)
+                    supabase_db.table("user_usage").update({"posts_generated": current + 1}).eq("workspace_id", payload.workspace_id).execute()
+            except Exception as inc_err:
+                logger.warning(f"Failed to increment usage: {inc_err}")
+        
         return {"action": "generate_post", "content": last_generated_post}
 
     if action == "schedule_post":
@@ -1588,19 +1613,20 @@ def generate(req: GenerateRequest):
     try:
         # 1. Fetch Workspace and Verify Usage
         ws_res = supabase_db.table("workspaces").select(
-            "*").eq("id", req.workspace_id).single().execute()
+            "*").eq("id", req.workspace_id).execute()
         if not ws_res.data:
             raise HTTPException(status_code=404, detail="Workspace not found")
 
         usage_res = supabase_db.table("user_usage").select(
-            "*").eq("workspace_id", req.workspace_id).single().execute()
-        usage = usage_res.data or {}
+            "*").eq("workspace_id", req.workspace_id).execute()
+        
+        usage = usage_res.data[0] if usage_res.data else {}
         posts_generated = usage.get("posts_generated", 0)
-        posts_limit = usage.get("posts_limit", 10)
+        posts_limit = usage.get("posts_limit", 15)
 
         if posts_generated >= posts_limit:
             raise HTTPException(
-                status_code=403, detail="Workspace usage limit reached.")
+                status_code=403, detail="Workspace usage limit reached. Please upgrade your plan.")
 
         # 2. Fetch Selected Brand Voice
         voice_id = req.voice_id
