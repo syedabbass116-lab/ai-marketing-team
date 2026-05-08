@@ -1148,9 +1148,10 @@ def chat_command(payload: ChatCommandRequest):
         usage_res = supabase_db.table("user_usage").select(
             "*").eq("workspace_id", payload.workspace_id).execute()
         
-        usage = usage_res.data[0] if usage_res.data else {}
-        posts_generated = usage.get("posts_generated", 0)
-        posts_limit = usage.get("posts_limit", 15)
+        usage_data = usage_res.data[0] if usage_res.data else {}
+        posts_generated = usage_data.get("posts_generated", 0)
+        # Use DB value; default Free = 15
+        posts_limit = usage_data.get("posts_limit", 15)
 
         if posts_generated >= posts_limit:
             raise HTTPException(
@@ -1767,10 +1768,11 @@ def verify_payment(request: Request, data: VerifyRequest):
         plan_details = PLANS.get(data.plan_name, PLANS["Free"])
         posts_limit = plan_details["posts_limit"]
 
-        # 1. Update user_usage table
+        # 1. Update user_usage table — reset posts_generated to 0 for fresh monthly count
         supabase_db.table("user_usage").update({
             "plan_name": data.plan_name,
             "posts_limit": posts_limit,
+            "posts_generated": 0,
             "is_pro": True if data.plan_name != "Free" else False
         }).eq("workspace_id", data.workspace_id).execute()
 

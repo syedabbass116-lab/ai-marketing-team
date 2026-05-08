@@ -88,9 +88,24 @@ export function useUsageLimit() {
     }
   }
 
-  const isNearLimit = (usage?.posts_generated || 0) >= 10 && (usage?.posts_generated || 0) < (usage?.posts_limit || 15);
-  const canGenerate = (usage?.posts_generated || 0) < (usage?.posts_limit || 15);
-  const postsLeft = Math.max(0, (usage?.posts_limit || 15) - (usage?.posts_generated || 0));
+  // Plan-aware thresholds
+  const PLAN_THRESHOLDS: Record<string, { warn: number; limit: number }> = {
+    'Free':    { warn: 10,  limit: 15  },
+    'Starter': { warn: 25,  limit: 30  },
+    'Pro':     { warn: 85,  limit: 100 },
+    'Agency':  { warn: 220, limit: 250 },
+  };
+
+  const planName = usage?.plan_name || 'Free';
+  const thresholds = PLAN_THRESHOLDS[planName] || PLAN_THRESHOLDS['Free'];
+
+  // Always use the database value as source of truth, fall back to plan threshold
+  const postsGenerated = usage?.posts_generated || 0;
+  const postsLimit = usage?.posts_limit || thresholds.limit;
+
+  const isNearLimit = postsGenerated >= thresholds.warn && postsGenerated < postsLimit;
+  const canGenerate = postsGenerated < postsLimit;
+  const postsLeft = Math.max(0, postsLimit - postsGenerated);
 
   // Dummy trial values to satisfy App.tsx destructuring
   const trialDaysLeft = 7;
@@ -100,7 +115,7 @@ export function useUsageLimit() {
     usage, 
     loading, 
     canGenerate, 
-    isNearLimit, 
+    isNearLimit,
     postsLeft, 
     incrementUsage, 
     refreshUsage: fetchUsage, 
@@ -108,4 +123,3 @@ export function useUsageLimit() {
     hasTrialExpired 
   };
 }
-
