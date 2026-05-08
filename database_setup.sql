@@ -64,3 +64,26 @@ CREATE POLICY "Users can update usage" ON user_usage
 CREATE INDEX IF NOT EXISTS idx_user_usage_workspace_id ON user_usage(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_brand_settings_workspace_id ON brand_settings(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_content_library_workspace_id ON content_library(workspace_id);
+
+-- RLS Policies for content_library
+CREATE POLICY "Users can view their own content library" ON content_library
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert into their content library" ON content_library
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can delete from their content library" ON content_library
+  FOR DELETE USING (true);
+
+-- RLS Policies for brand_settings
+CREATE POLICY "Users can view brand settings" ON brand_settings
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert brand settings" ON brand_settings
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update brand settings" ON brand_settings
+  FOR UPDATE USING (true);
+
+CREATE POLICY "Users can delete brand settings" ON brand_settings
+  FOR DELETE USING (true);

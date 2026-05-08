@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 export type ContentItem = {
   id: string;
   platform: string;
-  text: string;
+  content: string;
   created_at: string;
   workspace_id?: string;
 };
@@ -56,7 +56,7 @@ export function useLibrary() {
           user_id: user.id, 
           workspace_id: activeWorkspace.id,
           platform, 
-          text 
+          content: text 
         }])
         .select()
         .single();

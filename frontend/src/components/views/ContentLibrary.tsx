@@ -7,8 +7,8 @@ import Input from "../ui/Input";
 type ContentItem = {
   id: string;
   platform: string;
-  text: string;
-  timestamp?: string;
+  content: string;
+  created_at?: string;
 };
 
 type Props = {
@@ -36,7 +36,7 @@ export default function ContentLibrary({ library, onDelete }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = library.filter((item) => {
-    const matchesSearch = item.text
+    const matchesSearch = item.content
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesPlatform = !selectedPlatform || item.platform === selectedPlatform;
@@ -51,8 +51,8 @@ export default function ContentLibrary({ library, onDelete }: Props) {
     {} as Record<string, number>,
   );
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = (content: string) => {
+    navigator.clipboard.writeText(content);
   };
 
   const handleDelete = (id: string) => {
@@ -158,13 +158,13 @@ export default function ContentLibrary({ library, onDelete }: Props) {
                     )}
                   </div>
                   <p className="text-white text-sm leading-relaxed break-words line-clamp-3">
-                    {item.text}
+                    {item.content}
                   </p>
                 </div>
 
                 <div className="flex gap-2 flex-shrink-0">
                   <button
-                    onClick={() => handleCopy(item.text)}
+                    onClick={() => handleCopy(item.content)}
                     className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
                     title="Copy to clipboard"
                   >
