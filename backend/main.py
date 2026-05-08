@@ -81,42 +81,52 @@ app = FastAPI(
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
-# Add security middleware: Trusted Host
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=ALLOWED_ORIGINS + ["localhost", "127.0.0.1"]
-)
+# CORS configuration
+cors_origins = [
+    "https://ghostwrites.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://localhost:5177",
+]
 
-# CORS configuration - stricter for production
-cors_origins = []
-if ENVIRONMENT == "production":
-    # Only allow production domains
-    cors_origins = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip(
-    ) and not origin.startswith("http://localhost")]
-else:
-    # Allow localhost in development
-    cors_origins = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-    ]
-    # Add production if configured
-    if "https://ghostwrites.vercel.app" in ALLOWED_ORIGINS:
-        cors_origins.append("https://ghostwrites.vercel.app")
+if os.getenv("ALLOWED_ORIGINS"):
+    extra = [o.strip() for o in os.getenv("ALLOWED_ORIGINS").split(",") if o.strip()]
+    for e in extra:
+        if e not in cors_origins:
+            cors_origins.append(e)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Restricted HTTP methods
-    allow_headers=["Content-Type", "Authorization"],  # Restricted headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Add security headers middleware
+# Trusted Host Middleware - Must be hostnames, not URLs
+# Render uses various internal IPs and hostnames; using "*" or specific suffixes is safer.
+trusted_hosts = [
+    "localhost", 
+    "127.0.0.1", 
+    "ai-marketing-team-1.onrender.com", 
+    ".onrender.com",
+    "ghostwrites.vercel.app"
+]
 
+# In production, we'll be slightly more restrictive but still allow Render subdomains
+if ENVIRONMENT != "production":
+    trusted_hosts = ["*"]
+else:
+    # Always allow common local and the main production domain
+    pass 
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=trusted_hosts if ENVIRONMENT == "production" else ["*"]
+)
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -124,10 +134,6 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     return response
 
 # Razorpay initialization
@@ -355,18 +361,8 @@ def send_to_zapier(data: dict) -> None:
         logger.error(f"Zapier webhook failed: {str(e)}")
 
 
-@app.get("/")
-def root():
-    return {"status": "ok"}
-
-
 @app.get("/health")
 def health():
-    return {"status": "ok"}
-
-
-@app.get("/health/")
-def health_trailing_slash():
     return {"status": "ok"}
 
 
@@ -483,7 +479,7 @@ class SchedulePostRequest(BaseModel):
 class ChatCommandRequest(BaseModel):
     message: str
     platform: str | None = "linkedin"
-    client_drafts: dict[str, str] | None = None
+    client_drafts: dict | None = None
     brand_settings: dict | None = None
     user_name: str | None = "there"
     voice_id: str | None = None
@@ -1139,6 +1135,9 @@ def chat(payload: ChatRequest):
 def chat_command(payload: ChatCommandRequest):
     """Natural language: generate content or schedule via structured AI JSON + Zapier."""
     global last_generated_post
+    
+    # DEBUG LOGGING
+    logger.info(f"RECEIVED CHAT COMMAND: {payload.dict()}")
 
     msg = payload.message.strip()
     if not msg:
