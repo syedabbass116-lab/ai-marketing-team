@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS brand_settings (
   target_audience TEXT,
   writing_style_linkedin TEXT,
   writing_style_twitter TEXT,
+  writing_style_threads TEXT,
   key_topics TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

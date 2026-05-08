@@ -34,7 +34,8 @@ export function useUsageLimit() {
         .single();
 
       if (error) {
-        if (error.code === "PGRST116") {
+        // Handle both standard PGRST116 (no rows) and 406 (Not Acceptable) which some configs return for empty .single()
+        if (error.code === "PGRST116" || error.status === 406 || (error as any).message?.includes('406')) {
           // NEW USER/WORKSPACE: Initialize with FREE limits
           console.log('useUsageLimit: Initializing FREE plan for workspace', activeWorkspace.id);
           const { data: newData, error: insertError } = await supabase
