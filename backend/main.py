@@ -1155,10 +1155,11 @@ def chat_command(payload: ChatCommandRequest):
         platform = "linkedin"
 
     if payload.brand_settings:
+        # We still store it for backward compatibility, but it will be overridden by voice_id
         conversation_state["brand_settings"] = payload.brand_settings
 
     # Logic: If voice_id is provided, fetch full details from DB
-    brand_settings = payload.brand_settings or {}
+    brand_settings = None
 
     if payload.voice_id:
         try:
@@ -1181,6 +1182,11 @@ def chat_command(payload: ChatCommandRequest):
         except Exception as e:
             logger.error(f"Error fetching voice ID {payload.voice_id}: {e}")
 
+    # Fallback to payload brand_settings if voice_id failed/missing
+    if not brand_settings and payload.brand_settings:
+        brand_settings = payload.brand_settings
+
+    # Final fallback to conversation state (legacy)
     if not brand_settings and conversation_state.get("brand_settings"):
         brand_settings = conversation_state.get("brand_settings")
 

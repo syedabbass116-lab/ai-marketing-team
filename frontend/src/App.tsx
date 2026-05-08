@@ -129,13 +129,6 @@ function AppContent() {
         body.user_name = user.user_metadata?.full_name || user.email?.split('@')[0] || "there";
       }
 
-      const brandSettingsStr = localStorage.getItem("brandSettings");
-      if (brandSettingsStr) {
-        try {
-          body.brand_settings = JSON.parse(brandSettingsStr);
-        } catch (e) {}
-      }
-
       const res = await fetch(`${API_BASE_URL}/chat-command`, {
         method: "POST",
         mode: "cors",
