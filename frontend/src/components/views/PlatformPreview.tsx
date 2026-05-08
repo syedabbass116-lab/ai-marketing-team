@@ -13,7 +13,11 @@ export default function PlatformPreview({ platform, content, brandName, avatarUr
   const { user } = useAuth();
   const userName = brandName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User Name';
   const userHandle = brandName?.toLowerCase().replace(/\s+/g, '') || user?.email?.split('@')[0] || 'username';
-  const avatarUrl = customAvatar || user?.user_metadata?.avatar_url || chefDoodle;
+  
+  // LOGIC: If customAvatar exists and isn't empty, use it. Otherwise, use user avatar.
+  const avatarUrl = (customAvatar && customAvatar.trim() !== "") ? customAvatar : (user?.user_metadata?.avatar_url || chefDoodle);
+  
+  console.log(`[Preview] Rendering ${platform} for "${userName}" with avatar: ${avatarUrl.substring(0, 30)}...`);
 
   const truncateText = (text: string, limit: number) => {
     return text.length > limit ? text.substring(0, limit) + '...' : text;

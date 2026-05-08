@@ -124,12 +124,22 @@ export default function Profiles() {
     try {
       if (editingId) {
         // UPDATE FLOW
+        const updateData = {
+          brand_name: newProfile.brand_name,
+          brand_description: newProfile.brand_description,
+          brand_voice: newProfile.brand_voice,
+          tone: newProfile.tone,
+          target_audience: newProfile.target_audience,
+          writing_style_linkedin: newProfile.writing_style_linkedin,
+          writing_style_twitter: newProfile.writing_style_twitter,
+          writing_style_threads: newProfile.writing_style_threads,
+          key_topics: newProfile.key_topics,
+          logo_url: newProfile.logo_url
+        };
+
         const { error } = await supabase
           .from('brand_settings')
-          .update({
-            ...newProfile,
-            user_id: user.id
-          })
+          .update(updateData)
           .eq('id', editingId);
 
         if (error) throw error;
@@ -188,7 +198,16 @@ export default function Profiles() {
         const { error: profileErr } = await supabase
           .from('brand_settings')
           .insert([{
-            ...newProfile,
+            brand_name: newProfile.brand_name,
+            brand_description: newProfile.brand_description,
+            brand_voice: newProfile.brand_voice,
+            tone: newProfile.tone,
+            target_audience: newProfile.target_audience,
+            writing_style_linkedin: newProfile.writing_style_linkedin,
+            writing_style_twitter: newProfile.writing_style_twitter,
+            writing_style_threads: newProfile.writing_style_threads,
+            key_topics: newProfile.key_topics,
+            logo_url: newProfile.logo_url,
             workspace_id: targetWsId,
             user_id: user.id,
             created_by: user.email,
