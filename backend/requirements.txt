@@ -1,7 +1,10 @@
-fastapi
-uvicorn
-requests
-python-dotenv
-dateparser
-razorpay
-supabase
+fastapi>=0.104.1
+uvicorn>=0.24.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+dateparser>=1.1.8
+razorpay>=1.4.1
+supabase>=2.0.0
+pyjwt>=2.8.1
+slowapi>=0.1.9
+python-multipart>=0.0.6

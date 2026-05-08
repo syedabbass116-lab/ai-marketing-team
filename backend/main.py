@@ -1,13 +1,25 @@
+from services.pixazo import generate_image_url
+from services.llm import generate_text, complete_chat
+from agents.content_agent import (
+    linkedin_post,
+    twitter_thread,
+    threads_post
+)
+from agents.repurpose_agent import repurpose
 import os
-print("RUNNING MAIN BACKEND FILE")
 import json
 import re
 import importlib
+import logging
 from datetime import datetime
 import requests
-from pydantic import BaseModel, Field
-from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import razorpay
 import hmac
 import hashlib
@@ -16,10 +28,29 @@ from supabase import create_client, Client
 
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Supabase initialization
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase_db: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
+# Validate critical environment variables
+if not all([SUPABASE_URL, SUPABASE_KEY]):
+    logger.warning("Supabase credentials not configured")
+
+supabase_db: Client = create_client(
+    SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+# Get allowed origin from environment (for production)
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Subscription Plans
 PLANS = {
@@ -30,49 +61,87 @@ PLANS = {
 }
 
 
-from agents.repurpose_agent import repurpose
-from agents.content_agent import (
-    linkedin_post,
-    twitter_thread,
-    threads_post
+app = FastAPI(
+    title="AI Marketing Agent API",
+    description="Secure API for content generation",
+    version="1.0.0"
 )
-from services.llm import generate_text, complete_chat
-from services.pixazo import generate_image_url
 
-app = FastAPI()
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
 
-# CORS configuration
+# Add security middleware: Trusted Host
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://ghostwrites.vercel.app",
+    TrustedHostMiddleware,
+    allowed_hosts=ALLOWED_ORIGINS + ["localhost", "127.0.0.1"]
+)
+
+# CORS configuration - stricter for production
+cors_origins = []
+if ENVIRONMENT == "production":
+    # Only allow production domains
+    cors_origins = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip(
+    ) and not origin.startswith("http://localhost")]
+else:
+    # Allow localhost in development
+    cors_origins = [
         "http://localhost:5173",
+        "http://localhost:3000",
         "http://localhost:5174",
         "http://localhost:5175",
         "http://localhost:5176",
         "http://localhost:5177",
-    ],
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    ]
+    # Add production if configured
+    if "https://ghostwrites.vercel.app" in ALLOWED_ORIGINS:
+        cors_origins.append("https://ghostwrites.vercel.app")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Restricted HTTP methods
+    allow_headers=["Content-Type", "Authorization"],  # Restricted headers
 )
+
+# Add security headers middleware
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    return response
 
 # Razorpay initialization
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
-    print("WARNING: Razorpay LIVE keys are missing from environment variables!")
+    logger.warning(
+        "Razorpay credentials not configured - payment features disabled")
 
 client = None
 if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
     client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
-@app.get("/test-cors")
-def test_cors():
-    return {"message": "CORS working"}
+# Health check endpoints (rate limited)
+@app.get("/health", tags=["health"])
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/health/", tags=["health"])
+def health_trailing_slash():
+    return {"status": "ok"}
 
 
 # Last generated post text (for "schedule this" commands). In-memory only.
@@ -302,11 +371,12 @@ def send_to_zapier(data: dict) -> None:
             status_code=500,
             detail="ZAPIER_WEBHOOK_URL is not configured",
         )
-    response = requests.post(webhook_url, json=data, timeout=15)
-    response.raise_for_status()
-
-
-print("PORT ENV:", os.getenv("PORT"))
+    try:
+        response = requests.post(webhook_url, json=data, timeout=15)
+        response.raise_for_status()
+        logger.info("Successfully sent payload to Zapier")
+    except requests.RequestException as e:
+        logger.error(f"Zapier webhook failed: {str(e)}")
 
 
 @app.get("/")
@@ -332,6 +402,27 @@ class OrderRequest(BaseModel):
     user_id: str
     workspace_id: str
 
+    @validator('amount')
+    def amount_must_be_positive(cls, v):
+        if v < 100:
+            raise ValueError('Amount must be at least 100 paise')
+        if v > 100000:
+            raise ValueError('Amount exceeds maximum limit')
+        return v
+
+    @validator('currency')
+    def currency_must_be_valid(cls, v):
+        if v not in ["INR", "USD", "EUR"]:
+            raise ValueError('Invalid currency')
+        return v
+
+    @validator('user_id', 'workspace_id')
+    def ids_must_not_be_empty(cls, v):
+        if not v or not isinstance(v, str) or len(v) > 100:
+            raise ValueError('Invalid ID format')
+        return v
+
+
 class VerifyRequest(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
@@ -339,6 +430,19 @@ class VerifyRequest(BaseModel):
     user_id: str
     workspace_id: str
     plan_name: str
+
+    @validator('razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature')
+    def payment_fields_must_not_be_empty(cls, v):
+        if not v or not isinstance(v, str) or len(v) > 200:
+            raise ValueError('Invalid payment field')
+        return v
+
+    @validator('plan_name')
+    def plan_name_must_be_valid(cls, v):
+        if v not in PLANS.keys():
+            raise ValueError('Invalid plan name')
+        return v
+
 
 class GenerateRequest(BaseModel):
     user_id: str
@@ -348,15 +452,46 @@ class GenerateRequest(BaseModel):
     platform: str = "all"
     count: int = 1
 
+    @validator('topic')
+    def topic_must_not_be_empty(cls, v):
+        if not v or len(v) > 5000:
+            raise ValueError('Invalid topic')
+        return v.strip()
+
+    @validator('count')
+    def count_must_be_valid(cls, v):
+        if v < 1 or v > 10:
+            raise ValueError('Count must be between 1 and 10')
+        return v
+
+
 class WorkspaceCreate(BaseModel):
     name: str
     owner_id: str
+
+    @validator('name', 'owner_id')
+    def fields_must_not_be_empty(cls, v):
+        if not v or not isinstance(v, str) or len(v) > 255:
+            raise ValueError('Invalid field')
+        return v.strip()
+
 
 class UserInvite(BaseModel):
     workspace_id: str
     email: str
     role: str = "member"
 
+    @validator('email')
+    def email_must_be_valid(cls, v):
+        if not v or "@" not in v or len(v) > 255:
+            raise ValueError('Invalid email')
+        return v.lower().strip()
+
+    @validator('role')
+    def role_must_be_valid(cls, v):
+        if v not in ["member", "admin", "owner"]:
+            raise ValueError('Invalid role')
+        return v
 
 
 class RepurposeRequest(BaseModel):
@@ -1038,11 +1173,12 @@ def chat_command(payload: ChatCommandRequest):
 
     # Logic: If voice_id is provided, fetch full details from DB
     brand_settings = payload.brand_settings or {}
-    
+
     if payload.voice_id:
         try:
-            print(f"Backend: Fetching voice details for ID {payload.voice_id}")
-            voice_res = supabase_db.table("brand_settings").select("*").eq("id", payload.voice_id).single().execute()
+            logger.debug(f"Fetching voice details for ID {payload.voice_id}")
+            voice_res = supabase_db.table("brand_settings").select(
+                "*").eq("id", payload.voice_id).single().execute()
             if voice_res.data:
                 db_voice = voice_res.data
                 brand_settings = {
@@ -1057,10 +1193,10 @@ def chat_command(payload: ChatCommandRequest):
                     "keyTopics": db_voice.get("key_topics")
                 }
         except Exception as e:
-            print(f"Backend: Error fetching voice ID {payload.voice_id}: {e}")
+            logger.error(f"Error fetching voice ID {payload.voice_id}: {e}")
 
     if not brand_settings and conversation_state.get("brand_settings"):
-         brand_settings = conversation_state.get("brand_settings")
+        brand_settings = conversation_state.get("brand_settings")
 
     brand_prompt = ""
     if isinstance(brand_settings, dict) and brand_settings:
@@ -1071,39 +1207,47 @@ def chat_command(payload: ChatCommandRequest):
         if brand_settings.get("brandName"):
             lines.append(f"[IDENTITY NAME]: {brand_settings['brandName']}")
         if brand_settings.get("brandDescription"):
-            lines.append(f"[MISSION/DESCRIPTION]: {brand_settings['brandDescription']}")
+            lines.append(
+                f"[MISSION/DESCRIPTION]: {brand_settings['brandDescription']}")
         if brand_settings.get("brandVoice"):
             lines.append(f"[CORE VOICE]: {brand_settings['brandVoice']}")
         if brand_settings.get("tone"):
             lines.append(f"[TONE/EMOTION]: {brand_settings['tone']}")
         if brand_settings.get("targetAudience"):
-            lines.append(f"[TARGET AUDIENCE]: {brand_settings['targetAudience']} (Adjust vocabulary and reading level to match this group)")
-        
+            lines.append(
+                f"[TARGET AUDIENCE]: {brand_settings['targetAudience']} (Adjust vocabulary and reading level to match this group)")
+
         # Platform-Specific Style Selection
         platform_style = ""
         if platform == "linkedin":
             platform_style = brand_settings.get("writingStyleLinkedin")
         elif platform in {"twitter", "threads"}:
-            platform_style = brand_settings.get("writingStyleTwitter") or brand_settings.get("writingStyleThreads")
-        
+            platform_style = brand_settings.get(
+                "writingStyleTwitter") or brand_settings.get("writingStyleThreads")
+
         if platform_style:
             lines.append(f"--- {platform.upper()} WRITING SAMPLES ---")
-            lines.append("ANALYZE AND MIMIC THE STRUCTURE, PHRASING, AND FORMATTING OF THESE EXAMPLES:")
+            lines.append(
+                "ANALYZE AND MIMIC THE STRUCTURE, PHRASING, AND FORMATTING OF THESE EXAMPLES:")
             lines.append(platform_style)
         elif brand_settings.get("writingStyle"):
             lines.append("--- GENERAL WRITING STYLE ---")
             lines.append(brand_settings["writingStyle"])
-            
+
         if brand_settings.get("keyTopics"):
-            lines.append(f"[CORE TOPICS]: {brand_settings['keyTopics']} (Stay strictly within these themes)")
+            lines.append(
+                f"[CORE TOPICS]: {brand_settings['keyTopics']} (Stay strictly within these themes)")
 
         lines.append("--- INSTRUCTIONS ---")
-        lines.append(f"1. Write this post as if you are the {brand_settings.get('brandName', 'Brand')} persona.")
-        lines.append("2. Match the exact pacing and line-break frequency found in the samples.")
-        lines.append("3. If the samples use emojis, use them. If they are minimal, keep it minimal.")
-        lines.append("4. Ensure the content provides value specifically for the [TARGET AUDIENCE].")
+        lines.append(
+            f"1. Write this post as if you are the {brand_settings.get('brandName', 'Brand')} persona.")
+        lines.append(
+            "2. Match the exact pacing and line-break frequency found in the samples.")
+        lines.append(
+            "3. If the samples use emojis, use them. If they are minimal, keep it minimal.")
+        lines.append(
+            "4. Ensure the content provides value specifically for the [TARGET AUDIENCE].")
         brand_prompt = "\n".join(lines) + "\n\n"
-
 
     requested_posts = 1
     post_count_match = re.search(
@@ -1462,29 +1606,36 @@ def generate(req: GenerateRequest):
 
     try:
         # 1. Fetch Workspace and Verify Usage
-        ws_res = supabase_db.table("workspaces").select("*").eq("id", req.workspace_id).single().execute()
+        ws_res = supabase_db.table("workspaces").select(
+            "*").eq("id", req.workspace_id).single().execute()
         if not ws_res.data:
             raise HTTPException(status_code=404, detail="Workspace not found")
-        
-        usage_res = supabase_db.table("user_usage").select("*").eq("workspace_id", req.workspace_id).single().execute()
+
+        usage_res = supabase_db.table("user_usage").select(
+            "*").eq("workspace_id", req.workspace_id).single().execute()
         usage = usage_res.data or {}
         posts_generated = usage.get("posts_generated", 0)
         posts_limit = usage.get("posts_limit", 10)
 
         if posts_generated >= posts_limit:
-            raise HTTPException(status_code=403, detail="Workspace usage limit reached.")
+            raise HTTPException(
+                status_code=403, detail="Workspace usage limit reached.")
 
         # 2. Fetch Selected Brand Voice
         voice_id = req.voice_id
         if voice_id:
-            voice_res = supabase_db.table("brand_settings").select("*").eq("id", voice_id).single().execute()
+            voice_res = supabase_db.table("brand_settings").select(
+                "*").eq("id", voice_id).single().execute()
         else:
-            voice_res = supabase_db.table("brand_settings").select("*").eq("workspace_id", req.workspace_id).eq("is_active", True).execute()
+            voice_res = supabase_db.table("brand_settings").select(
+                "*").eq("workspace_id", req.workspace_id).eq("is_active", True).execute()
             if not voice_res.data:
-                voice_res = supabase_db.table("brand_settings").select("*").eq("workspace_id", req.workspace_id).limit(1).execute()
-        
-        brand_voice = voice_res.data if isinstance(voice_res.data, dict) else (voice_res.data[0] if voice_res.data else {})
-        
+                voice_res = supabase_db.table("brand_settings").select(
+                    "*").eq("workspace_id", req.workspace_id).limit(1).execute()
+
+        brand_voice = voice_res.data if isinstance(voice_res.data, dict) else (
+            voice_res.data[0] if voice_res.data else {})
+
         brand_name = brand_voice.get("brand_name", "Default")
         tone = brand_voice.get("tone", "Professional")
         audience = brand_voice.get("target_audience", "General")
@@ -1514,7 +1665,7 @@ Threads: Conversational, engaging, short lines, end with question
         # 4. Generate Content
         count = max(1, min(req.count, 10))
         prompt_suffix = f"\nUSER REQUEST: Write content about: {req.topic}\nPlatform: {req.platform}\nOUTPUT: Return ONLY the post text."
-        
+
         if req.platform == "all":
             result = {
                 "linkedin": generate_text(base_prompt + "\nFormat: LinkedIn post" + prompt_suffix),
@@ -1522,7 +1673,8 @@ Threads: Conversational, engaging, short lines, end with question
                 "threads": generate_text(base_prompt + "\nFormat: Threads post" + prompt_suffix),
             }
         else:
-            result = {req.platform: generate_text(base_prompt + f"\nFormat: {req.platform} content" + prompt_suffix)}
+            result = {req.platform: generate_text(
+                base_prompt + f"\nFormat: {req.platform} content" + prompt_suffix)}
 
         # 5. Increment Workspace Usage
         supabase_db.table("user_usage").update({
@@ -1539,24 +1691,22 @@ Threads: Conversational, engaging, short lines, end with question
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Generation Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Generation Error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Content generation failed")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
 
 @app.post("/api/create-order")
-def create_order(data: OrderRequest):
+@limiter.limit("5/minute")
+def create_order(request: Request, data: OrderRequest):
     if not client:
-        raise HTTPException(status_code=500, detail="Razorpay client not configured")
-    
+        raise HTTPException(
+            status_code=500, detail="Razorpay client not configured")
+
     if data.amount < 100:
-        raise HTTPException(status_code=400, detail="Amount must be at least 100 paise")
-    
+        raise HTTPException(
+            status_code=400, detail="Amount must be at least 100 paise")
+
     try:
         order = client.order.create({
             "amount": data.amount,
@@ -1565,24 +1715,27 @@ def create_order(data: OrderRequest):
             "payment_capture": 1
         })
 
-        print(f"Razorpay Order Created: {order}")
+        logger.info(f"Order created successfully: {order['id']}")
         return {
             "order_id": order["id"],
             "amount": order["amount"],
             "currency": order["currency"]
         }
     except Exception as e:
-        print(f"Razorpay Order Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Razorpay Order Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create order")
+
 
 @app.post("/api/verify-payment")
-def verify_payment(data: VerifyRequest):
+@limiter.limit("5/minute")
+def verify_payment(request: Request, data: VerifyRequest):
     if not RAZORPAY_KEY_SECRET:
-        raise HTTPException(status_code=500, detail="Razorpay secret not configured")
-        
+        raise HTTPException(
+            status_code=500, detail="Razorpay secret not configured")
+
     if not all([data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    
+
     # 1. Verify Signature
     body = f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
     expected = hmac.new(
@@ -1590,10 +1743,13 @@ def verify_payment(data: VerifyRequest):
         body.encode(),
         hashlib.sha256
     ).hexdigest()
-    
+
     if expected != data.razorpay_signature:
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
-    
+        logger.warning(
+            f"Invalid payment signature for order {data.razorpay_order_id}")
+        raise HTTPException(
+            status_code=400, detail="Invalid payment signature")
+
     # 2. Update Subscription and Billing History in Supabase
     if not supabase_db:
         return {"success": True, "payment_id": data.razorpay_payment_id, "note": "DB not configured"}
@@ -1601,40 +1757,44 @@ def verify_payment(data: VerifyRequest):
     try:
         plan_details = PLANS.get(data.plan_name, PLANS["Free"])
         posts_limit = plan_details["posts_limit"]
-        
+
         # 1. Update user_usage table
         supabase_db.table("user_usage").update({
             "plan_name": data.plan_name,
             "posts_limit": posts_limit,
             "is_pro": True if data.plan_name != "Free" else False
         }).eq("workspace_id", data.workspace_id).execute()
-        
+
         # 2. Insert into billing_history
         # Note: We use amount from request if possible, or from PLANS
         billing_record = {
             "user_id": data.user_id,
             "plan_name": data.plan_name,
-            "amount": f"₹{plan_details['price_paise']/100}", # Using INR as per backend config
+            # Using INR as per backend config
+            "amount": f"₹{plan_details['price_paise']/100}",
             "status": "Paid",
             "date": datetime.utcnow().isoformat()
         }
         supabase_db.table("billing_history").insert(billing_record).execute()
-        
-        print(f"Subscription and Billing updated for workspace {data.workspace_id} to {data.plan_name}")
-        
+
+        logger.info(
+            f"Subscription and Billing updated for workspace {data.workspace_id} to {data.plan_name}")
+
         return {
-            "success": True, 
+            "success": True,
             "payment_id": data.razorpay_payment_id,
             "plan": data.plan_name,
             "posts_limit": posts_limit
         }
     except Exception as e:
-        print(f"Error updating subscription/billing: {str(e)}")
-        # We don't raise 500 here if the payment was already successful, 
+        logger.error(f"Error updating subscription/billing: {str(e)}")
+        # We don't raise 500 here if the payment was already successful,
         # but we should ideally log it for manual intervention.
         # For now, return success: False with error detail.
-        return {"success": False, "error": str(e), "payment_id": data.razorpay_payment_id}
+        return {"success": False, "error": "Subscription update failed", "payment_id": data.razorpay_payment_id}
 # Workspace Management
+
+
 @app.post("/workspaces/create")
 def create_workspace(req: WorkspaceCreate):
     try:
@@ -1644,39 +1804,43 @@ def create_workspace(req: WorkspaceCreate):
             "owner_id": req.owner_id
         }).execute()
         workspace = ws_res.data[0]
-        
+
         # Add owner as member
         supabase_db.table("workspace_members").insert({
             "workspace_id": workspace["id"],
             "user_id": req.owner_id,
             "role": "owner"
         }).execute()
-        
+
         # Initialize usage
         supabase_db.table("user_usage").insert({
             "workspace_id": workspace["id"],
-            "clerk_user_id": req.owner_id, # Link for legacy support
+            "clerk_user_id": req.owner_id,  # Link for legacy support
             "plan_name": "Free",
             "posts_limit": 10
         }).execute()
-        
+
         return workspace
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/workspaces/list/{user_id}")
 def list_workspaces(user_id: str):
     try:
-        members_res = supabase_db.table("workspace_members").select("workspace_id, role").eq("user_id", user_id).execute()
+        members_res = supabase_db.table("workspace_members").select(
+            "workspace_id, role").eq("user_id", user_id).execute()
         ws_ids = [m["workspace_id"] for m in members_res.data]
-        
+
         if not ws_ids:
             return []
-            
-        workspaces_res = supabase_db.table("workspaces").select("*").in_("id", ws_ids).execute()
+
+        workspaces_res = supabase_db.table("workspaces").select(
+            "*").in_("id", ws_ids).execute()
         return workspaces_res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/workspaces/invite")
 def invite_user(req: UserInvite):
@@ -1685,12 +1849,9 @@ def invite_user(req: UserInvite):
         # In a real app, you'd send an email invite. Here we add directly for simplicity.
         res = supabase_db.table("workspace_members").insert({
             "workspace_id": req.workspace_id,
-            "user_id": req.email, # Using email as placeholder for ID until they join
+            "user_id": req.email,  # Using email as placeholder for ID until they join
             "role": req.role
         }).execute()
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
