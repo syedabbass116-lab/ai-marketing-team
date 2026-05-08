@@ -31,6 +31,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const fetchWorkspaces = async () => {
     if (!user?.id) {
       console.log('WorkspaceContext: No user ID yet, skipping fetch.');
+      setLoading(false);
       return;
     }
     setLoading(true);

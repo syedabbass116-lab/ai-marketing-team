@@ -3,6 +3,8 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface ContentItem {
   id: string;
@@ -107,6 +109,8 @@ export default function Billing({
   usage,
   onContactClick
 }: BillingProps) {
+  const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
   const handleRazorpayPayment = async (planName: string, amount: number) => {
@@ -128,8 +132,8 @@ export default function Billing({
         body: JSON.stringify({
           amount: inrAmount * 100, // Convert to paise
           currency: 'INR',
-          user_id: usage?.user_id || '',
-          workspace_id: usage?.workspace_id || '',
+          user_id: user?.id || usage?.user_id || '',
+          workspace_id: activeWorkspace?.id || usage?.workspace_id || '',
           receipt: `${planName.toLowerCase()}_${Date.now()}`
         })
       });
@@ -174,8 +178,8 @@ export default function Billing({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                user_id: usage?.user_id || '',
-                workspace_id: usage?.workspace_id || '',
+                user_id: user?.id || usage?.user_id || '',
+                workspace_id: activeWorkspace?.id || usage?.workspace_id || '',
                 plan_name: planName
               })
             });
@@ -193,7 +197,7 @@ export default function Billing({
 
             // Record in billing history
             await supabase.from('billing_history').insert({
-              user_id: usage?.user_id,
+              user_id: user?.id || usage?.user_id,
               plan_name: planName,
               amount: `$${amount}`,
               status: 'Paid',

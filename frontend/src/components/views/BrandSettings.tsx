@@ -6,6 +6,7 @@ import Input from "../ui/Input";
 import Textarea from "../ui/Textarea";
 import Select from "../ui/Select";
 import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 import { supabase } from "../../lib/supabase";
 
 const voiceOptions = [
@@ -25,6 +26,7 @@ const toneOptions = [
 
 export default function BrandSettings() {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [brandName, setBrandName] = useState("");
   const [brandDescription, setBrandDescription] = useState("");
   const [brandVoice, setBrandVoice] = useState("professional");
@@ -41,13 +43,22 @@ export default function BrandSettings() {
 
   useEffect(() => {
     async function loadSettings() {
-      if (!user) return;
+      if (!user || !activeWorkspace?.id) {
+        if (!activeWorkspace?.id && user) {
+           // still loading workspace
+        } else {
+           setIsLoading(false);
+        }
+        return;
+      }
       
+      setIsLoading(true);
       try {
+        console.log('BrandSettings: Loading for workspace', activeWorkspace.id);
         const { data, error } = await supabase
           .from('brand_settings')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('workspace_id', activeWorkspace.id)
           .single();
 
         if (error && error.code !== 'PGRST116') throw error;
@@ -75,6 +86,17 @@ export default function BrandSettings() {
             writingStyleThreads: data.writing_style_threads,
             keyTopics: data.key_topics
           }));
+        } else {
+          // Reset fields if no settings for this workspace
+          setBrandName("");
+          setBrandDescription("");
+          setBrandVoice("professional");
+          setTone("friendly");
+          setTargetAudience("");
+          setWritingStyleLinkedin("");
+          setWritingStyleTwitter("");
+          setWritingStyleThreads("");
+          setKeyTopics("");
         }
       } catch (err) {
         console.error("Error loading brand settings:", err);
@@ -84,7 +106,7 @@ export default function BrandSettings() {
     }
 
     loadSettings();
-  }, [user]);
+  }, [user, activeWorkspace?.id]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -92,6 +114,7 @@ export default function BrandSettings() {
     setSaveSuccess(false);
 
     const settings = {
+      workspace_id: activeWorkspace.id,
       user_id: user.id,
       brand_name: brandName,
       brand_description: brandDescription,
