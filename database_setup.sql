@@ -1,8 +1,29 @@
--- Create user_usage table
+-- 1. Create workspaces table
+CREATE TABLE IF NOT EXISTS workspaces (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  owner_id UUID NOT NULL, -- references auth.users(id)
+  plan TEXT DEFAULT 'Free',
+  logo_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. Create workspace_members table
+CREATE TABLE IF NOT EXISTS workspace_members (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL, -- references auth.users(id)
+  role TEXT DEFAULT 'member', -- owner, admin, member
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(workspace_id, user_id)
+);
+
+-- 3. Create user_usage table
 CREATE TABLE IF NOT EXISTS user_usage (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL,
+  user_id UUID NOT NULL,
   plan_name TEXT DEFAULT 'Free',
   posts_limit INTEGER DEFAULT 10,
   posts_generated INTEGER DEFAULT 0,
@@ -12,11 +33,11 @@ CREATE TABLE IF NOT EXISTS user_usage (
   UNIQUE(workspace_id)
 );
 
--- Create brand_settings table
+-- 4. Create brand_settings table
 CREATE TABLE IF NOT EXISTS brand_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL,
+  user_id UUID NOT NULL,
   brand_name TEXT,
   brand_description TEXT,
   brand_voice TEXT,
@@ -26,64 +47,50 @@ CREATE TABLE IF NOT EXISTS brand_settings (
   writing_style_twitter TEXT,
   writing_style_threads TEXT,
   key_topics TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(workspace_id)
 );
 
--- Create content_library table
+-- 5. Create content_library table
 CREATE TABLE IF NOT EXISTS content_library (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL,
+  user_id UUID NOT NULL,
   platform TEXT NOT NULL,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS)
+-- 6. Create billing_history table
+CREATE TABLE IF NOT EXISTS billing_history (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  plan_name TEXT NOT NULL,
+  amount TEXT NOT NULL,
+  status TEXT DEFAULT 'Paid',
+  date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE brand_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_library ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billing_history ENABLE ROW LEVEL SECURITY;
 
--- Note: The following policies assume you have a 'workspace_members' table 
--- or similar to check if a user belongs to a workspace.
--- If not, you might want simpler policies based on user_id for now.
-
-CREATE POLICY "Users can view usage for their workspaces" ON user_usage
-  FOR SELECT USING (true); -- Adjusted for simplicity if workspace-based
-
-CREATE POLICY "Users can insert usage" ON user_usage
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Users can update usage" ON user_usage
-  FOR UPDATE USING (true);
+-- Basic Policies (Simplified - allow all authenticated users for now)
+CREATE POLICY "Allow all for authenticated" ON workspaces FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON workspace_members FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON user_usage FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON brand_settings FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON content_library FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated" ON billing_history FOR ALL USING (true);
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_user_usage_workspace_id ON user_usage(workspace_id);
-CREATE INDEX IF NOT EXISTS idx_brand_settings_workspace_id ON brand_settings(workspace_id);
-CREATE INDEX IF NOT EXISTS idx_content_library_workspace_id ON content_library(workspace_id);
-
--- RLS Policies for content_library
-CREATE POLICY "Users can view their own content library" ON content_library
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert into their content library" ON content_library
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Users can delete from their content library" ON content_library
-  FOR DELETE USING (true);
-
--- RLS Policies for brand_settings
-CREATE POLICY "Users can view brand settings" ON brand_settings
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert brand settings" ON brand_settings
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Users can update brand settings" ON brand_settings
-  FOR UPDATE USING (true);
-
-CREATE POLICY "Users can delete brand settings" ON brand_settings
-  FOR DELETE USING (true);
+CREATE INDEX IF NOT EXISTS idx_wm_user_id ON workspace_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_bs_ws_id ON brand_settings(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_cl_ws_id ON content_library(workspace_id);

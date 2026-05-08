@@ -53,7 +53,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const wsIds = memberData?.map(m => m.workspace_id) || [];
       
       if (wsIds.length === 0) {
-        console.log('WorkspaceContext: No workspaces found, creating default...');
+        console.log('WorkspaceContext: No memberships found, creating default...');
         const workspaceName = user.email ? `${user.email.split('@')[0]}'s Workspace` : 'My Workspace';
         
         const { data: newWs, error: createError } = await supabase
@@ -94,6 +94,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
         console.log('WorkspaceContext: Workspaces loaded:', wsData?.length);
         
+        if (!wsData || wsData.length === 0) {
+           console.log('WorkspaceContext: Member records found but no workspaces. Cleaning up and creating fresh start.');
+           // If we have orphans, we should ideally clean them up, but for now just create a new one
+           const workspaceName = user.email ? `${user.email.split('@')[0]}'s Workspace` : 'My Workspace';
+           const { data: newWs } = await supabase
+            .from('workspaces')
+            .insert([{ name: workspaceName, owner_id: user.id }])
+            .select()
+            .single();
+           
+           if (newWs) {
+              await supabase.from('workspace_members').insert([{ workspace_id: newWs.id, user_id: user.id, role: 'owner' }]);
+              setWorkspaces([newWs]);
+              setActiveWorkspace(newWs);
+           }
+           return;
+        }
+
         // 2. Fetch profile counts for these workspaces
         const { data: profilesData } = await supabase
           .from('brand_settings')
