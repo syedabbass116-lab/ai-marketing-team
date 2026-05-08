@@ -517,8 +517,12 @@ export default function Profiles() {
               {/* Card Header */}
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${profile.is_active ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20' : 'bg-white/5'}`}>
-                    <User className={`w-6 h-6 ${profile.is_active ? 'text-white' : 'text-white/40'}`} />
+                  <div className={`w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center ${profile.is_active ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20' : 'bg-white/5'}`}>
+                    {profile.logo_url ? (
+                      <img src={profile.logo_url} alt={profile.brand_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className={`w-6 h-6 ${profile.is_active ? 'text-white' : 'text-white/40'}`} />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/60 transition-all">
