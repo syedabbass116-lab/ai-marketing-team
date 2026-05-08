@@ -61,7 +61,7 @@ export default function Home({ onViewChange }: HomeProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000] to-[#000] pointer-events-none" />
 
       {/* Body (centered column) */}
-      <main className="relative z-10 flex flex-col items-center justify-center pt-28 px-4 animate-in fade-in duration-700 slide-in-from-bottom-4">
+      <main className="relative z-10 flex flex-col items-center justify-start pt-12 md:pt-28 px-4 animate-in fade-in duration-700 slide-in-from-bottom-4">
         <div className="text-center space-y-5 mb-14">
           <div className="relative inline-block mb-2">
             <div className="absolute inset-0 bg-white blur-[70px] opacity-[0.07] rounded-full" />
