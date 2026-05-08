@@ -59,7 +59,7 @@ supabase_db: Client = create_client(
 
 # Get allowed origin from environment (for production)
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+    "ALLOWED_ORIGINS", "https://ghostwrites.vercel.app,http://localhost:5173,http://localhost:3000").split(",")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Subscription Plans
