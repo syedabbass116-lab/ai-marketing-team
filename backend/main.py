@@ -120,6 +120,8 @@ trusted_hosts = [
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=trusted_hosts
+)
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -137,35 +139,35 @@ if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
     logger.warning(
         "Razorpay credentials not configured - payment features disabled")
 
-client = None
+client=None
 if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
-    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    client=razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
 # Health check endpoints (rate limited)
-@app.get("/health", tags=["health"])
+@ app.get("/health", tags=["health"])
 def health():
     return {"status": "ok"}
 
 
-@app.get("/health/", tags=["health"])
+@ app.get("/health/", tags=["health"])
 def health_trailing_slash():
     return {"status": "ok"}
 
 
 # Handle OPTIONS requests for CORS preflight
-@app.options("/{full_path:path}")
+@ app.options("/{full_path:path}")
 async def preflight_handler(full_path: str):
     return {"message": "OK"}
 
 
 # Last generated post text (for "schedule this" commands). In-memory only.
-last_generated_post: str | None = None
-ALLOWED_PLATFORMS = frozenset(
+last_generated_post: str | None=None
+ALLOWED_PLATFORMS=frozenset(
     {"linkedin", "twitter", "threads"}
 )
 
-conversation_state = {
+conversation_state={
     "step": "start",  # start | idea | approval | awaiting_schedule | done
     "content": "",
     "idea": "",
@@ -178,7 +180,7 @@ conversation_state = {
 def _normalize_platform(raw: str | None) -> str | None:
     if not raw or not isinstance(raw, str):
         return None
-    p = raw.strip().lower()
+    p=raw.strip().lower()
     return p if p in ALLOWED_PLATFORMS else None
 
 
@@ -191,7 +193,7 @@ def _platform_label(p: str) -> str:
 
 
 def _build_chat_system(platform: str) -> str:
-    label = _platform_label(platform)
+    label=_platform_label(platform)
 
     return f"""You are an expert social media copywriter who has studied viral content across LinkedIn, Twitter/X, and Threads.
 The user is focused on **{label}** ({platform}).
@@ -214,27 +216,27 @@ PLATFORM SPECIFIC RULES:
 - For Threads: Conversational tone, feels like a thought shared with friends, can be slightly longer and raw.
 
 FORMATTING:
-- SINGLE PLATFORM: put the full post in "post_draft" as plain text. 
+- SINGLE PLATFORM: put the full post in "post_draft" as plain text.
 - MULTI-PLATFORM: If they ask for multiple platforms, use "post_drafts" (JSON object with platform keys).
 - ALWAYS provide 3 alternative hook options at the end of your "post_draft" or within each platform's draft.
 
 Respond ONLY with valid JSON."""
 
 
-def _trim_chat_history(history: list, max_messages: int = 24) -> list:
+def _trim_chat_history(history: list, max_messages: int=24) -> list:
     if len(history) <= max_messages:
         return history
     return history[-max_messages:]
 
 
 def _parse_assistant_json(raw: str) -> dict | None:
-    raw = (raw or "").strip()
+    raw=(raw or "").strip()
     if not raw:
         return None
     try:
         return json.loads(raw)
     except Exception:
-        m = re.search(r"\{[\s\S]*\}", raw)
+        m=re.search(r"\{[\s\S]*\}", raw)
         if not m:
             return None
         try:
@@ -244,11 +246,11 @@ def _parse_assistant_json(raw: str) -> dict | None:
 
 
 def _merged_drafts_for_client() -> dict:
-    out = dict(conversation_state.get("drafts") or {})
-    p = conversation_state.get("platform") or "linkedin"
-    c = (conversation_state.get("content") or "").strip()
+    out=dict(conversation_state.get("drafts") or {})
+    p=conversation_state.get("platform") or "linkedin"
+    c=(conversation_state.get("content") or "").strip()
     if c:
-        out[p] = conversation_state["content"]
+        out[p]=conversation_state["content"]
     return out
 
 
@@ -256,40 +258,40 @@ def _apply_client_drafts(raw: dict[str, str] | None) -> None:
     """Merge latest post drafts from the client before platform switch or chat."""
     if not raw:
         return
-    drafts = conversation_state.setdefault("drafts", {})
+    drafts=conversation_state.setdefault("drafts", {})
     for k, v in raw.items():
-        pk = _normalize_platform(str(k))
+        pk=_normalize_platform(str(k))
         if pk and isinstance(v, str):
-            drafts[pk] = v
-    cur_p = conversation_state.get("platform") or "linkedin"
-    conversation_state["content"] = (drafts.get(cur_p) or "").strip()
+            drafts[pk]=v
+    cur_p=conversation_state.get("platform") or "linkedin"
+    conversation_state["content"]=(drafts.get(cur_p) or "").strip()
 
 
 def _switch_platform(new_platform: str) -> None:
-    drafts = conversation_state.setdefault("drafts", {})
-    old = conversation_state.get("platform") or "linkedin"
+    drafts=conversation_state.setdefault("drafts", {})
+    old=conversation_state.get("platform") or "linkedin"
     if old != new_platform and (conversation_state.get("content") or "").strip():
-        drafts[old] = conversation_state["content"]
-    conversation_state["platform"] = new_platform
-    conversation_state["content"] = (drafts.get(new_platform) or "").strip()
+        drafts[old]=conversation_state["content"]
+    conversation_state["platform"]=new_platform
+    conversation_state["content"]=(drafts.get(new_platform) or "").strip()
 
 
 def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
     """Returns (reply, single_draft or None, multi_drafts or None)."""
-    history = _trim_chat_history(conversation_state.get("chat_history") or [])
-    platform = conversation_state.get("platform") or "linkedin"
-    system = _build_chat_system(platform)
+    history=_trim_chat_history(conversation_state.get("chat_history") or [])
+    platform=conversation_state.get("platform") or "linkedin"
+    system=_build_chat_system(platform)
     if (
         conversation_state.get("step") == "approval"
         and (conversation_state.get("content") or "").strip()
     ):
-        system = (
+        system=(
             system
             + "\n\nCurrent draft the user may want revised:\n"
             + conversation_state["content"].strip()
         )
 
-    brand = conversation_state.get("brand_settings")
+    brand=conversation_state.get("brand_settings")
     if brand:
         system += (
             f"\n\n--- BRAND SETTINGS ---\n"
@@ -303,41 +305,41 @@ def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
             "----------------------"
         )
 
-    messages = [{"role": "system", "content": system}] + history
-    raw = complete_chat(messages)
+    messages=[{"role": "system", "content": system}] + history
+    raw=complete_chat(messages)
     if not raw:
         return ("Something went wrong. Try again.", None, None)
     if raw.startswith("API Error"):
         return (raw, None, None)
-    data = _parse_assistant_json(raw)
+    data=_parse_assistant_json(raw)
     if not data:
         return (raw.strip(), None, None)
-    reply = data.get("reply")
+    reply=data.get("reply")
     if not isinstance(reply, str):
-        reply = raw.strip()
-    reply_out = reply.strip() if isinstance(reply, str) else str(reply)
+        reply=raw.strip()
+    reply_out=reply.strip() if isinstance(reply, str) else str(reply)
 
-    multi_raw = data.get("post_drafts")
+    multi_raw=data.get("post_drafts")
     if isinstance(multi_raw, dict) and multi_raw:
-        cleaned: dict[str, str] = {}
+        cleaned: dict[str, str]={}
         for k, v in multi_raw.items():
-            pk = _normalize_platform(str(k))
+            pk=_normalize_platform(str(k))
             if pk and isinstance(v, str) and v.strip():
-                cleaned[pk] = v.strip()
+                cleaned[pk]=v.strip()
         if cleaned:
             return (reply_out, None, cleaned)
 
-    draft = data.get("post_draft")
+    draft=data.get("post_draft")
     if not isinstance(draft, str) or not draft.strip():
-        draft = data.get("linkedin_draft")
+        draft=data.get("linkedin_draft")
 
     # PERMANENT FIX: If no draft was found, but the reply looks like a formatted post
     # (starts with numbers like 1/ or has hook-like structure), move it to draft.
     if (not draft or not draft.strip()) and reply_out:
         # Check for Twitter thread style (1/) or LinkedIn structure (lots of newlines/hooks)
         if re.match(r"^1/", reply_out) or reply_out.count("\n\n") > 2:
-            draft = reply_out
-            reply_out = "I've drafted that for you! You can see it in the panel below."
+            draft=reply_out
+            reply_out="I've drafted that for you! You can see it in the panel below."
 
     if isinstance(draft, str) and draft.strip():
         return (reply_out, draft.strip(), None)
@@ -346,21 +348,21 @@ def _marketing_chat_reply() -> tuple[str, str | None, dict[str, str] | None]:
 
 def send_to_zapier(data: dict) -> None:
     """POST scheduling payload to Zapier Catch hook."""
-    webhook_url = os.getenv("ZAPIER_WEBHOOK_URL")
+    webhook_url=os.getenv("ZAPIER_WEBHOOK_URL")
     if not webhook_url:
         raise HTTPException(
             status_code=500,
             detail="ZAPIER_WEBHOOK_URL is not configured",
         )
     try:
-        response = requests.post(webhook_url, json=data, timeout=15)
+        response=requests.post(webhook_url, json=data, timeout=15)
         response.raise_for_status()
         logger.info("Successfully sent payload to Zapier")
     except requests.RequestException as e:
         logger.error(f"Zapier webhook failed: {str(e)}")
 
 
-@app.get("/health")
+@ app.get("/health")
 def health():
     return {"status": "ok"}
 
@@ -369,11 +371,11 @@ def health():
 
 class OrderRequest(BaseModel):
     amount: int
-    currency: str = "INR"
+    currency: str="INR"
     user_id: str
     workspace_id: str
 
-    @validator('amount')
+    @ validator('amount')
     def amount_must_be_positive(cls, v):
         if v < 100:
             raise ValueError('Amount must be at least 100 paise')
@@ -381,13 +383,13 @@ class OrderRequest(BaseModel):
             raise ValueError('Amount exceeds maximum limit')
         return v
 
-    @validator('currency')
+    @ validator('currency')
     def currency_must_be_valid(cls, v):
         if v not in ["INR", "USD", "EUR"]:
             raise ValueError('Invalid currency')
         return v
 
-    @validator('user_id', 'workspace_id')
+    @ validator('user_id', 'workspace_id')
     def ids_must_not_be_empty(cls, v):
         if not v or not isinstance(v, str) or len(v) > 100:
             raise ValueError('Invalid ID format')
@@ -402,13 +404,13 @@ class VerifyRequest(BaseModel):
     workspace_id: str
     plan_name: str
 
-    @validator('razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature')
+    @ validator('razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature')
     def payment_fields_must_not_be_empty(cls, v):
         if not v or not isinstance(v, str) or len(v) > 200:
             raise ValueError('Invalid payment field')
         return v
 
-    @validator('plan_name')
+    @ validator('plan_name')
     def plan_name_must_be_valid(cls, v):
         if v not in PLANS.keys():
             raise ValueError('Invalid plan name')
@@ -418,18 +420,18 @@ class VerifyRequest(BaseModel):
 class GenerateRequest(BaseModel):
     user_id: str
     workspace_id: str
-    voice_id: str = None
+    voice_id: str=None
     topic: str
-    platform: str = "all"
-    count: int = 1
+    platform: str="all"
+    count: int=1
 
-    @validator('topic')
+    @ validator('topic')
     def topic_must_not_be_empty(cls, v):
         if not v or len(v) > 5000:
             raise ValueError('Invalid topic')
         return v.strip()
 
-    @validator('count')
+    @ validator('count')
     def count_must_be_valid(cls, v):
         if v < 1 or v > 10:
             raise ValueError('Count must be between 1 and 10')
@@ -440,7 +442,7 @@ class WorkspaceCreate(BaseModel):
     name: str
     owner_id: str
 
-    @validator('name', 'owner_id')
+    @ validator('name', 'owner_id')
     def fields_must_not_be_empty(cls, v):
         if not v or not isinstance(v, str) or len(v) > 255:
             raise ValueError('Invalid field')
@@ -450,15 +452,15 @@ class WorkspaceCreate(BaseModel):
 class UserInvite(BaseModel):
     workspace_id: str
     email: str
-    role: str = "member"
+    role: str="member"
 
-    @validator('email')
+    @ validator('email')
     def email_must_be_valid(cls, v):
         if not v or "@" not in v or len(v) > 255:
             raise ValueError('Invalid email')
         return v.lower().strip()
 
-    @validator('role')
+    @ validator('role')
     def role_must_be_valid(cls, v):
         if v not in ["member", "admin", "owner"]:
             raise ValueError('Invalid role')
@@ -472,51 +474,51 @@ class RepurposeRequest(BaseModel):
 class SchedulePostRequest(BaseModel):
     content: str
     instruction: str
-    platform: str = "linkedin"
+    platform: str="linkedin"
 
 
 class ChatCommandRequest(BaseModel):
     message: str
-    platform: str | None = "linkedin"
-    client_drafts: dict | None = None
-    brand_settings: dict | None = None
-    user_name: str | None = "there"
-    voice_id: str | None = None
-    workspace_id: str | None = None
+    platform: str | None="linkedin"
+    client_drafts: dict | None=None
+    brand_settings: dict | None=None
+    user_name: str | None="there"
+    voice_id: str | None=None
+    workspace_id: str | None=None
 
 
 class ChatRequest(BaseModel):
-    message: str = ""
-    platform: str | None = None
-    client_drafts: dict[str, str] | None = None
-    brand_settings: dict | None = None
-    user_name: str | None = None
+    message: str=""
+    platform: str | None=None
+    client_drafts: dict[str, str] | None=None
+    brand_settings: dict | None=None
+    user_name: str | None=None
 
 
 class ActionRequest(BaseModel):
     action: str  # approve | regenerate | edit
-    content: str | None = None
+    content: str | None=None
 
 
 class GenerateImageRequest(BaseModel):
     prompt: str
     # None → default aesthetic suffix; "" → use prompt only
-    style_suffix: str | None = None
+    style_suffix: str | None=None
 
 
 class CarouselRequest(BaseModel):
     idea: str
-    slides: int = Field(default=5, ge=1, le=10)
+    slides: int=Field(default=5, ge=1, le=10)
 
 
-GREET_MESSAGE = "Hii Abbas, What do you want to post today?"
+GREET_MESSAGE="Hii Abbas, What do you want to post today?"
 
 
 def _reset_conversation_state() -> None:
-    conversation_state["step"] = "start"
-    conversation_state["content"] = ""
-    conversation_state["idea"] = ""
-    conversation_state["platform"] = "linkedin"
+    conversation_state["step"]="start"
+    conversation_state["content"]=""
+    conversation_state["idea"]=""
+    conversation_state["platform"]="linkedin"
     conversation_state["drafts"].clear()
     # Clear in place so callers holding a reference to chat_history stay valid.
     conversation_state["chat_history"].clear()
@@ -531,25 +533,25 @@ def _with_session_meta(payload: dict) -> dict:
 
 
 def _store_active_draft(text: str) -> None:
-    t = (text or "").strip()
-    conversation_state["content"] = t
+    t=(text or "").strip()
+    conversation_state["content"]=t
     if t:
         conversation_state.setdefault("drafts", {})[
             conversation_state.get("platform") or "linkedin"
-        ] = t
+        ]=t
 
 
 def _store_multi_drafts(multi: dict[str, str]) -> None:
     """Merge several platform drafts from the model; refresh active content."""
     global last_generated_post
-    drafts = conversation_state.setdefault("drafts", {})
+    drafts=conversation_state.setdefault("drafts", {})
     for k, v in multi.items():
-        pk = _normalize_platform(str(k))
+        pk=_normalize_platform(str(k))
         if pk and isinstance(v, str) and v.strip():
-            drafts[pk] = v.strip()
-    cur = conversation_state.get("platform") or "linkedin"
+            drafts[pk]=v.strip()
+    cur=conversation_state.get("platform") or "linkedin"
     if (drafts.get(cur) or "").strip():
-        conversation_state["content"] = drafts[cur].strip()
+        conversation_state["content"]=drafts[cur].strip()
     else:
         for plat in (
             "linkedin",
@@ -560,13 +562,13 @@ def _store_multi_drafts(multi: dict[str, str]) -> None:
             "youtube",
         ):
             if (drafts.get(plat) or "").strip():
-                conversation_state["content"] = drafts[plat].strip()
+                conversation_state["content"]=drafts[plat].strip()
                 break
-    last_generated_post = (conversation_state.get("content") or "").strip()
+    last_generated_post=(conversation_state.get("content") or "").strip()
 
 
 def _generate_linkedin_post(idea: str) -> str:
-    prompt = f"""You are an expert social media copywriter who has studied viral content across LinkedIn. Write a high-quality LinkedIn post about: {idea}
+    prompt=f"""You are an expert social media copywriter who has studied viral content across LinkedIn. Write a high-quality LinkedIn post about: {idea}
 Follow these rules:
 
 Hook first — The opening line must stop the scroll. Use a bold claim, surprising stat, or counterintuitive idea. Never start with "I".
@@ -583,7 +585,7 @@ Also provide: 3 alternative hook options I can swap in.
 
 
 def _generate_for_platform(idea: str, platform: str) -> str:
-    p = _normalize_platform(platform) or "linkedin"
+    p=_normalize_platform(platform) or "linkedin"
     if p == "linkedin":
         return linkedin_post(idea).strip()
     if p == "twitter":
@@ -608,7 +610,7 @@ def _generate_for_platform(idea: str, platform: str) -> str:
 
 
 def _has_time_hint(text: str) -> bool:
-    lowered = text.lower()
+    lowered=text.lower()
     if re.search(r"\b\d{1,2}(:\d{2})?\s*([ap]m)\b", lowered):
         return True
     if re.search(r"\b\d{1,2}:\d{2}\b", lowered):
@@ -617,18 +619,18 @@ def _has_time_hint(text: str) -> bool:
 
 
 def _extract_schedule_datetime(instruction: str) -> tuple[str | None, str | None]:
-    dateparser_search = importlib.import_module("dateparser.search")
-    search_dates = dateparser_search.search_dates
-    settings = {
+    dateparser_search=importlib.import_module("dateparser.search")
+    search_dates=dateparser_search.search_dates
+    settings={
         "PREFER_DATES_FROM": "future",
         "RETURN_AS_TIMEZONE_AWARE": False,
     }
-    hits = search_dates(instruction, settings=settings, languages=["en"])
+    hits=search_dates(instruction, settings=settings, languages=["en"])
     if not hits:
         return None, None
 
-    picked_dt = hits[0][1]
-    date_str = picked_dt.strftime("%Y-%m-%d")
+    picked_dt=hits[0][1]
+    date_str=picked_dt.strftime("%Y-%m-%d")
 
     if not _has_time_hint(instruction):
         return date_str, None
@@ -640,21 +642,21 @@ def _normalize_time(raw_time: str | None) -> str:
     if not raw_time:
         return "10:00"
 
-    cleaned = raw_time.strip().lower()
+    cleaned=raw_time.strip().lower()
 
     # Supports: "10:00", "9:30", "10 AM", "6pm", "09:15 pm"
-    time_match = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$", cleaned)
+    time_match=re.match(r"^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$", cleaned)
     if not time_match:
         return "10:00"
 
-    hours = int(time_match.group(1))
-    minutes = int(time_match.group(2) or "0")
-    meridiem = time_match.group(3)
+    hours=int(time_match.group(1))
+    minutes=int(time_match.group(2) or "0")
+    meridiem=time_match.group(3)
 
     if meridiem == "pm" and hours != 12:
         hours += 12
     if meridiem == "am" and hours == 12:
-        hours = 0
+        hours=0
 
     if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
         return "10:00"
@@ -663,7 +665,7 @@ def _normalize_time(raw_time: str | None) -> str:
 
 
 def _extract_schedule_data(instruction: str) -> dict:
-    prompt = f"""You must respond with ONLY a single JSON object. No markdown, no explanation.
+    prompt=f"""You must respond with ONLY a single JSON object. No markdown, no explanation.
 
 Today's date (UTC) is: {today_utc}
 
@@ -728,7 +730,8 @@ Return exactly one of:
 {{"action":"generate_post","content":"<full generated post text>"}}
 
 2) Schedule a post:
-{{"action":"schedule_post","content":"<post text>","date":"YYYY-MM-DD","time":"HH:MM","platform":"{platform}"}}
+{{"action":"schedule_post","content":"<post text>",
+    "date":"YYYY-MM-DD","time":"HH:MM","platform":"{platform}"}}
 
 If the user says "schedule this" / "schedule it", set "content" to empty string ""; the server will use the last generated post.
 
@@ -739,26 +742,26 @@ If the user clearly wants to schedule but date or time cannot be determined, ret
 
 JSON only.""".strip()
 
-    raw = generate_text(prompt)
+    raw=generate_text(prompt)
 
     # LLM may return extra text; parse the first JSON object.
     try:
         return json.loads(raw)
     except Exception:
-        json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+        json_match=re.search(r"\{.*\}", raw, re.DOTALL)
         if not json_match:
             raise ValueError("Could not parse schedule JSON from AI output")
         return json.loads(json_match.group(0))
 
 
 def _sanitize_json_string(raw: str) -> str:
-    out: list[str] = []
-    in_string = False
-    escape = False
+    out: list[str]=[]
+    in_string=False
+    escape=False
 
     for ch in raw:
         if ch == '"' and not escape:
-            in_string = not in_string
+            in_string=not in_string
             out.append(ch)
             continue
 
@@ -769,42 +772,42 @@ def _sanitize_json_string(raw: str) -> str:
                 out.append("\\r")
             else:
                 out.append("\\t")
-            escape = False
+            escape=False
             continue
 
         out.append(ch)
-        escape = (ch == "\\" and not escape)
+        escape=(ch == "\\" and not escape)
 
     return "".join(out)
 
 
 def _escape_invalid_json_escapes(raw: str) -> str:
-    out: list[str] = []
-    in_string = False
-    escape = False
-    i = 0
+    out: list[str]=[]
+    in_string=False
+    escape=False
+    i=0
 
     while i < len(raw):
-        ch = raw[i]
+        ch=raw[i]
         if ch == '"' and not escape:
-            in_string = not in_string
+            in_string=not in_string
             out.append(ch)
             i += 1
             continue
 
         if in_string and ch == '\\' and not escape:
-            nxt = raw[i + 1] if i + 1 < len(raw) else ''
+            nxt=raw[i + 1] if i + 1 < len(raw) else ''
             if nxt not in '"\\/bfnrtu':
                 out.append('\\\\')
                 i += 1
                 continue
             out.append(ch)
-            escape = True
+            escape=True
             i += 1
             continue
 
         out.append(ch)
-        escape = (ch == '\\' and not escape)
+        escape=(ch == '\\' and not escape)
         i += 1
 
     return "".join(out)
@@ -814,18 +817,18 @@ def _parse_llm_json(raw: str) -> dict:
     try:
         return json.loads(raw)
     except Exception:
-        json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+        json_match=re.search(r"\{.*\}", raw, re.DOTALL)
         if not json_match:
             raise ValueError("Could not parse JSON from AI output")
-        json_text = json_match.group(0)
+        json_text=json_match.group(0)
         try:
             return json.loads(json_text)
         except Exception:
-            sanitized = _sanitize_json_string(json_text)
+            sanitized=_sanitize_json_string(json_text)
             try:
                 return json.loads(sanitized)
             except Exception:
-                sanitized = _escape_invalid_json_escapes(sanitized)
+                sanitized=_escape_invalid_json_escapes(sanitized)
                 return json.loads(sanitized)
 
 
@@ -839,17 +842,17 @@ def _carousel_slide_texts(idea: str, n: int) -> list[dict[str, str]]:
     ]
 
 
-@app.post("/action")
+@ app.post("/action")
 def post_action(payload: ActionRequest):
     """Approve, regenerate, or edit draft — separate from chat conversation."""
     global last_generated_post
 
-    act = (payload.action or "").strip().lower()
+    act=(payload.action or "").strip().lower()
     if act not in {"approve", "regenerate", "edit"}:
         raise HTTPException(
             status_code=400, detail="action must be approve, regenerate, or edit")
 
-    step = conversation_state["step"]
+    step=conversation_state["step"]
 
     if act == "approve":
         if step != "approval":
@@ -860,7 +863,7 @@ def post_action(payload: ActionRequest):
         if not conversation_state.get("content", "").strip():
             raise HTTPException(
                 status_code=400, detail="No post content to approve.")
-        conversation_state["step"] = "awaiting_schedule"
+        conversation_state["step"]="awaiting_schedule"
         return _with_session_meta(
             {
                 "step": "awaiting_schedule",
@@ -876,17 +879,17 @@ def post_action(payload: ActionRequest):
                 status_code=400,
                 detail="Regenerate is only available while you have a draft.",
             )
-        source_idea = conversation_state.get("idea", "").strip()
+        source_idea=conversation_state.get("idea", "").strip()
         if not source_idea:
             raise HTTPException(
                 status_code=400, detail="No idea stored — start over and share your topic again.")
-        plat = conversation_state.get("platform") or "linkedin"
-        regenerated = _generate_for_platform(source_idea, plat)
+        plat=conversation_state.get("platform") or "linkedin"
+        regenerated=_generate_for_platform(source_idea, plat)
         if not regenerated:
             raise HTTPException(
                 status_code=500, detail="Failed to regenerate post")
         _store_active_draft(regenerated)
-        last_generated_post = regenerated
+        last_generated_post=regenerated
         return _with_session_meta(
             {
                 "step": "approval",
@@ -901,11 +904,11 @@ def post_action(payload: ActionRequest):
             status_code=400,
             detail="Edits only apply while reviewing a draft.",
         )
-    text = (payload.content or "").strip()
+    text=(payload.content or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="Content cannot be empty")
     _store_active_draft(text)
-    last_generated_post = text
+    last_generated_post=text
     return _with_session_meta(
         {
             "step": "approval",
@@ -915,29 +918,29 @@ def post_action(payload: ActionRequest):
     )
 
 
-@app.post("/chat")
+@ app.post("/chat")
 def chat(payload: ChatRequest):
     """Real-time style chat via Groq; drafts and scheduling stay integrated."""
     global last_generated_post
 
-    message = (payload.message or "").strip()
-    lowered = message.lower()
-    current_step = conversation_state["step"]
-    hist: list = conversation_state.setdefault("chat_history", [])
-    plat_in = _normalize_platform(
+    message=(payload.message or "").strip()
+    lowered=message.lower()
+    current_step=conversation_state["step"]
+    hist: list=conversation_state.setdefault("chat_history", [])
+    plat_in=_normalize_platform(
         payload.platform) if payload.platform else None
 
     if payload.brand_settings:
-        conversation_state["brand_settings"] = payload.brand_settings
+        conversation_state["brand_settings"]=payload.brand_settings
 
     if lowered not in {"start over", "reset", "restart"} and current_step != "start":
         _apply_client_drafts(payload.client_drafts)
 
     if lowered in {"start over", "reset", "restart"}:
-        user_name = payload.user_name or "there"
-        dynamic_greet = f"Hii {user_name}, What do you want to post today?"
+        user_name=payload.user_name or "there"
+        dynamic_greet=f"Hii {user_name}, What do you want to post today?"
         _reset_conversation_state()
-        conversation_state["step"] = "idea"
+        conversation_state["step"]="idea"
         hist.append({"role": "assistant", "content": dynamic_greet})
         if plat_in:
             _switch_platform(plat_in)
@@ -951,9 +954,9 @@ def chat(payload: ChatRequest):
         )
 
     if current_step == "start":
-        user_name = payload.user_name or "there"
-        dynamic_greet = f"Hii {user_name}, What do you want to post today?"
-        conversation_state["step"] = "idea"
+        user_name=payload.user_name or "there"
+        dynamic_greet=f"Hii {user_name}, What do you want to post today?"
+        conversation_state["step"]="idea"
         hist.clear()
         hist.append({"role": "assistant", "content": dynamic_greet})
         if plat_in:
@@ -983,9 +986,9 @@ def chat(payload: ChatRequest):
         )
 
     if current_step == "awaiting_schedule":
-        date_str, time_str = _extract_schedule_datetime(message)
+        date_str, time_str=_extract_schedule_datetime(message)
         if not date_str or not time_str:
-            clarify = (
+            clarify=(
                 "Please include both a date and a time (for example: April 15 at 10:00 AM)."
             )
             hist.append({"role": "user", "content": message})
@@ -999,16 +1002,16 @@ def chat(payload: ChatRequest):
                 }
             )
 
-        norm_time = _normalize_time(time_str)
-        sched_platform = conversation_state.get("platform") or "linkedin"
-        zap_payload = {
+        norm_time=_normalize_time(time_str)
+        sched_platform=conversation_state.get("platform") or "linkedin"
+        zap_payload={
             "content": conversation_state.get("content", "").strip(),
             "date": date_str,
             "time": norm_time,
             "platform": sched_platform,
         }
         if not zap_payload["content"]:
-            err = "No post content found. Say 'start over' and we'll create a new draft."
+            err="No post content found. Say 'start over' and we'll create a new draft."
             hist.append({"role": "user", "content": message})
             hist.append({"role": "assistant", "content": err})
             return _with_session_meta(
@@ -1027,10 +1030,10 @@ def chat(payload: ChatRequest):
             raise HTTPException(
                 status_code=502, detail=f"Webhook error: {str(exc)}")
 
-        confirm = f"✅ Post scheduled for {date_str} at {norm_time}"
+        confirm=f"✅ Post scheduled for {date_str} at {norm_time}"
         hist.append({"role": "user", "content": message})
         hist.append({"role": "assistant", "content": confirm})
-        conversation_state["step"] = "done"
+        conversation_state["step"]="done"
         return _with_session_meta(
             {
                 "step": "done",
@@ -1045,11 +1048,11 @@ def chat(payload: ChatRequest):
 
     if current_step == "done":
         hist.append({"role": "user", "content": message})
-        reply, draft, multi = _marketing_chat_reply()
+        reply, draft, multi=_marketing_chat_reply()
         if multi:
-            conversation_state["idea"] = message
+            conversation_state["idea"]=message
             _store_multi_drafts(multi)
-            conversation_state["step"] = "approval"
+            conversation_state["step"]="approval"
             hist.append({"role": "assistant", "content": reply})
             return _with_session_meta(
                 {
@@ -1061,10 +1064,10 @@ def chat(payload: ChatRequest):
                 }
             )
         if draft:
-            conversation_state["idea"] = message
+            conversation_state["idea"]=message
             _store_active_draft(draft)
-            conversation_state["step"] = "approval"
-            last_generated_post = draft
+            conversation_state["step"]="approval"
+            last_generated_post=draft
             hist.append({"role": "assistant", "content": reply})
             return _with_session_meta(
                 {
@@ -1085,14 +1088,14 @@ def chat(payload: ChatRequest):
         )
 
     # idea | approval — free-form Groq chat + optional draft(s)
-    prior_step = conversation_state["step"]
+    prior_step=conversation_state["step"]
     hist.append({"role": "user", "content": message})
-    reply, draft, multi = _marketing_chat_reply()
+    reply, draft, multi=_marketing_chat_reply()
     if multi:
         if prior_step == "idea":
-            conversation_state["idea"] = message
+            conversation_state["idea"]=message
         _store_multi_drafts(multi)
-        conversation_state["step"] = "approval"
+        conversation_state["step"]="approval"
         hist.append({"role": "assistant", "content": reply})
         return _with_session_meta(
             {
@@ -1105,10 +1108,10 @@ def chat(payload: ChatRequest):
         )
     if draft:
         if prior_step == "idea":
-            conversation_state["idea"] = message
+            conversation_state["idea"]=message
         _store_active_draft(draft)
-        conversation_state["step"] = "approval"
-        last_generated_post = draft
+        conversation_state["step"]="approval"
+        last_generated_post=draft
         hist.append({"role": "assistant", "content": reply})
         return _with_session_meta(
             {
@@ -1130,7 +1133,7 @@ def chat(payload: ChatRequest):
     )
 
 
-@app.post("/chat-command")
+@ app.post("/chat-command")
 def chat_command(payload: ChatCommandRequest):
     """Natural language: generate content or schedule via structured AI JSON + Zapier."""
     global last_generated_post
@@ -1138,19 +1141,19 @@ def chat_command(payload: ChatCommandRequest):
     # DEBUG LOGGING
     logger.info(f"RECEIVED CHAT COMMAND: {payload.dict()}")
 
-    msg = payload.message.strip()
+    msg=payload.message.strip()
     if not msg:
         raise HTTPException(status_code=400, detail="message is required")
 
     # 1. Fetch Workspace and Verify Usage
     if payload.workspace_id:
-        usage_res = supabase_db.table("user_usage").select(
+        usage_res=supabase_db.table("user_usage").select(
             "*").eq("workspace_id", payload.workspace_id).execute()
 
-        usage_data = usage_res.data[0] if usage_res.data else {}
-        posts_generated = usage_data.get("posts_generated", 0)
+        usage_data=usage_res.data[0] if usage_res.data else {}
+        posts_generated=usage_data.get("posts_generated", 0)
         # Use DB value; default Free = 15
-        posts_limit = usage_data.get("posts_limit", 15)
+        posts_limit=usage_data.get("posts_limit", 15)
 
         if posts_generated >= posts_limit:
             raise HTTPException(
@@ -1162,26 +1165,26 @@ def chat_command(payload: ChatCommandRequest):
             detail="No generated post yet. Generate content first, then say 'schedule this'.",
         )
 
-    today_utc = datetime.utcnow().strftime("%Y-%m-%d")
-    platform = (payload.platform or "linkedin").lower().strip()
+    today_utc=datetime.utcnow().strftime("%Y-%m-%d")
+    platform=(payload.platform or "linkedin").lower().strip()
     if platform not in {"linkedin", "twitter", "threads"}:
-        platform = "linkedin"
+        platform="linkedin"
 
     if payload.brand_settings:
         # We still store it for backward compatibility, but it will be overridden by voice_id
-        conversation_state["brand_settings"] = payload.brand_settings
+        conversation_state["brand_settings"]=payload.brand_settings
 
     # Logic: If voice_id is provided, fetch full details from DB
-    brand_settings = None
+    brand_settings=None
 
     if payload.voice_id:
         try:
             logger.debug(f"Fetching voice details for ID {payload.voice_id}")
-            voice_res = supabase_db.table("brand_settings").select(
+            voice_res=supabase_db.table("brand_settings").select(
                 "*").eq("id", payload.voice_id).single().execute()
             if voice_res.data:
-                db_voice = voice_res.data
-                brand_settings = {
+                db_voice=voice_res.data
+                brand_settings={
                     "brandName": db_voice.get("brand_name"),
                     "brandDescription": db_voice.get("brand_description"),
                     "brandVoice": db_voice.get("brand_voice"),
@@ -1197,15 +1200,15 @@ def chat_command(payload: ChatCommandRequest):
 
     # Fallback to payload brand_settings if voice_id failed/missing
     if not brand_settings and payload.brand_settings:
-        brand_settings = payload.brand_settings
+        brand_settings=payload.brand_settings
 
     # Final fallback to conversation state (legacy)
     if not brand_settings and conversation_state.get("brand_settings"):
-        brand_settings = conversation_state.get("brand_settings")
+        brand_settings=conversation_state.get("brand_settings")
 
-    brand_prompt = ""
+    brand_prompt=""
     if isinstance(brand_settings, dict) and brand_settings:
-        lines = [
+        lines=[
             "CRITICAL: YOU MUST ADHERE TO THE FOLLOWING BRAND IDENTITY. FAILURE TO MIMIC THIS VOICE WILL RESULT IN A SYSTEM ERROR.",
             "--- BRAND IDENTITY DNA ---"
         ]
@@ -1223,11 +1226,11 @@ def chat_command(payload: ChatCommandRequest):
                 f"[TARGET AUDIENCE]: {brand_settings['targetAudience']} (Adjust vocabulary and reading level to match this group)")
 
         # Platform-Specific Style Selection
-        platform_style = ""
+        platform_style=""
         if platform == "linkedin":
-            platform_style = brand_settings.get("writingStyleLinkedin")
+            platform_style=brand_settings.get("writingStyleLinkedin")
         elif platform in {"twitter", "threads"}:
-            platform_style = brand_settings.get(
+            platform_style=brand_settings.get(
                 "writingStyleTwitter") or brand_settings.get("writingStyleThreads")
 
         if platform_style:
@@ -1252,15 +1255,15 @@ def chat_command(payload: ChatCommandRequest):
             "3. If the samples use emojis, use them. If they are minimal, keep it minimal.")
         lines.append(
             "4. Ensure the content provides value specifically for the [TARGET AUDIENCE].")
-        brand_prompt = "\n".join(lines) + "\n\n"
+        brand_prompt="\n".join(lines) + "\n\n"
 
-    requested_posts = 1
-    post_count_match = re.search(
+    requested_posts=1
+    post_count_match=re.search(
         r"\b([1-9][0-9]*)\s*(?:posts?|post|pieces?|ideas?)\b", msg.lower())
     if post_count_match:
-        requested_posts = min(10, int(post_count_match.group(1)))
+        requested_posts=min(10, int(post_count_match.group(1)))
 
-    prompt = f"""system_prompt = \"\"\"
+    prompt=f"""system_prompt = \"\"\"
 You are a LinkedIn content writer.
 IMPORTANT:
 - Respond ONLY with valid JSON
@@ -1343,16 +1346,16 @@ Return exactly:
 
 JSON only.""".strip()
 
-    raw = generate_text(prompt)
+    raw=generate_text(prompt)
     try:
-        data = _parse_llm_json(raw)
+        data=_parse_llm_json(raw)
     except Exception as exc:
         raise HTTPException(
             status_code=500,
             detail=f"Could not parse AI response as JSON: {str(exc)}",
         )
 
-    action = data.get("action")
+    action=data.get("action")
     if action == "clarify":
         return {
             "action": "clarify",
@@ -1360,19 +1363,19 @@ JSON only.""".strip()
         }
 
     if action == "generate_post":
-        content = data.get("content")
+        content=data.get("content")
         if not isinstance(content, str) or not content.strip():
             raise HTTPException(
                 status_code=500, detail="Generated content was empty")
-        last_generated_post = content.strip()
+        last_generated_post=content.strip()
 
         # Increment usage count in the database
         if payload.workspace_id and supabase_db:
             try:
-                usage_res = supabase_db.table("user_usage").select(
+                usage_res=supabase_db.table("user_usage").select(
                     "posts_generated").eq("workspace_id", payload.workspace_id).execute()
                 if usage_res.data:
-                    current = usage_res.data[0].get("posts_generated", 0)
+                    current=usage_res.data[0].get("posts_generated", 0)
                     supabase_db.table("user_usage").update(
                         {"posts_generated": current + 1}).eq("workspace_id", payload.workspace_id).execute()
             except Exception as inc_err:
@@ -1381,24 +1384,24 @@ JSON only.""".strip()
         return {"action": "generate_post", "content": last_generated_post}
 
     if action == "schedule_post":
-        content = data.get("content")
+        content=data.get("content")
         if isinstance(content, str) and not content.strip():
             if re.search(r"schedule\s+this|schedule\s+it", msg.lower()):
-                content = last_generated_post
+                content=last_generated_post
         if not content or not str(content).strip():
             raise HTTPException(
                 status_code=400,
                 detail="No post content to schedule.",
             )
-        content = str(content).strip()
+        content=str(content).strip()
 
-        date_str = data.get("date")
-        time_str = data.get("time")
-        platform = (data.get("platform") or "linkedin")
+        date_str=data.get("date")
+        time_str=data.get("time")
+        platform=(data.get("platform") or "linkedin")
         if isinstance(platform, str):
-            platform = platform.lower().strip()
+            platform=platform.lower().strip()
         else:
-            platform = "linkedin"
+            platform="linkedin"
 
         if not date_str or not time_str:
             return {
@@ -1420,9 +1423,9 @@ JSON only.""".strip()
                 "message": "Please specify the date clearly (e.g. 2026-04-15).",
             }
 
-        norm_time = _normalize_time(time_str.strip())
+        norm_time=_normalize_time(time_str.strip())
 
-        zap_payload = {
+        zap_payload={
             "content": content,
             "date": date_str.strip(),
             "time": norm_time,
@@ -1449,42 +1452,42 @@ JSON only.""".strip()
         status_code=400, detail=f"Unknown or missing action: {action!r}")
 
 
-@app.post("/repurpose")
+@ app.post("/repurpose")
 def repurpose_content(payload: RepurposeRequest):
     try:
-        result = repurpose(payload.content)
+        result=repurpose(payload.content)
         return {"result": result}
     except Exception as e:
         return {"error": str(e)}
 
 
-database = []
+database=[]
 
 
-@app.post("/save")
+@ app.post("/save")
 def save_content(content: str):
     database.append(content)
     return {"message": "Saved"}
 
 
-@app.get("/content")
+@ app.get("/content")
 def get_content():
     return {"data": database}
 
 
-@app.post("/schedule-post")
+@ app.post("/schedule-post")
 def schedule_post(payload: SchedulePostRequest):
     try:
-        webhook_url = os.getenv("ZAPIER_WEBHOOK_URL")
+        webhook_url=os.getenv("ZAPIER_WEBHOOK_URL")
         if not webhook_url:
             raise HTTPException(
                 status_code=500,
                 detail="ZAPIER_WEBHOOK_URL is not configured",
             )
 
-        parsed = _extract_schedule_data(payload.instruction)
-        dates = parsed.get("dates") if isinstance(parsed, dict) else None
-        parsed_time = parsed.get("time") if isinstance(parsed, dict) else None
+        parsed=_extract_schedule_data(payload.instruction)
+        dates=parsed.get("dates") if isinstance(parsed, dict) else None
+        parsed_time=parsed.get("time") if isinstance(parsed, dict) else None
 
         if not isinstance(dates, list) or len(dates) == 0:
             raise HTTPException(
@@ -1492,8 +1495,8 @@ def schedule_post(payload: SchedulePostRequest):
                 detail="Could not extract any schedule dates from instruction",
             )
 
-        normalized_time = _normalize_time(parsed_time)
-        scheduled_items = []
+        normalized_time=_normalize_time(parsed_time)
+        scheduled_items=[]
 
         for date_value in dates:
             if not isinstance(date_value, str):
@@ -1504,13 +1507,13 @@ def schedule_post(payload: SchedulePostRequest):
             except Exception:
                 continue
 
-            iso_time = f"{date_value}T{normalized_time}:00Z"
-            zap_payload = {
+            iso_time=f"{date_value}T{normalized_time}:00Z"
+            zap_payload={
                 "content": payload.content,
                 "platform": payload.platform,
                 "scheduled_time": iso_time,
             }
-            response = requests.post(webhook_url, json=zap_payload, timeout=15)
+            response=requests.post(webhook_url, json=zap_payload, timeout=15)
             response.raise_for_status()
             scheduled_items.append(iso_time)
 
@@ -1535,18 +1538,18 @@ def schedule_post(payload: SchedulePostRequest):
             status_code=500, detail=f"Scheduling failed: {str(exc)}")
 
 
-@app.post("/generate-image")
+@ app.post("/generate-image")
 def generate_image(req: GenerateImageRequest):
-    prompt = (req.prompt or "").strip()
+    prompt=(req.prompt or "").strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="prompt is required")
     if req.style_suffix is None:
-        suffix = ", minimal illustration, modern, aesthetic"
+        suffix=", minimal illustration, modern, aesthetic"
     else:
-        suffix = req.style_suffix
-    full_prompt = prompt + suffix
+        suffix=req.style_suffix
+    full_prompt=prompt + suffix
     try:
-        image_url = generate_image_url(full_prompt)
+        image_url=generate_image_url(full_prompt)
         return {"image_url": image_url, "prompt_used": full_prompt}
     except HTTPException:
         raise
@@ -1566,19 +1569,19 @@ def generate_image(req: GenerateImageRequest):
         ) from exc
 
 
-@app.post("/generate-carousel")
+@ app.post("/generate-carousel")
 def generate_carousel(req: CarouselRequest):
-    idea = (req.idea or "").strip()
+    idea=(req.idea or "").strip()
     if not idea:
         raise HTTPException(status_code=400, detail="idea is required")
-    slides_meta = _carousel_slide_texts(idea, req.slides)
-    carousel: list[dict[str, str]] = []
+    slides_meta=_carousel_slide_texts(idea, req.slides)
+    carousel: list[dict[str, str]]=[]
     try:
         for slide in slides_meta:
-            image_prompt = (
+            image_prompt=(
                 f"{slide['title']}, minimal illustration, modern, aesthetic"
             )
-            image_url = generate_image_url(image_prompt)
+            image_url=generate_image_url(image_prompt)
             carousel.append(
                 {
                     "title": slide["title"],
@@ -1605,7 +1608,7 @@ def generate_carousel(req: CarouselRequest):
         ) from exc
 
 
-@app.post("/generate")
+@ app.post("/generate")
 def generate(req: GenerateRequest):
     global last_generated_post
     if not supabase_db:
@@ -1613,44 +1616,44 @@ def generate(req: GenerateRequest):
 
     try:
         # 1. Fetch Workspace and Verify Usage
-        ws_res = supabase_db.table("workspaces").select(
+        ws_res=supabase_db.table("workspaces").select(
             "*").eq("id", req.workspace_id).execute()
         if not ws_res.data:
             raise HTTPException(status_code=404, detail="Workspace not found")
 
-        usage_res = supabase_db.table("user_usage").select(
+        usage_res=supabase_db.table("user_usage").select(
             "*").eq("workspace_id", req.workspace_id).execute()
 
-        usage = usage_res.data[0] if usage_res.data else {}
-        posts_generated = usage.get("posts_generated", 0)
-        posts_limit = usage.get("posts_limit", 15)
+        usage=usage_res.data[0] if usage_res.data else {}
+        posts_generated=usage.get("posts_generated", 0)
+        posts_limit=usage.get("posts_limit", 15)
 
         if posts_generated >= posts_limit:
             raise HTTPException(
                 status_code=403, detail="Workspace usage limit reached. Please upgrade your plan.")
 
         # 2. Fetch Selected Brand Voice
-        voice_id = req.voice_id
+        voice_id=req.voice_id
         if voice_id:
-            voice_res = supabase_db.table("brand_settings").select(
+            voice_res=supabase_db.table("brand_settings").select(
                 "*").eq("id", voice_id).single().execute()
         else:
-            voice_res = supabase_db.table("brand_settings").select(
+            voice_res=supabase_db.table("brand_settings").select(
                 "*").eq("workspace_id", req.workspace_id).eq("is_active", True).execute()
             if not voice_res.data:
-                voice_res = supabase_db.table("brand_settings").select(
+                voice_res=supabase_db.table("brand_settings").select(
                     "*").eq("workspace_id", req.workspace_id).limit(1).execute()
 
-        brand_voice = voice_res.data if isinstance(voice_res.data, dict) else (
+        brand_voice=voice_res.data if isinstance(voice_res.data, dict) else (
             voice_res.data[0] if voice_res.data else {})
 
-        brand_name = brand_voice.get("brand_name", "Default")
-        tone = brand_voice.get("tone", "Professional")
-        audience = brand_voice.get("target_audience", "General")
-        style = brand_voice.get("brand_voice", "Clear and concise")
+        brand_name=brand_voice.get("brand_name", "Default")
+        tone=brand_voice.get("tone", "Professional")
+        audience=brand_voice.get("target_audience", "General")
+        style=brand_voice.get("brand_voice", "Clear and concise")
 
         # 3. World-Class Ghostwriter Prompt
-        base_prompt = f"""You are a world-class ghostwriter for SaaS users.
+        base_prompt=f"""You are a world-class ghostwriter for SaaS users.
 Write content in EXACT brand voice below:
 
 Brand Name: {brand_name}
@@ -1671,17 +1674,17 @@ Threads: Conversational, engaging, short lines, end with question
 """
 
         # 4. Generate Content
-        count = max(1, min(req.count, 10))
-        prompt_suffix = f"\nUSER REQUEST: Write content about: {req.topic}\nPlatform: {req.platform}\nOUTPUT: Return ONLY the post text."
+        count=max(1, min(req.count, 10))
+        prompt_suffix=f"\nUSER REQUEST: Write content about: {req.topic}\nPlatform: {req.platform}\nOUTPUT: Return ONLY the post text."
 
         if req.platform == "all":
-            result = {
+            result={
                 "linkedin": generate_text(base_prompt + "\nFormat: LinkedIn post" + prompt_suffix),
                 "twitter": generate_text(base_prompt + "\nFormat: Twitter thread" + prompt_suffix),
                 "threads": generate_text(base_prompt + "\nFormat: Threads post" + prompt_suffix),
             }
         else:
-            result = {req.platform: generate_text(
+            result={req.platform: generate_text(
                 base_prompt + f"\nFormat: {req.platform} content" + prompt_suffix)}
 
         # 5. Increment Workspace Usage
@@ -1690,9 +1693,9 @@ Threads: Conversational, engaging, short lines, end with question
         }).eq("workspace_id", req.workspace_id).execute()
 
         for key in ("linkedin", "twitter", "threads"):
-            val = result.get(key)
+            val=result.get(key)
             if isinstance(val, str) and val.strip():
-                last_generated_post = val.strip()
+                last_generated_post=val.strip()
                 break
 
         return result
@@ -1704,8 +1707,8 @@ Threads: Conversational, engaging, short lines, end with question
             status_code=500, detail="Content generation failed")
 
 
-@app.post("/api/create-order")
-@limiter.limit("5/minute")
+@ app.post("/api/create-order")
+@ limiter.limit("5/minute")
 def create_order(request: Request, data: OrderRequest):
     logger.info(f"CREATE ORDER REQUEST: {data.dict()}")
     if not client:
@@ -1717,7 +1720,7 @@ def create_order(request: Request, data: OrderRequest):
             status_code=400, detail="Amount must be at least 100 paise")
 
     try:
-        order = client.order.create({
+        order=client.order.create({
             "amount": data.amount,
             "currency": data.currency,
             "receipt": f"receipt_{os.urandom(4).hex()}",
@@ -1735,8 +1738,8 @@ def create_order(request: Request, data: OrderRequest):
         raise HTTPException(status_code=500, detail="Failed to create order")
 
 
-@app.post("/api/verify-payment")
-@limiter.limit("5/minute")
+@ app.post("/api/verify-payment")
+@ limiter.limit("5/minute")
 def verify_payment(request: Request, data: VerifyRequest):
     logger.info(f"VERIFY PAYMENT REQUEST: {data.dict()}")
     if not RAZORPAY_KEY_SECRET:
@@ -1747,8 +1750,8 @@ def verify_payment(request: Request, data: VerifyRequest):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     # 1. Verify Signature
-    body = f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
-    expected = hmac.new(
+    body=f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
+    expected=hmac.new(
         RAZORPAY_KEY_SECRET.encode(),
         body.encode(),
         hashlib.sha256
@@ -1765,8 +1768,8 @@ def verify_payment(request: Request, data: VerifyRequest):
         return {"success": True, "payment_id": data.razorpay_payment_id, "note": "DB not configured"}
 
     try:
-        plan_details = PLANS.get(data.plan_name, PLANS["Free"])
-        posts_limit = plan_details["posts_limit"]
+        plan_details=PLANS.get(data.plan_name, PLANS["Free"])
+        posts_limit=plan_details["posts_limit"]
 
         # 1. Update user_usage table — reset posts_generated to 0 for fresh monthly count
         supabase_db.table("user_usage").update({
@@ -1778,7 +1781,7 @@ def verify_payment(request: Request, data: VerifyRequest):
 
         # 2. Insert into billing_history
         # Note: We use amount from request if possible, or from PLANS
-        billing_record = {
+        billing_record={
             "user_id": data.user_id,
             "plan_name": data.plan_name,
             # Using INR as per backend config
@@ -1806,15 +1809,15 @@ def verify_payment(request: Request, data: VerifyRequest):
 # Workspace Management
 
 
-@app.post("/workspaces/create")
+@ app.post("/workspaces/create")
 def create_workspace(req: WorkspaceCreate):
     try:
         # Create workspace
-        ws_res = supabase_db.table("workspaces").insert({
+        ws_res=supabase_db.table("workspaces").insert({
             "name": req.name,
             "owner_id": req.owner_id
         }).execute()
-        workspace = ws_res.data[0]
+        workspace=ws_res.data[0]
 
         # Add owner as member
         supabase_db.table("workspace_members").insert({
@@ -1836,29 +1839,29 @@ def create_workspace(req: WorkspaceCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/workspaces/list/{user_id}")
+@ app.get("/workspaces/list/{user_id}")
 def list_workspaces(user_id: str):
     try:
-        members_res = supabase_db.table("workspace_members").select(
+        members_res=supabase_db.table("workspace_members").select(
             "workspace_id, role").eq("user_id", user_id).execute()
-        ws_ids = [m["workspace_id"] for m in members_res.data]
+        ws_ids=[m["workspace_id"] for m in members_res.data]
 
         if not ws_ids:
             return []
 
-        workspaces_res = supabase_db.table("workspaces").select(
+        workspaces_res=supabase_db.table("workspaces").select(
             "*").in_("id", ws_ids).execute()
         return workspaces_res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/workspaces/invite")
+@ app.post("/workspaces/invite")
 def invite_user(req: UserInvite):
     try:
         # Check if user already in workspace
         # In a real app, you'd send an email invite. Here we add directly for simplicity.
-        res = supabase_db.table("workspace_members").insert({
+        res=supabase_db.table("workspace_members").insert({
             "workspace_id": req.workspace_id,
             "user_id": req.email,  # Using email as placeholder for ID until they join
             "role": req.role
