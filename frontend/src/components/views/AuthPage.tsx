@@ -75,7 +75,7 @@ export default function AuthPage({ onBack }: AuthPageProps) {
         options: {
           redirectTo: window.location.origin,
           queryParams: {
-            prompt: 'select_account',
+            prompt: "select_account",
           },
         },
       });
@@ -112,7 +112,7 @@ export default function AuthPage({ onBack }: AuthPageProps) {
               className="text-2xl font-bold text-white tracking-tight"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Ghostwrites
+              GhostScribe
             </span>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">

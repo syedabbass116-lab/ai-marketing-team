@@ -11,7 +11,7 @@ export function DashboardMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
         </div>
         <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white/50">
-          app.ghostwrites.io
+          app.ghostscribe.io
         </div>
         <div className="h-2 w-10" />
       </div>
@@ -40,13 +40,23 @@ export function DashboardMockup() {
             </span>
           </div>
           <p className="text-[12px] leading-relaxed text-white/85">
-            Stop guessing what to post. The best creators don't wait for inspiration — they build a system. Here's the 3-step framework I use every Sunday to plan a full week of content in 20 minutes 👇
+            Stop guessing what to post. The best creators don't wait for inspiration — they build a
+            system. Here's the 3-step framework I use every Sunday to plan a full week of content in
+            20 minutes 👇
           </p>
           <div className="mt-3 flex items-center gap-4 text-[10px] text-white/40">
-            <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3" /> 1.2k</span>
-            <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" /> 84</span>
-            <span className="inline-flex items-center gap-1"><Repeat2 className="h-3 w-3" /> 312</span>
-            <span className="ml-auto text-white/50">Predicted reach: <span className="text-white">38.4k</span></span>
+            <span className="inline-flex items-center gap-1">
+              <Heart className="h-3 w-3" /> 1.2k
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MessageCircle className="h-3 w-3" /> 84
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Repeat2 className="h-3 w-3" /> 312
+            </span>
+            <span className="ml-auto text-white/50">
+              Predicted reach: <span className="text-white">38.4k</span>
+            </span>
           </div>
         </div>
 

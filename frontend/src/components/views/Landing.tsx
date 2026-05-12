@@ -342,7 +342,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
       >
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">
-            Why Ghostwrite
+            Why GhostScribe
           </p>
           <h2 className="mt-3 font-mono text-3xl font-bold tracking-tight sm:text-5xl">
             Sounds like you.
@@ -381,7 +381,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
             Everything you need to dominate social media
           </h2>
           <p className="text-base text-gray-400 sm:text-lg mb-12">
-            Ghostwrites isn't just a text generator. It is a fully-featured
+            GhostScribe isn't just a text generator. It is a fully-featured
             digital marketing agency built directly into your browser.
           </p>
 
@@ -422,7 +422,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
                 Platform Native Output
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Stop cross-posting the exact same text. Ghostwrites
+                Stop cross-posting the exact same text. GhostScribe
                 automatically formats your ideas into algorithm-friendly
                 LinkedIn posts, punchy X (Twitter) threads, and engaging
                 Threads.
@@ -546,7 +546,7 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           </div>
         </div>
         <div className="border-t border-white/10 py-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} Ghostwrites. All rights reserved.
+          © {new Date().getFullYear()} GhostScribe. All rights reserved.
         </div>
       </footer>
     </div>

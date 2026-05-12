@@ -17,7 +17,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
       <div className="relative w-28 h-28 mb-4 animate-logo-pulse">
         <img
           src={logo}
-          alt="Ghostwrites Logo"
+          alt="GhostScribe Logo"
           className="w-full h-full object-contain"
         />
       </div>

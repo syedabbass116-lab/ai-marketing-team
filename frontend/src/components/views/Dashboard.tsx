@@ -9,7 +9,6 @@ import LoadingOverlay from "../ui/LoadingOverlay";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import { useBrandVoices } from "../../hooks/useBrandVoices";
 
-
 type ContentType = {
   linkedin?: string;
   twitter?: string;
@@ -90,11 +89,11 @@ export default function Dashboard({
   usage,
   canGenerate = true,
   isNearLimit = false,
-  onUpgrade
+  onUpgrade,
 }: DashboardProps) {
   const { activeWorkspace } = useWorkspace();
   const { profiles: voices } = useBrandVoices(activeWorkspace?.id);
-  const activeProfile = voices.find(v => v.is_active);
+  const activeProfile = voices.find((v) => v.is_active);
   const selectedVoiceId = activeProfile?.id || "";
   const [chatBusy, setChatBusy] = useState(false);
 
@@ -203,9 +202,15 @@ export default function Dashboard({
       const drafts = buildClientDraftsPayload(
         content,
         activePlatform,
-        editablePost
+        editablePost,
       );
-      const data = await onChatCommand(outgoing, activePlatform, drafts, activeWorkspace?.id, selectedVoiceId);
+      const data = await onChatCommand(
+        outgoing,
+        activePlatform,
+        drafts,
+        activeWorkspace?.id,
+        selectedVoiceId,
+      );
 
       if (data.action === "generate_post") {
         hydrateDraftFromResponse(data);
@@ -229,8 +234,6 @@ export default function Dashboard({
       setShowFirstPostLoading(false);
     }
   };
-
-
 
   const handleStartOver = async () => {
     setChatBusy(true);
@@ -265,9 +268,10 @@ export default function Dashboard({
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Ghostwrites</h1>
+          <h1 className="text-2xl font-bold text-white mb-1">GhostScribe</h1>
           <p className="text-gray-400 text-sm">
-            {activeWorkspace?.name || 'Workspace'} — Choose a platform and enter your idea.
+            {activeWorkspace?.name || "Workspace"} — Choose a platform and enter
+            your idea.
           </p>
         </div>
       </div>
@@ -284,14 +288,17 @@ export default function Dashboard({
               disabled={chatBusy}
               className={`
                 relative flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight transition-all duration-300
-                ${isActive
-                  ? "bg-white text-black shadow-[0_2px_10px_rgba(255,255,255,0.15)] scale-100"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/5 scale-95 hover:scale-100"
+                ${
+                  isActive
+                    ? "bg-white text-black shadow-[0_2px_10px_rgba(255,255,255,0.15)] scale-100"
+                    : "text-white/40 hover:text-white/70 hover:bg-white/5 scale-95 hover:scale-100"
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
               `}
             >
-              <Icon className={`w-3 h-3 ${isActive ? "text-black" : "text-white/40"}`} />
+              <Icon
+                className={`w-3 h-3 ${isActive ? "text-black" : "text-white/40"}`}
+              />
               <span>{tab.label}</span>
               {isActive && (
                 <span className="absolute -bottom-px left-1/2 -translate-x-1/2 w-1 h-1 bg-black rounded-full" />
@@ -304,7 +311,7 @@ export default function Dashboard({
       <div className="relative">
         <LoadingOverlay
           isVisible={chatBusy}
-          message="Ghostwrites is drafting your post..."
+          message="GhostScribe is drafting your post..."
         />
 
         <div className="flex flex-col gap-6">
@@ -317,17 +324,21 @@ export default function Dashboard({
               post editor.
             </p>
 
-
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={chatText}
                 onChange={(e) => setChatText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !chatBusy && canGenerate) handleNlChat();
+                  if (e.key === "Enter" && !chatBusy && canGenerate)
+                    handleNlChat();
                 }}
-                placeholder={!canGenerate ? "Post limit reached. Please upgrade to continue." : placeholder}
-                className={`flex-1 px-3 py-2 rounded-lg border border-white/10 bg-black text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-white/30 ${!canGenerate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder={
+                  !canGenerate
+                    ? "Post limit reached. Please upgrade to continue."
+                    : placeholder
+                }
+                className={`flex-1 px-3 py-2 rounded-lg border border-white/10 bg-black text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-white/30 ${!canGenerate ? "opacity-50 cursor-not-allowed" : ""}`}
                 disabled={chatBusy || !canGenerate}
               />
               <Button
@@ -345,19 +356,34 @@ export default function Dashboard({
                 Reset
               </Button>
             </div>
-            
+
             {isNearLimit && canGenerate && (
               <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-between">
-                <p className="text-xs text-amber-500 font-medium">Few credits left! Upgrade your plan to ensure uninterrupted generation.</p>
-                <button onClick={onUpgrade} className="text-xs font-bold text-amber-500 hover:underline">Upgrade Now</button>
+                <p className="text-xs text-amber-500 font-medium">
+                  Few credits left! Upgrade your plan to ensure uninterrupted
+                  generation.
+                </p>
+                <button
+                  onClick={onUpgrade}
+                  className="text-xs font-bold text-amber-500 hover:underline"
+                >
+                  Upgrade Now
+                </button>
               </div>
             )}
 
             {!canGenerate && (
               <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-                <p className="text-sm text-red-500 font-bold mb-2">Monthly Post Limit Reached</p>
-                <p className="text-xs text-red-400/80 mb-4">You've reached your post generation limit for this month. Upgrade to continue crafting high-conversion content.</p>
-                <Button variant="primary" size="sm" onClick={onUpgrade}>View Plans & Upgrade</Button>
+                <p className="text-sm text-red-500 font-bold mb-2">
+                  Monthly Post Limit Reached
+                </p>
+                <p className="text-xs text-red-400/80 mb-4">
+                  You've reached your post generation limit for this month.
+                  Upgrade to continue crafting high-conversion content.
+                </p>
+                <Button variant="primary" size="sm" onClick={onUpgrade}>
+                  View Plans & Upgrade
+                </Button>
               </div>
             )}
 
@@ -381,7 +407,9 @@ export default function Dashboard({
               {/* Editor */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-white/60 uppercase">Edit Content</label>
+                  <label className="text-xs font-semibold text-white/60 uppercase">
+                    Edit Content
+                  </label>
                   {editablePost.trim() && (
                     <Button
                       size="sm"
@@ -397,10 +425,11 @@ export default function Dashboard({
                           }, 2000);
                         }
                       }}
-                      className={`transition-all duration-300 !py-1 !text-[10px] ${saveSuccess
+                      className={`transition-all duration-300 !py-1 !text-[10px] ${
+                        saveSuccess
                           ? "bg-green-600 border-green-600 text-white"
                           : "bg-white text-black hover:bg-gray-100"
-                        }`}
+                      }`}
                     >
                       {saveSuccess ? "✓ Saved" : "Save Post"}
                     </Button>
@@ -417,13 +446,15 @@ export default function Dashboard({
 
               {/* Platform Preview */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/60 uppercase">Live Preview</label>
+                <label className="text-xs font-semibold text-white/60 uppercase">
+                  Live Preview
+                </label>
                 <div className="flex items-center justify-center min-h-[500px] bg-white/5 rounded-lg border border-white/10 overflow-auto">
                   {editablePost.trim() ? (
                     <div className="p-4 max-w-full">
-                      <PlatformPreview 
-                        platform={activePlatform} 
-                        content={editablePost} 
+                      <PlatformPreview
+                        platform={activePlatform}
+                        content={editablePost}
                         brandName={activeProfile?.brand_name}
                         avatarUrl={activeProfile?.logo_url}
                       />
@@ -455,7 +486,7 @@ export default function Dashboard({
                   }
                 }}
                 disabled={!editablePost}
-                className={`transition-all duration-200 ${copySuccess ? 'text-green-400' : ''}`}
+                className={`transition-all duration-200 ${copySuccess ? "text-green-400" : ""}`}
               >
                 {copySuccess ? "✓ Copied" : "Copy"}
               </Button>

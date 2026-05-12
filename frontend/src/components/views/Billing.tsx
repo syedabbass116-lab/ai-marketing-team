@@ -1,10 +1,10 @@
-import { Check, CreditCard, Download, Zap } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../context/AuthContext';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { Check, CreditCard, Download, Zap } from "lucide-react";
+import Button from "../ui/Button";
+import Card from "../ui/Card";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 interface ContentItem {
   id: string;
@@ -26,13 +26,24 @@ interface PlanCardProps {
   processingPayment?: boolean;
 }
 
-function PlanCard({ name, price, period, postsPerMonth, platforms, features, current, popular, onUpgrade, processingPayment }: PlanCardProps) {
+function PlanCard({
+  name,
+  price,
+  period,
+  postsPerMonth,
+  platforms,
+  features,
+  current,
+  popular,
+  onUpgrade,
+  processingPayment,
+}: PlanCardProps) {
   return (
-    <Card className={popular ? 'border-white/30' : ''}>
+    <Card className={popular ? "border-white/30" : ""}>
       {popular && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <span
-            style={{ fontFamily: 'var(--font-heading)' }}
+            style={{ fontFamily: "var(--font-heading)" }}
             className="bg-white text-black text-[10px] font-black px-3 py-1 rounded-full tracking-widest"
           >
             POPULAR
@@ -41,7 +52,7 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
       )}
       <div className="text-center mb-6">
         <h3
-          style={{ fontFamily: 'var(--font-heading)' }}
+          style={{ fontFamily: "var(--font-heading)" }}
           className="text-base font-bold text-white mb-1 tracking-tight"
         >
           {name}
@@ -51,12 +62,20 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
           <span className="text-xs text-white/30 ml-1">/{period}</span>
         </div>
         <Button
-          variant={current ? 'secondary' : 'primary'}
+          variant={current ? "secondary" : "primary"}
           className="w-full"
           disabled={current || processingPayment}
-          onClick={() => !current && onUpgrade && onUpgrade(name, parseInt(price.replace('$', '')))}
+          onClick={() =>
+            !current &&
+            onUpgrade &&
+            onUpgrade(name, parseInt(price.replace("$", "")))
+          }
         >
-          {processingPayment ? 'Processing...' : current ? 'Current Plan' : 'Upgrade'}
+          {processingPayment
+            ? "Processing..."
+            : current
+              ? "Current Plan"
+              : "Upgrade"}
         </Button>
       </div>
 
@@ -64,7 +83,9 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
       <div className="space-y-3 mb-6 p-3 bg-white/5 rounded-lg border border-white/10">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-white/60" />
-          <span className="text-sm font-semibold text-white">{postsPerMonth}</span>
+          <span className="text-sm font-semibold text-white">
+            {postsPerMonth}
+          </span>
           <span className="text-xs text-white/50">posts/month</span>
         </div>
         <div className="flex items-center gap-2">
@@ -76,7 +97,10 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
 
       <ul className="space-y-2.5">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-start gap-2 text-xs text-white/50">
+          <li
+            key={index}
+            className="flex items-start gap-2 text-xs text-white/50"
+          >
             <Check className="w-3.5 h-3.5 text-white/60 flex-shrink-0 mt-0.5" />
             <span>{feature}</span>
           </li>
@@ -87,15 +111,15 @@ function PlanCard({ name, price, period, postsPerMonth, platforms, features, cur
 }
 
 const PLATFORM_NAMES: Record<string, string> = {
-  linkedin: 'LinkedIn',
-  twitter: 'X (Twitter)',
-  threads: 'Threads',
+  linkedin: "LinkedIn",
+  twitter: "X (Twitter)",
+  threads: "Threads",
 };
 
 const PLATFORM_COLORS: Record<string, string> = {
-  linkedin: 'bg-blue-900/30 text-blue-300',
-  twitter: 'bg-sky-900/30 text-sky-300',
-  threads: 'bg-zinc-900/30 text-zinc-300',
+  linkedin: "bg-blue-900/30 text-blue-300",
+  twitter: "bg-sky-900/30 text-sky-300",
+  threads: "bg-zinc-900/30 text-zinc-300",
 };
 
 interface BillingProps {
@@ -104,10 +128,10 @@ interface BillingProps {
   onContactClick?: () => void;
 }
 
-export default function Billing({ 
-  library = [], 
+export default function Billing({
+  library = [],
   usage,
-  onContactClick
+  onContactClick,
 }: BillingProps) {
   const { user } = useAuth();
   const { activeWorkspace } = useWorkspace();
@@ -115,55 +139,65 @@ export default function Billing({
 
   const handleRazorpayPayment = async (planName: string, amount: number) => {
     setProcessingPlan(planName);
-    
-    const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000').replace(/\/+$/, "").replace(/\.+$/, "");
-    
-    try {
-      console.log('Starting payment process for:', planName, amount);
-      
-      const uId = user?.id || usage?.user_id || '';
-      const wId = activeWorkspace?.id || usage?.workspace_id || '';
 
-      console.log('Payment Context:', { uId, wId });
+    const BACKEND_URL = (
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"
+    )
+      .replace(/\/+$/, "")
+      .replace(/\.+$/, "");
+
+    try {
+      console.log("Starting payment process for:", planName, amount);
+
+      const uId = user?.id || usage?.user_id || "";
+      const wId = activeWorkspace?.id || usage?.workspace_id || "";
+
+      console.log("Payment Context:", { uId, wId });
 
       if (!uId || !wId) {
-        alert("Authentication error: Could not identify user or workspace. Please try logging in again.");
+        alert(
+          "Authentication error: Could not identify user or workspace. Please try logging in again.",
+        );
         setProcessingPlan(null);
         return;
       }
-      
+
       // Step 1: Create order from backend
-      const inrAmount = amount * 95; 
-      
+      const inrAmount = amount * 95;
+
       const orderResponse = await fetch(`${BACKEND_URL}/api/create-order`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           amount: inrAmount * 100, // Convert to paise
-          currency: 'INR',
+          currency: "INR",
           user_id: uId,
           workspace_id: wId,
-          receipt: `${planName.toLowerCase()}_${Date.now()}`
-        })
+          receipt: `${planName.toLowerCase()}_${Date.now()}`,
+        }),
       });
 
       if (!orderResponse || !orderResponse.ok) {
-        const errorText = orderResponse ? await orderResponse.text() : 'No response';
-        console.error('Order creation failed:', errorText);
+        const errorText = orderResponse
+          ? await orderResponse.text()
+          : "No response";
+        console.error("Order creation failed:", errorText);
         alert(`Failed to create order: ${errorText}`);
         setProcessingPlan(null);
         return;
       }
 
       const orderData = await orderResponse.json();
-      console.log('Order data received:', orderData);
+      console.log("Order data received:", orderData);
       const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
       console.log("Initializing Razorpay with Key:", rzpKey);
 
       if (!rzpKey) {
-        alert("CRITICAL ERROR: Razorpay Key ID is missing! Check your environment variables.");
+        alert(
+          "CRITICAL ERROR: Razorpay Key ID is missing! Check your environment variables.",
+        );
         setProcessingPlan(null);
         return;
       }
@@ -173,83 +207,88 @@ export default function Billing({
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Ghostwrites',
+        name: "GhostScribe",
         description: `${planName} Plan Subscription`,
         order_id: orderData.order_id,
-        image: 'https://your-logo-url.com/logo.png', // Add your logo URL
+        image: "https://your-logo-url.com/logo.png", // Add your logo URL
         handler: async function (response: any) {
           // Step 3: Verify payment with backend
           try {
-            const verifyResponse = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
+            const verifyResponse = await fetch(
+              `${BACKEND_URL}/api/verify-payment`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  user_id: uId,
+                  workspace_id: wId,
+                  plan_name: planName,
+                }),
               },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                user_id: uId,
-                workspace_id: wId,
-                plan_name: planName
-              })
-            });
+            );
 
             if (!verifyResponse || !verifyResponse.ok) {
-              const errorText = verifyResponse ? await verifyResponse.text() : 'No response';
-              console.error('Verification failed:', errorText);
+              const errorText = verifyResponse
+                ? await verifyResponse.text()
+                : "No response";
+              console.error("Verification failed:", errorText);
               alert(`Payment verification failed: ${errorText}`);
               setProcessingPlan(null);
               return;
             }
 
             const verifyData = await verifyResponse.json();
-            console.log('Payment verified:', verifyData);
+            console.log("Payment verified:", verifyData);
 
             // Record in billing history
-            await supabase.from('billing_history').insert({
+            await supabase.from("billing_history").insert({
               user_id: user?.id || usage?.user_id,
               plan_name: planName,
               amount: `$${amount}`,
-              status: 'Paid',
-              date: new Date().toISOString()
+              status: "Paid",
+              date: new Date().toISOString(),
             });
 
-            alert('Payment successful! Plan upgraded.');
-            window.location.reload(); 
+            alert("Payment successful! Plan upgraded.");
+            window.location.reload();
           } catch (error) {
-            console.error('Verification error:', error);
-            alert('Payment verification failed. Please contact support.');
+            console.error("Verification error:", error);
+            alert("Payment verification failed. Please contact support.");
             setProcessingPlan(null);
           }
         },
         prefill: {
-          name: '', // Optional: Add user name if available
-          email: '', // Optional: Add user email if available
+          name: "", // Optional: Add user name if available
+          email: "", // Optional: Add user email if available
         },
         theme: {
-          color: '#000000' // Sleek black theme like Apollo/Instantly
+          color: "#000000", // Sleek black theme like Apollo/Instantly
         },
         modal: {
-          ondismiss: function() {
-            console.log('Payment modal dismissed');
+          ondismiss: function () {
+            console.log("Payment modal dismissed");
             setProcessingPlan(null);
           },
           escape: true,
-          backdropclose: false
-        }
+          backdropclose: false,
+        },
       };
 
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error);
+      rzp.on("payment.failed", function (response: any) {
+        console.error("Payment failed:", response.error);
         alert(`Payment failed: ${response.error.description}`);
         setProcessingPlan(null);
       });
       rzp.open();
     } catch (error) {
-      console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
       setProcessingPlan(null);
     }
   };
@@ -273,52 +312,66 @@ export default function Billing({
     const fetchHistory = async () => {
       try {
         const { data, error } = await supabase
-          .from('billing_history')
-          .select('*')
-          .order('date', { ascending: false });
-        
+          .from("billing_history")
+          .select("*")
+          .order("date", { ascending: false });
+
         if (error) {
-          console.error('Error fetching billing history:', error);
+          console.error("Error fetching billing history:", error);
           // If table doesn't exist, Supabase might return 404 or a specific error code
           return;
         }
         if (data) setHistory(data);
       } catch (err) {
-        console.error('Unexpected error fetching history:', err);
+        console.error("Unexpected error fetching history:", err);
       }
     };
     fetchHistory();
   }, []);
 
-  const libraryTotal = Object.values(platformUsage).reduce((sum, count) => sum + count, 0);
+  const libraryTotal = Object.values(platformUsage).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
   const totalUsed = usage?.posts_generated ?? libraryTotal;
-  const monthlyLimit = usage?.posts_limit || 10; 
-  const percentUsed = Math.min(100, Math.round((totalUsed / monthlyLimit) * 100));
+  const monthlyLimit = usage?.posts_limit || 10;
+  const percentUsed = Math.min(
+    100,
+    Math.round((totalUsed / monthlyLimit) * 100),
+  );
 
   const platformList = Object.entries(platformUsage).map(([key, count]) => ({
     name: PLATFORM_NAMES[key] || key,
     platform: key,
     used: count,
-    color: PLATFORM_COLORS[key] || 'bg-gray-900/30 text-gray-300',
+    color: PLATFORM_COLORS[key] || "bg-gray-900/30 text-gray-300",
   }));
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Billing & Usage</h1>
-          <p className="text-sm text-white/40">Track your posts and platform usage</p>
+          <h1 className="text-3xl font-bold text-white mb-1">
+            Billing & Usage
+          </h1>
+          <p className="text-sm text-white/40">
+            Track your posts and platform usage
+          </p>
         </div>
       </div>
 
       {/* Current Usage Overview */}
       <Card className="border-white/20">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-white mb-4">Posts Generated This Month</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">
+            Posts Generated This Month
+          </h3>
           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
             <div className="flex-shrink-0">
               <div className="text-4xl font-black text-white">{totalUsed}</div>
-              <div className="text-xs text-white/50">of {monthlyLimit} available</div>
+              <div className="text-xs text-white/50">
+                of {monthlyLimit} available
+              </div>
             </div>
             <div className="flex-1 w-full">
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -327,7 +380,9 @@ export default function Billing({
                   style={{ width: `${percentUsed}%` }}
                 />
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-2">{percentUsed}% of monthly credits used</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mt-2">
+                {percentUsed}% of monthly credits used
+              </div>
             </div>
           </div>
         </div>
@@ -335,7 +390,9 @@ export default function Billing({
 
       {/* Platform Breakdown */}
       <Card>
-        <h3 className="text-sm font-semibold text-white mb-4">Usage by Platform</h3>
+        <h3 className="text-sm font-semibold text-white mb-4">
+          Usage by Platform
+        </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {platformList.map((platform) => (
             <div
@@ -352,65 +409,67 @@ export default function Billing({
 
       {/* Pricing Plans */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Simple Pricing</h2>
+        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">
+          Simple Pricing
+        </h2>
         <p className="text-sm text-white/40 max-w-md mx-auto">
           Choose the plan that's right for your growth.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          <PlanCard
-            name="Starter"
-            price="$19"
-            period="month"
-            postsPerMonth={30}
-            platforms={3}
-            current={usage?.plan_name === 'Starter'}
-            features={[
-              '1 Brand Voice',
-              '30 posts per month',
-              'Content library storage',
-              'Email support',
-            ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 19)}
-            processingPayment={processingPlan === "Starter"}
-          />
-          <PlanCard
-            name="Pro"
-            price="$49"
-            period="month"
-            postsPerMonth={100}
-            platforms={3}
-            current={usage?.plan_name === 'Pro'}
-            popular
-            features={[
-              '3 Brand Voices',
-              '100 posts per month',
-              'Content library storage',
-              'Priority support',
-              'Export posts',
-            ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 49)}
-            processingPayment={processingPlan === "Pro"}
-          />
-          <PlanCard
-            name="Agency"
-            price="$129"
-            period="month"
-            postsPerMonth={250}
-            platforms={3}
-            current={usage?.plan_name === 'Agency'}
-            features={[
-              '5 Brand Voices',
-              '250 posts per month',
-              'Advanced content library',
-              'Dedicated support',
-              'Custom integrations',
-            ]}
-            onUpgrade={(name) => handleRazorpayPayment(name, 129)}
-            processingPayment={processingPlan === "Agency"}
-          />
-        </div>
+        <PlanCard
+          name="Starter"
+          price="$19"
+          period="month"
+          postsPerMonth={30}
+          platforms={3}
+          current={usage?.plan_name === "Starter"}
+          features={[
+            "1 Brand Voice",
+            "30 posts per month",
+            "Content library storage",
+            "Email support",
+          ]}
+          onUpgrade={(name) => handleRazorpayPayment(name, 19)}
+          processingPayment={processingPlan === "Starter"}
+        />
+        <PlanCard
+          name="Pro"
+          price="$49"
+          period="month"
+          postsPerMonth={100}
+          platforms={3}
+          current={usage?.plan_name === "Pro"}
+          popular
+          features={[
+            "3 Brand Voices",
+            "100 posts per month",
+            "Content library storage",
+            "Priority support",
+            "Export posts",
+          ]}
+          onUpgrade={(name) => handleRazorpayPayment(name, 49)}
+          processingPayment={processingPlan === "Pro"}
+        />
+        <PlanCard
+          name="Agency"
+          price="$129"
+          period="month"
+          postsPerMonth={250}
+          platforms={3}
+          current={usage?.plan_name === "Agency"}
+          features={[
+            "5 Brand Voices",
+            "250 posts per month",
+            "Advanced content library",
+            "Dedicated support",
+            "Custom integrations",
+          ]}
+          onUpgrade={(name) => handleRazorpayPayment(name, 129)}
+          processingPayment={processingPlan === "Agency"}
+        />
+      </div>
 
       {/* Billing History */}
       <Card>
@@ -425,41 +484,53 @@ export default function Billing({
                 className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg hover:bg-white/[0.05] transition-colors"
               >
                 <div>
-                  <p className="text-sm font-medium text-white">{new Date(invoice.date).toLocaleDateString()}</p>
-                  <p className="text-xs text-white/30">{invoice.plan_name} Plan</p>
+                  <p className="text-sm font-medium text-white">
+                    {new Date(invoice.date).toLocaleDateString()}
+                  </p>
+                  <p className="text-xs text-white/30">
+                    {invoice.plan_name} Plan
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-semibold text-white">{invoice.amount}</span>
+                  <span className="text-sm font-semibold text-white">
+                    {invoice.amount}
+                  </span>
                   <span className="text-[10px] px-2 py-1 bg-white/10 text-white/60 rounded tracking-widest uppercase">
                     {invoice.status}
                   </span>
-                  <Button variant="ghost" size="sm" icon={<Download className="w-3 h-3" />}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Download className="w-3 h-3" />}
+                  >
                     PDF
                   </Button>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-xs text-white/30 py-4 text-center">No payment history available.</p>
+            <p className="text-xs text-white/30 py-4 text-center">
+              No payment history available.
+            </p>
           )}
         </div>
       </Card>
-      
+
       {/* Contact Section */}
       <div className="mt-12 p-6 bg-white/[0.03] border border-white/10 rounded-2xl text-center">
-        <h3 className="text-lg font-bold text-white mb-2">Need help with payments?</h3>
+        <h3 className="text-lg font-bold text-white mb-2">
+          Need help with payments?
+        </h3>
         <p className="text-sm text-white/40 mb-4 max-w-md mx-auto">
-          If you face any issue regarding payment, please contact us. Our team is ready to assist you.
+          If you face any issue regarding payment, please contact us. Our team
+          is ready to assist you.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button 
-            variant="secondary" 
-            onClick={onContactClick}
-          >
+          <Button variant="secondary" onClick={onContactClick}>
             Contact Support
           </Button>
-          <a 
-            href="mailto:abbhasan098@gmail.com" 
+          <a
+            href="mailto:abbhasan098@gmail.com"
             className="text-xs text-white/30 hover:text-white/60 transition-colors"
           >
             abbhasan098@gmail.com

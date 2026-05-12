@@ -59,7 +59,7 @@ supabase_db: Client = create_client(
 
 # Get allowed origin from environment (for production)
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS", "https://ghostwrites.vercel.app,http://localhost:5173,http://localhost:3000").split(",")
+    "ALLOWED_ORIGINS", "https://ghostscribe.vercel.app,http://localhost:5173,http://localhost:3000").split(",")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Subscription Plans
@@ -84,7 +84,7 @@ app.state.limiter = limiter
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ghostwrites.vercel.app"],
+    allow_origins=["https://ghostscribe.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
