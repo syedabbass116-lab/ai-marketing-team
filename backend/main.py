@@ -93,7 +93,8 @@ cors_origins = [
 ]
 
 if os.getenv("ALLOWED_ORIGINS"):
-    extra = [o.strip() for o in os.getenv("ALLOWED_ORIGINS").split(",") if o.strip()]
+    extra = [o.strip() for o in os.getenv(
+        "ALLOWED_ORIGINS").split(",") if o.strip()]
     for e in extra:
         if e not in cors_origins:
             cors_origins.append(e)
@@ -102,16 +103,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 # Trusted Host Middleware - Must be hostnames, not URLs
 # Render uses various internal IPs and hostnames; using "*" or specific suffixes is safer.
 trusted_hosts = [
-    "localhost", 
-    "127.0.0.1", 
-    "ai-marketing-team-1.onrender.com", 
+    "localhost",
+    "127.0.0.1",
+    "ai-marketing-team-1.onrender.com",
     ".onrender.com",
     "ghostwrites.vercel.app"
 ]
@@ -121,12 +124,13 @@ if ENVIRONMENT != "production":
     trusted_hosts = ["*"]
 else:
     # Always allow common local and the main production domain
-    pass 
+    pass
 
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=trusted_hosts if ENVIRONMENT == "production" else ["*"]
 )
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -193,7 +197,7 @@ def _platform_label(p: str) -> str:
 
 def _build_chat_system(platform: str) -> str:
     label = _platform_label(platform)
-    
+
     return f"""You are an expert social media copywriter who has studied viral content across LinkedIn, Twitter/X, and Threads.
 The user is focused on **{label}** ({platform}).
 
@@ -1135,7 +1139,7 @@ def chat(payload: ChatRequest):
 def chat_command(payload: ChatCommandRequest):
     """Natural language: generate content or schedule via structured AI JSON + Zapier."""
     global last_generated_post
-    
+
     # DEBUG LOGGING
     logger.info(f"RECEIVED CHAT COMMAND: {payload.dict()}")
 
@@ -1147,7 +1151,7 @@ def chat_command(payload: ChatCommandRequest):
     if payload.workspace_id:
         usage_res = supabase_db.table("user_usage").select(
             "*").eq("workspace_id", payload.workspace_id).execute()
-        
+
         usage_data = usage_res.data[0] if usage_res.data else {}
         posts_generated = usage_data.get("posts_generated", 0)
         # Use DB value; default Free = 15
@@ -1156,7 +1160,6 @@ def chat_command(payload: ChatCommandRequest):
         if posts_generated >= posts_limit:
             raise HTTPException(
                 status_code=403, detail="Workspace usage limit reached. Please upgrade your plan.")
-
 
     if re.search(r"schedule\s+this", msg.lower()) and not last_generated_post:
         raise HTTPException(
@@ -1367,17 +1370,19 @@ JSON only.""".strip()
             raise HTTPException(
                 status_code=500, detail="Generated content was empty")
         last_generated_post = content.strip()
-        
+
         # Increment usage count in the database
         if payload.workspace_id and supabase_db:
             try:
-                usage_res = supabase_db.table("user_usage").select("posts_generated").eq("workspace_id", payload.workspace_id).execute()
+                usage_res = supabase_db.table("user_usage").select(
+                    "posts_generated").eq("workspace_id", payload.workspace_id).execute()
                 if usage_res.data:
                     current = usage_res.data[0].get("posts_generated", 0)
-                    supabase_db.table("user_usage").update({"posts_generated": current + 1}).eq("workspace_id", payload.workspace_id).execute()
+                    supabase_db.table("user_usage").update(
+                        {"posts_generated": current + 1}).eq("workspace_id", payload.workspace_id).execute()
             except Exception as inc_err:
                 logger.warning(f"Failed to increment usage: {inc_err}")
-        
+
         return {"action": "generate_post", "content": last_generated_post}
 
     if action == "schedule_post":
@@ -1620,7 +1625,7 @@ def generate(req: GenerateRequest):
 
         usage_res = supabase_db.table("user_usage").select(
             "*").eq("workspace_id", req.workspace_id).execute()
-        
+
         usage = usage_res.data[0] if usage_res.data else {}
         posts_generated = usage.get("posts_generated", 0)
         posts_limit = usage.get("posts_limit", 15)
