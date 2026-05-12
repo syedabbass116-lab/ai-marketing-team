@@ -359,7 +359,7 @@ class OrderRequest(BaseModel):
     def amount_must_be_positive(cls, v):
         if v < 100:
             raise ValueError('Amount must be at least 100 paise')
-        if v > 100000:
+        if v > 2000000:  # ₹20000 max to accommodate all plan tiers
             raise ValueError('Amount exceeds maximum limit')
         return v
 
@@ -1140,7 +1140,8 @@ def chat_command(payload: ChatCommandRequest):
                 raise HTTPException(
                     status_code=403, detail="Workspace usage limit reached. Please upgrade your plan.")
         else:
-            logger.warning("Skipping workspace usage check because Supabase is not configured")
+            logger.warning(
+                "Skipping workspace usage check because Supabase is not configured")
             usage_data = {}
             posts_limit = 15
 
@@ -1165,7 +1166,8 @@ def chat_command(payload: ChatCommandRequest):
     if payload.voice_id:
         if supabase_db:
             try:
-                logger.debug(f"Fetching voice details for ID {payload.voice_id}")
+                logger.debug(
+                    f"Fetching voice details for ID {payload.voice_id}")
                 voice_res = supabase_db.table("brand_settings").select(
                     "*").eq("id", payload.voice_id).single().execute()
                 if voice_res.data:
@@ -1182,9 +1184,11 @@ def chat_command(payload: ChatCommandRequest):
                         "keyTopics": db_voice.get("key_topics")
                     }
             except Exception as e:
-                logger.error(f"Error fetching voice ID {payload.voice_id}: {e}")
+                logger.error(
+                    f"Error fetching voice ID {payload.voice_id}: {e}")
         else:
-            logger.warning("Skipping voice lookup because Supabase is not configured")
+            logger.warning(
+                "Skipping voice lookup because Supabase is not configured")
 
     # Fallback to payload brand_settings if voice_id failed/missing
     if not brand_settings and payload.brand_settings:
