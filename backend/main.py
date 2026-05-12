@@ -82,32 +82,12 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
 # CORS configuration
-cors_origins = [
-    "https://ghostwrites.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:5177",
-]
-
-if os.getenv("ALLOWED_ORIGINS"):
-    extra = [o.strip() for o in os.getenv(
-        "ALLOWED_ORIGINS").split(",") if o.strip()]
-    for e in extra:
-        if e not in cors_origins:
-            cors_origins.append(e)
-
-# Add CORS middleware FIRST (before other middleware that might intercept)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["https://ghostwrites.vercel.app"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=86400,
 )
 
 # Trusted Host Middleware - Must be hostnames, not URLs
@@ -1133,7 +1113,7 @@ def chat(payload: ChatRequest):
     )
 
 
-@ app.post("/chat-command")
+@app.post("/chat-command")
 def chat_command(payload: ChatCommandRequest):
     """Natural language: generate content or schedule via structured AI JSON + Zapier."""
     global last_generated_post
