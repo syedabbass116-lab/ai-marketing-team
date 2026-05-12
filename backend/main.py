@@ -84,7 +84,8 @@ app.state.limiter = limiter
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ghostscribe.vercel.app"],
+    allow_origins=["https://ghostscribe.vercel.app",
+                   "https://theghostscribe.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
