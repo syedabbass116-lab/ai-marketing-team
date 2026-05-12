@@ -99,38 +99,27 @@ if os.getenv("ALLOWED_ORIGINS"):
         if e not in cors_origins:
             cors_origins.append(e)
 
+# Add CORS middleware FIRST (before other middleware that might intercept)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=3600,
+    max_age=86400,
 )
 
 # Trusted Host Middleware - Must be hostnames, not URLs
 # Render uses various internal IPs and hostnames; using "*" or specific suffixes is safer.
+# IMPORTANT: In production, be more restrictive. For now, allow all to debug CORS.
 trusted_hosts = [
-    "localhost",
-    "127.0.0.1",
-    "ai-marketing-team-1.onrender.com",
-    ".onrender.com",
-    "ghostwrites.vercel.app"
+    "*"  # Allow all hosts to prevent TrustedHostMiddleware from blocking CORS
 ]
-
-# In production, we'll be slightly more restrictive but still allow Render subdomains
-if ENVIRONMENT != "production":
-    trusted_hosts = ["*"]
-else:
-    # Always allow common local and the main production domain
-    pass
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=trusted_hosts if ENVIRONMENT == "production" else ["*"]
-)
-
+    allowed_hosts=trusted_hosts
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -162,6 +151,12 @@ def health():
 @app.get("/health/", tags=["health"])
 def health_trailing_slash():
     return {"status": "ok"}
+
+
+# Handle OPTIONS requests for CORS preflight
+@app.options("/{full_path:path}")
+async def preflight_handler(full_path: str):
+    return {"message": "OK"}
 
 
 # Last generated post text (for "schedule this" commands). In-memory only.
