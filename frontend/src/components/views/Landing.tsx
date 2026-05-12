@@ -213,11 +213,11 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           <div className="flex items-center gap-3">
             <img
               src={logo}
-              alt="Ghostwrite logo"
+              alt="GhostScribe logo"
               className="h-20 w-20 object-contain ml-2"
             />
             <span className="font-mono text-lg font-bold tracking-tight text-white sm:text-xl">
-              Ghostwrite
+              GhostScribe
             </span>
           </div>
           <div className="hidden items-center gap-8 text-sm text-gray-400 md:flex">
@@ -487,10 +487,10 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           <div className="flex items-center gap-2 font-mono text-base font-bold">
             <img
               src={logo}
-              alt="Ghostwrite logo"
+              alt="GhostScribe logo"
               className="h-8 w-8 object-contain"
             />
-            <span>Ghostwrite</span>
+            <span>GhostScribe</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">
             <button

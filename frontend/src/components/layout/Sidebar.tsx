@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Sparkles,
   PenTool,
-  Users as TeamIcon
+  Users as TeamIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWorkspace } from "../../context/WorkspaceContext";
@@ -42,8 +42,6 @@ const menuItems: MenuItem[] = [
   { id: "billing", label: "Subscription", icon: CreditCard },
 ];
 
-
-
 export default function Sidebar({
   activeView,
   onViewChange,
@@ -54,8 +52,6 @@ export default function Sidebar({
   const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [wsOpen, setWsOpen] = useState(false);
-
-
 
   const wsRef = useRef<HTMLDivElement>(null);
 
@@ -75,19 +71,19 @@ export default function Sidebar({
   }, [wsOpen]);
 
   const handleLogout = async () => {
-    console.log('Logout clicked, setting isLoggingOut to true');
+    console.log("Logout clicked, setting isLoggingOut to true");
     setIsLoggingOut(true);
-    
+
     // Force a re-render to ensure the overlay shows
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     // Wait for 2 seconds with the loading animation
     setTimeout(async () => {
-      console.log('Calling signOut after 2 seconds');
+      console.log("Calling signOut after 2 seconds");
       try {
         await signOut();
       } catch (error) {
-        console.error('Error during signOut:', error);
+        console.error("Error during signOut:", error);
       }
     }, 2000);
   };
@@ -111,7 +107,6 @@ export default function Sidebar({
           </div>
         </div>
       )}
-
 
       {/* Hamburger toggle when closed */}
       {!isOpen && (
@@ -137,8 +132,6 @@ export default function Sidebar({
         />
       )}
 
-
-
       <aside className={asideClass}>
         {/* Logo row */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-white/5">
@@ -146,7 +139,7 @@ export default function Sidebar({
             <div className="w-11 h-11 flex items-center justify-center p-1.5 bg-white/5 rounded-lg border border-white/10">
               <img
                 src={logo}
-                alt="Ghostwrites logo"
+                alt="GhostScribe logo"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -154,7 +147,7 @@ export default function Sidebar({
               style={{ fontFamily: "var(--font-heading)" }}
               className="text-[16px] font-bold text-white tracking-tight"
             >
-              Ghostwrites
+              GhostScribe
             </span>
           </div>
           <button
@@ -170,17 +163,21 @@ export default function Sidebar({
         {/* Identity Switcher */}
         <div className="px-3 py-4 border-b border-white/5">
           <div className="relative">
-            <button 
+            <button
               onClick={() => setWsOpen(!wsOpen)}
               className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.05] transition-all"
             >
-
-
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Active Identity</p>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">
+                  Active Identity
+                </p>
                 <div className="flex items-center gap-3">
                   {activeWorkspace?.logo_url ? (
-                    <img src={activeWorkspace.logo_url} alt="" className="w-5 h-5 rounded-md object-cover border border-white/10" />
+                    <img
+                      src={activeWorkspace.logo_url}
+                      alt=""
+                      className="w-5 h-5 rounded-md object-cover border border-white/10"
+                    />
                   ) : (
                     <div className="w-5 h-5 rounded bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/20">
                       {activeWorkspace?.name?.charAt(0) || "I"}
@@ -192,65 +189,74 @@ export default function Sidebar({
                 </div>
               </div>
 
-
-              <ChevronDown className={`w-4 h-4 text-white/20 transition-transform duration-300 ${wsOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-4 h-4 text-white/20 transition-transform duration-300 ${wsOpen ? "rotate-180" : ""}`}
+              />
             </button>
-            
+
             {wsOpen && (
-              <div 
+              <div
                 ref={wsRef}
                 className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl z-[100] py-2 overflow-hidden"
               >
-
-
                 <div className="px-3 pb-2 mb-2 border-b border-white/5">
-                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Your Identities</p>
+                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                    Your Identities
+                  </p>
                 </div>
 
                 <div className="max-h-[240px] overflow-y-auto px-1">
                   {(workspaces || [])
-                    .filter(ws => {
+                    .filter((ws) => {
                       // Show workspace if it has profiles, or if it's the active one, or if no workspaces have profiles yet
-                      const hasAnyBrandedWs = (workspaces || []).some(w => (w.profile_count ?? 0) > 0);
+                      const hasAnyBrandedWs = (workspaces || []).some(
+                        (w) => (w.profile_count ?? 0) > 0,
+                      );
                       if (!hasAnyBrandedWs) return true; // Show all if none are branded yet
-                      return (ws.profile_count ?? 0) > 0 || ws.id === activeWorkspace?.id;
+                      return (
+                        (ws.profile_count ?? 0) > 0 ||
+                        ws.id === activeWorkspace?.id
+                      );
                     })
-                    .map(ws => (
-
-                    <button
-                      key={ws.id}
-                      onClick={() => {
-                        setActiveWorkspace(ws);
-                        setWsOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2.5 rounded-md text-xs transition-colors flex items-center justify-between ${
-                        activeWorkspace?.id === ws.id 
-                          ? 'text-white bg-blue-600/20' 
-                          : 'text-white/40 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        {ws.logo_url ? (
-                          <img src={ws.logo_url} alt="" className="w-5 h-5 rounded object-cover" />
-                        ) : (
-                          <div className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-[10px] font-bold">
-                            {ws.name.charAt(0)}
-                          </div>
+                    .map((ws) => (
+                      <button
+                        key={ws.id}
+                        onClick={() => {
+                          setActiveWorkspace(ws);
+                          setWsOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-md text-xs transition-colors flex items-center justify-between ${
+                          activeWorkspace?.id === ws.id
+                            ? "text-white bg-blue-600/20"
+                            : "text-white/40 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          {ws.logo_url ? (
+                            <img
+                              src={ws.logo_url}
+                              alt=""
+                              className="w-5 h-5 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-[10px] font-bold">
+                              {ws.name.charAt(0)}
+                            </div>
+                          )}
+                          <span className="truncate">{ws.name}</span>
+                        </div>
+                        {activeWorkspace?.id === ws.id && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                         )}
-                        <span className="truncate">{ws.name}</span>
-                      </div>
-                      {activeWorkspace?.id === ws.id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      )}
-                    </button>
-                  ))}
-                  
+                      </button>
+                    ))}
+
                   {/* Primary CTA */}
                   <div className="mt-3 px-1">
-                    <button 
+                    <button
                       onClick={() => {
-                        localStorage.setItem('profile_action', 'add');
-                        onViewChange('profile');
+                        localStorage.setItem("profile_action", "add");
+                        onViewChange("profile");
                         setWsOpen(false);
                       }}
                       className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all text-xs font-bold shadow-lg shadow-blue-600/20 active:scale-95"
@@ -262,9 +268,9 @@ export default function Sidebar({
 
                   {/* Secondary Link */}
                   <div className="px-2 pt-2 mt-1 border-t border-white/5">
-                    <button 
+                    <button
                       onClick={() => {
-                        onViewChange('profile');
+                        onViewChange("profile");
                         setWsOpen(false);
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-all text-xs font-bold group"
@@ -273,25 +279,15 @@ export default function Sidebar({
                       <span>Manage All Identities</span>
                     </button>
                   </div>
-
-
                 </div>
               </div>
             )}
-
-
-
-
-
           </div>
         </div>
 
-
         {/* Nav items */}
         <nav className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto pb-8 scrollbar-bw">
-
           {menuItems.map((item) => {
-
             const Icon = item.icon;
             const active = activeView === item.id;
             return (
