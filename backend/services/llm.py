@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 
 def generate_text(prompt):
@@ -16,7 +17,7 @@ def generate_text(prompt):
     }
 
     data = {
-        "model": "llama-3.1-8b-instant",
+        "model": GROQ_MODEL,
         "messages": [
             {"role": "user", "content": prompt}
         ]
@@ -26,7 +27,16 @@ def generate_text(prompt):
 
     # 🔍 DEBUG PRINT (VERY IMPORTANT)
     print("STATUS:", response.status_code)
-    print("RESPONSE:", response.text)
+    try:
+        print("RESPONSE:", response.text)
+    except UnicodeEncodeError:
+        # Fallback for Windows consoles that do not support utf-8 output natively
+        try:
+            import sys
+            encoding = sys.stdout.encoding or 'utf-8'
+            print("RESPONSE:", response.text.encode(encoding, errors='replace').decode(encoding))
+        except Exception:
+            print("RESPONSE: [Unicode response could not be printed]")
 
     # ❌ If API failed
     if response.status_code != 200:
@@ -44,7 +54,7 @@ def generate_text(prompt):
 def complete_chat(
     messages: list[dict],
     *,
-    model: str = "llama-3.1-8b-instant",
+    model: str = GROQ_MODEL,
     temperature: float = 0.7,
 ) -> str:
     """Multi-turn chat completion (same Groq endpoint as generate_text)."""
