@@ -82,10 +82,20 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
 # CORS configuration
+default_origins = [
+    "https://ghostscribe.vercel.app",
+    "https://theghostscribe.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+env_origins = [o.strip() for o in ALLOWED_ORIGINS if o.strip()]
+merged_origins = list(set(default_origins + env_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ghostscribe.vercel.app",
-                   "https://theghostscribe.vercel.app"],
+    allow_origins=merged_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1862,3 +1872,13 @@ def invite_user(req: UserInvite):
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Mount Ghostscribe Autonomous Content Engine Router
+try:
+    from services.engine_routes import engine_router
+    app.include_router(engine_router)
+    logger.info("Autonomous Content Engine router mounted successfully at /api/engine")
+except Exception as e:
+    logger.error(f"Failed to mount engine_router: {e}")
+

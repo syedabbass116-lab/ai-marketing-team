@@ -3,50 +3,56 @@ import { useAuth } from "../context/AuthContext";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { supabase } from "../lib/supabase";
 
-
-const FREE_LIMIT = 3; // free posts per user
-const TRIAL_DAYS = 7; // trial duration
-
-export function useUsageLimit() {
+export function useUsageLimit(_workspaceId?: string) {
   const { user } = useAuth();
   const { activeWorkspace } = useWorkspace();
+  const targetWsId = _workspaceId || activeWorkspace?.id;
   const [usage, setUsage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (activeWorkspace?.id) {
+    if (targetWsId) {
       fetchUsage();
     }
-  }, [activeWorkspace?.id]);
+  }, [targetWsId]);
 
   async function fetchUsage() {
-    if (!activeWorkspace?.id) {
+    if (!targetWsId) {
       setLoading(false);
       return;
     }
 
     try {
-      console.log('useUsageLimit: Fetching usage for workspace', activeWorkspace.id);
+      console.log("useUsageLimit: Fetching usage for workspace", targetWsId);
       let { data: selectData, error } = await supabase
         .from("user_usage")
         .select("*")
-        .eq("workspace_id", activeWorkspace.id);
+        .eq("workspace_id", targetWsId);
 
       let data = selectData && selectData.length > 0 ? selectData[0] : null;
 
       if (error || !data) {
         // Handle both standard error and "no data" case
-        if (!data || error?.code === "PGRST116" || error?.status === 406 || (error as any)?.message?.includes('406')) {
+        const errAny = error as any;
+        if (
+          !data ||
+          errAny?.code === "PGRST116" ||
+          errAny?.status === 406 ||
+          errAny?.message?.includes("406")
+        ) {
           // NEW USER/WORKSPACE: Initialize with FREE limits
-          console.log('useUsageLimit: Initializing FREE plan for workspace', activeWorkspace.id);
+          console.log(
+            "useUsageLimit: Initializing FREE plan for workspace",
+            targetWsId,
+          );
           const { data: insertData, error: insertError } = await supabase
             .from("user_usage")
-            .insert({ 
-              workspace_id: activeWorkspace.id,
+            .insert({
+              workspace_id: targetWsId,
               user_id: user?.id,
-              plan_name: 'Free',
+              plan_name: "Free",
               posts_limit: 15,
-              posts_generated: 0
+              posts_generated: 0,
             })
             .select();
 
@@ -90,20 +96,21 @@ export function useUsageLimit() {
 
   // Plan-aware thresholds
   const PLAN_THRESHOLDS: Record<string, { warn: number; limit: number }> = {
-    'Free':    { warn: 10,  limit: 15  },
-    'Starter': { warn: 25,  limit: 30  },
-    'Pro':     { warn: 85,  limit: 100 },
-    'Agency':  { warn: 220, limit: 250 },
+    Free: { warn: 10, limit: 15 },
+    Starter: { warn: 25, limit: 30 },
+    Pro: { warn: 85, limit: 100 },
+    Agency: { warn: 220, limit: 250 },
   };
 
-  const planName = usage?.plan_name || 'Free';
-  const thresholds = PLAN_THRESHOLDS[planName] || PLAN_THRESHOLDS['Free'];
+  const planName = usage?.plan_name || "Free";
+  const thresholds = PLAN_THRESHOLDS[planName] || PLAN_THRESHOLDS["Free"];
 
   // Always use the database value as source of truth, fall back to plan threshold
   const postsGenerated = usage?.posts_generated || 0;
   const postsLimit = usage?.posts_limit || thresholds.limit;
 
-  const isNearLimit = postsGenerated >= thresholds.warn && postsGenerated < postsLimit;
+  const isNearLimit =
+    postsGenerated >= thresholds.warn && postsGenerated < postsLimit;
   const canGenerate = postsGenerated < postsLimit;
   const postsLeft = Math.max(0, postsLimit - postsGenerated);
 
@@ -111,15 +118,15 @@ export function useUsageLimit() {
   const trialDaysLeft = 7;
   const hasTrialExpired = false;
 
-  return { 
-    usage, 
-    loading, 
-    canGenerate, 
+  return {
+    usage,
+    loading,
+    canGenerate,
     isNearLimit,
-    postsLeft, 
-    incrementUsage, 
-    refreshUsage: fetchUsage, 
-    trialDaysLeft, 
-    hasTrialExpired 
+    postsLeft,
+    incrementUsage,
+    refreshUsage: fetchUsage,
+    trialDaysLeft,
+    hasTrialExpired,
   };
 }

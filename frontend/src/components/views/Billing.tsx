@@ -1,17 +1,12 @@
-import { Check, CreditCard, Download, Zap } from "lucide-react";
+import { Check, Download, Zap } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { useWorkspace } from "../../context/WorkspaceContext";
+import type { ContentItem } from "../../hooks/useLibrary";
 
-interface ContentItem {
-  id: string;
-  platform: string;
-  text: string;
-  timestamp?: string;
-}
 
 interface PlanCardProps {
   name: string;

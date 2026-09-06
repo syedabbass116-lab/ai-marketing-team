@@ -14,12 +14,16 @@ import PrivacyPolicy from "./components/views/PrivacyPolicy";
 import TermsOfService from "./components/views/TermsOfService";
 import AboutUs from "./components/views/AboutUs";
 import FAQ from "./components/views/FAQ";
+import CaptureView from "./components/views/CaptureView";
+import OpportunitiesView from "./components/views/OpportunitiesView";
+import SourcesView from "./components/views/SourcesView";
+import IntegrationsView from "./components/views/IntegrationsView";
 import { useUsageLimit } from "./hooks/useUsageLimit";
 import { useLibrary } from "./hooks/useLibrary";
+import { useEngine } from "./hooks/useEngine";
 import FeatureWalkthrough from "./components/FeatureWalkthrough";
-import { WorkspaceProvider } from "./context/WorkspaceContext";
+import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
 import Team from "./components/views/Team";
-
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -35,8 +39,19 @@ const emptyContentRecord = () => ({
 });
 
 function AppContent() {
-  const { usage, canGenerate, isNearLimit, incrementUsage, hasTrialExpired } = useUsageLimit();
+  const { activeWorkspace } = useWorkspace();
+  const { usage, canGenerate, isNearLimit, incrementUsage, hasTrialExpired } =
+    useUsageLimit(activeWorkspace?.id);
   const { library, saveToLibrary, deleteFromLibrary } = useLibrary();
+  const {
+    opportunities,
+    sources,
+    submitAudio,
+    submitThought,
+    handleOpportunityGenerate,
+    handleDeleteSource,
+  } = useEngine(activeWorkspace?.id);
+
   const [activeView, setActiveView] = useState("home");
   const [content, setContent] = useState<Record<string, string> | null>(null);
   const { user } = useAuth();
@@ -44,12 +59,13 @@ function AppContent() {
   const [genChatStep, setGenChatStep] = useState("start");
   const [genChatInput, setGenChatInput] = useState("");
 
-  
   const saveContent = async (platform: string, text: string) => {
     try {
       const result = await saveToLibrary(platform, text);
       if (!result) {
-        alert("Failed to save: No active brand identity selected. Please select or create one first.");
+        alert(
+          "Failed to save: No active brand identity selected. Please select or create one first.",
+        );
         return;
       }
       incrementUsage();
@@ -111,23 +127,22 @@ function AppContent() {
       workspaceId?: string,
       voiceId?: string,
     ) => {
-
       if (!API_BASE_URL) {
         throw new Error(
           "Backend URL is not configured. Set VITE_API_URL in your environment (e.g. frontend/.env).",
         );
       }
-      const body: Record<string, unknown> = { 
-        message, 
+      const body: Record<string, unknown> = {
+        message,
         platform,
         workspace_id: workspaceId,
-        voice_id: voiceId
+        voice_id: voiceId,
       };
       if (clientDrafts) body.client_drafts = clientDrafts;
 
-
       if (user) {
-        body.user_name = user.user_metadata?.full_name || user.email?.split('@')[0] || "there";
+        body.user_name =
+          user.user_metadata?.full_name || user.email?.split("@")[0] || "there";
       }
 
       const res = await fetch(`${API_BASE_URL}/chat-command`, {
@@ -197,9 +212,43 @@ function AppContent() {
 
   const renderView = () => {
     if (hasTrialExpired && activeView !== "billing") {
-      return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
+      return (
+        <Billing
+          library={library}
+          usage={usage}
+          onContactClick={() => setActiveView("contact")}
+        />
+      );
     }
     switch (activeView) {
+      case "home":
+        return <Home onViewChange={setActiveView} />;
+      case "capture":
+        return (
+          <CaptureView
+            onSubmitAudio={submitAudio}
+            onSubmitThought={submitThought}
+            onNavigateHome={() => setActiveView("home")}
+          />
+        );
+      case "opportunities":
+        return (
+          <OpportunitiesView
+            opportunities={opportunities}
+            onGeneratePost={handleOpportunityGenerate}
+            onNavigateHome={() => setActiveView("home")}
+          />
+        );
+      case "sources":
+        return (
+          <SourcesView
+            sources={sources}
+            onDeleteSource={handleDeleteSource}
+            onOpenCaptureModal={() => setActiveView("capture")}
+          />
+        );
+      case "integrations":
+        return <IntegrationsView workspaceId={activeWorkspace?.id} />;
       case "generate":
         return (
           <Dashboard
@@ -214,42 +263,42 @@ function AppContent() {
             usage={usage}
             canGenerate={canGenerate}
             isNearLimit={isNearLimit}
-            onUpgrade={() => setActiveView('billing')}
+            onUpgrade={() => setActiveView("billing")}
           />
         );
       case "library":
         return <ContentLibrary library={library} onDelete={deleteContent} />;
       case "billing":
-        return <Billing library={library} usage={usage} onContactClick={() => setActiveView('contact')} />;
+        return (
+          <Billing
+            library={library}
+            usage={usage}
+            onContactClick={() => setActiveView("contact")}
+          />
+        );
       case "profile":
         return <Profiles />;
       case "team":
         return <Team />;
-      case "home":
-        return <Home onViewChange={setActiveView} />;
+      case "contact":
+        return <ContactUs />;
+      case "privacy":
+        return <PrivacyPolicy />;
+      case "terms":
+        return <TermsOfService />;
+      case "about":
+        return <AboutUs />;
+      case "faq":
+        return <FAQ />;
       default:
-        return (
-          <Dashboard
-            content={content}
-            onSave={saveContent}
-            onChatCommand={runChatCommand}
-            onPostAction={runPostAction}
-            chatStep={genChatStep}
-            setChatStep={setGenChatStep}
-            chatInput={genChatInput}
-            setChatInput={setGenChatInput}
-            usage={usage}
-            canGenerate={canGenerate}
-            isNearLimit={isNearLimit}
-            onUpgrade={() => setActiveView('billing')}
-          />
-        );
+        return <Home onViewChange={setActiveView} />;
     }
-
   };
 
   return (
-    <div className={`min-h-screen text-white ${activeView === 'home' ? 'bg-[#0a0a0a]' : 'bg-black bg-dot-grid'}`}>
+    <div
+      className={`min-h-screen text-white ${activeView === "home" ? "bg-[#0a0a0a]" : "bg-black bg-dot-grid"}`}
+    >
       <FeatureWalkthrough />
       <Sidebar
         activeView={activeView}
@@ -260,9 +309,15 @@ function AppContent() {
       <TopBar sidebarOpen={sidebarOpen} onViewChange={setActiveView} />
 
       <main
-        className={`pt-14 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'ml-0'} h-full`}
+        className={`pt-14 transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "ml-0"} h-full`}
       >
-        <div className={activeView !== 'home' ? "p-4 sm:p-6 md:p-8 animate-fadeIn max-w-7xl mx-auto" : "h-full w-full"}>
+        <div
+          className={
+            activeView !== "home"
+              ? "p-4 sm:p-6 md:p-8 animate-fadeIn max-w-7xl mx-auto"
+              : "h-full w-full"
+          }
+        >
           {renderView()}
         </div>
       </main>
@@ -302,6 +357,5 @@ function App() {
     </WorkspaceProvider>
   );
 }
-
 
 export default App;

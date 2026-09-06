@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Mail, User as UserIcon, Check, Loader2, Camera, Upload } from "lucide-react";
+import { Mail, User as UserIcon, Check, Loader2, Camera } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/AuthContext";

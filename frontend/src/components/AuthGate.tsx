@@ -5,7 +5,7 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 
-export default function AuthGate({ children }) {
+export default function AuthGate({ children }: { children: React.ReactNode }) {
   // Check if Clerk is properly initialized
   const isClerkActive =
     import.meta.env.VITE_CLERK_PUBLISHABLE_KEY &&

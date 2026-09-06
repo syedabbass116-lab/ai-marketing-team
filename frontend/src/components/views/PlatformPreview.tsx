@@ -19,10 +19,6 @@ export default function PlatformPreview({ platform, content, brandName, avatarUr
   
   console.log(`[Preview] Rendering ${platform} for "${userName}" with avatar: ${avatarUrl.substring(0, 30)}...`);
 
-  const truncateText = (text: string, limit: number) => {
-    return text.length > limit ? text.substring(0, limit) + '...' : text;
-  };
-
   if (platform === 'linkedin') {
     return (
       <div className="bg-white text-black rounded-lg overflow-hidden border border-gray-300">

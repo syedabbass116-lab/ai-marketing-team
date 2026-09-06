@@ -58,11 +58,9 @@ export function useBrandVoices(workspaceId?: string) {
   }, [workspaceId]);
 
   useEffect(() => {
-    let isMounted = true;
     if (workspaceId) {
       fetchProfiles();
     }
-    return () => { isMounted = false; };
   }, [workspaceId, fetchProfiles]);
 
 

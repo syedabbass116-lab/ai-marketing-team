@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Plus, Trash2, CheckCircle2, Circle, Loader2, Info, Target, PenTool, Hash, Upload, Image as ImageIcon, AlertTriangle, X } from 'lucide-react';
+import { User, Plus, Trash2, CheckCircle2, Circle, Loader2, PenTool, Hash, Upload, Image as ImageIcon, AlertTriangle, X } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { useBrandVoices, BrandProfile } from '../../hooks/useBrandVoices';
@@ -25,8 +25,8 @@ const toneOptions = [
 
 export default function Profiles() {
   const { user } = useAuth();
-  const { workspaces, createWorkspace, setActiveWorkspace, activeWorkspace, refreshWorkspaces } = useWorkspace();
-  const { profiles, loading, addProfile, deleteProfile, setActiveProfile, refreshProfiles } = useBrandVoices(activeWorkspace?.id);
+  const { createWorkspace, activeWorkspace, refreshWorkspaces } = useWorkspace();
+  const { profiles, loading, setActiveProfile, refreshProfiles } = useBrandVoices(activeWorkspace?.id);
   const { usage } = useUsageLimit();
   const [globalProfiles, setGlobalProfiles] = useState<any[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);

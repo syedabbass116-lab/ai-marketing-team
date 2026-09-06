@@ -8,11 +8,11 @@ import {
   Plus,
   Settings,
   User,
-  Wand2,
   ChevronDown,
-  Sparkles,
   PenTool,
-  Users as TeamIcon,
+  Mic,
+  Lightbulb,
+  Database,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWorkspace } from "../../context/WorkspaceContext";
@@ -32,13 +32,18 @@ type MenuItem = {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
 };
 
 const menuItems: MenuItem[] = [
-  { id: "home", label: "Home", icon: LayoutDashboard },
-  { id: "generate", label: "Generate Post", icon: PenTool },
+  { id: "home", label: "Today's Post", icon: LayoutDashboard },
+  { id: "capture", label: "Capture Input", icon: Mic, highlight: true },
+  { id: "opportunities", label: "Opportunities", icon: Lightbulb },
+  { id: "sources", label: "Sources & Audio", icon: Database },
+  { id: "generate", label: "Manual Writer", icon: PenTool },
   { id: "profile", label: "Brand Identities", icon: User },
   { id: "library", label: "Content Library", icon: FolderOpen },
+  { id: "integrations", label: "Integrations & Brain", icon: Settings },
   { id: "billing", label: "Subscription", icon: CreditCard },
 ];
 

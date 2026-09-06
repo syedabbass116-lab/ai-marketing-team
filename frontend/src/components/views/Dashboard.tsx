@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { Copy, Save, Linkedin, Twitter, MessageSquare } from "lucide-react";
+import { Copy, Linkedin, Twitter, MessageSquare } from "lucide-react";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Textarea from "../ui/Textarea";
@@ -86,7 +86,7 @@ export default function Dashboard({
   setChatStep,
   chatInput: chatText,
   setChatInput: setChatText,
-  usage,
+  usage: _usage,
   canGenerate = true,
   isNearLimit = false,
   onUpgrade,
@@ -96,8 +96,6 @@ export default function Dashboard({
   const activeProfile = voices.find((v) => v.is_active);
   const selectedVoiceId = activeProfile?.id || "";
   const [chatBusy, setChatBusy] = useState(false);
-
-  const [showFirstPostLoading, setShowFirstPostLoading] = useState(false);
   const [chatErr, setChatErr] = useState<string | null>(null);
   const [activePlatform, setActivePlatform] =
     useState<DraftPlatform>("linkedin");
@@ -192,12 +190,6 @@ export default function Dashboard({
     setChatBusy(true);
     setChatErr(null);
 
-    // Show special loading if it's the first post
-    const isFirstPost = !usage || usage.posts_generated === 0;
-    if (isFirstPost) {
-      setShowFirstPostLoading(true);
-    }
-
     try {
       const drafts = buildClientDraftsPayload(
         content,
@@ -231,7 +223,6 @@ export default function Dashboard({
       setChatErr(e instanceof Error ? e.message : "Message failed");
     } finally {
       setChatBusy(false);
-      setShowFirstPostLoading(false);
     }
   };
 

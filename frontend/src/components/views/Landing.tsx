@@ -259,9 +259,9 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               We'll post them.
             </h1>
             <p className="mt-5 max-w-lg text-base text-gray-400 sm:mt-6 sm:text-lg">
-              Record a voice note, upload a meeting, or type a quick thought — AI
-              transcribes, extracts insights, and generates ready-to-publish posts
-              grounded in your actual words.
+              Record a voice note, upload a meeting, or type a quick thought —
+              AI transcribes, extracts insights, and generates ready-to-publish
+              posts grounded in your actual words.
             </p>
             <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:items-center justify-center lg:justify-start">
               <button
@@ -422,8 +422,8 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
                 AI scores your insights across 9 factors: ICP relevance,
-                originality, story potential, credibility, and more. Surface
-                the highest-impact content you might have missed.
+                originality, story potential, credibility, and more. Surface the
+                highest-impact content you might have missed.
               </p>
             </div>
 
