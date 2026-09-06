@@ -20,6 +20,7 @@ import {
 
 export function useEngine(workspaceId = 'default') {
   const [todaysPost, setTodaysPost] = useState<EnginePost | null>(null);
+  const [todaysPosts, setTodaysPosts] = useState<EnginePost[]>([]);
   const [readyQueue, setReadyQueue] = useState<EnginePost[]>([]);
   const [stats, setStats] = useState({
     ready_count: 0,
@@ -45,8 +46,19 @@ export function useEngine(workspaceId = 'default') {
         fetchOpportunities(workspaceId),
         fetchSources(workspaceId)
       ]);
-      setTodaysPost(todayData.todays_post);
-      setReadyQueue(todayData.ready_queue || []);
+      const mainPost = todayData.todays_post;
+      const queue = todayData.ready_queue || [];
+      setTodaysPost(mainPost);
+      setReadyQueue(queue);
+
+      if (mainPost) {
+        // Group posts generated from same session if available
+        const related = queue.filter(q => q.source_id && q.source_id === mainPost.source_id);
+        setTodaysPosts([mainPost, ...related]);
+      } else {
+        setTodaysPosts([]);
+      }
+
       setStats(todayData.stats || { ready_count: 0, week_count: 0, opportunities_count: 0, sources_count: 0 });
       setOpportunities(oppsData);
       setSources(sourcesData);
@@ -72,6 +84,7 @@ export function useEngine(workspaceId = 'default') {
 
     // Reset stale post state so the user never sees content from a previous recording
     setTodaysPost(null);
+    setTodaysPosts([]);
 
     setActiveJob({
       job_id: jobId,
@@ -116,17 +129,16 @@ export function useEngine(workspaceId = 'default') {
           }
           setIsProcessing(false);
 
-          if (job.status === 'ready' && job.result?.post) {
-            // Only apply if this is still the current job
+          if (job.status === 'ready' && job.result) {
             if (currentJobIdRef.current === jobId) {
-              if (import.meta.env.DEV) {
-                console.log(
-                  `[GhostScribe] Post ready — jobId: ${jobId}, ` +
-                  `post chars: ${job.result.post.content?.length ?? 0}, ` +
-                  `transcript chars: ${(job.result as any).transcript_chars ?? 'n/a'}`
-                );
+              const allGenerated = job.result.posts && job.result.posts.length > 0
+                ? job.result.posts
+                : (job.result.post ? [job.result.post] : []);
+
+              if (allGenerated.length > 0) {
+                setTodaysPost(allGenerated[0]);
+                setTodaysPosts(allGenerated);
               }
-              setTodaysPost(job.result.post);
               loadData();
             }
           } else if (job.status === 'failed') {
@@ -192,18 +204,22 @@ export function useEngine(workspaceId = 'default') {
       customInstruction?: string;
       scheduledAt?: string;
       content?: string;
-    }
+    },
+    targetPost?: EnginePost
   ) => {
-    if (!todaysPost) return;
+    const postToUse = targetPost || todaysPost;
+    if (!postToUse) return;
 
     // Optimistic UI updates
     if (action === 'approve') {
-      setTodaysPost({ ...todaysPost, status: 'approved' });
+      const updated = { ...postToUse, status: 'approved' as const };
+      if (todaysPost?.id === postToUse.id) setTodaysPost(updated);
+      setTodaysPosts(prev => prev.map(p => p.id === postToUse.id ? updated : p));
     }
 
     try {
       const res = await executePostAction(
-        todaysPost.id,
+        postToUse.id,
         {
           action,
           modifier: options?.modifier,
@@ -215,7 +231,9 @@ export function useEngine(workspaceId = 'default') {
       );
 
       if (res.post) {
-        setTodaysPost(res.post);
+        const updatedPost = res.post;
+        if (todaysPost?.id === postToUse.id) setTodaysPost(updatedPost);
+        setTodaysPosts(prev => prev.map(p => p.id === postToUse.id ? updatedPost : p));
       }
       return res;
     } catch (err) {
@@ -257,6 +275,7 @@ export function useEngine(workspaceId = 'default') {
 
   return {
     todaysPost,
+    todaysPosts,
     readyQueue,
     stats,
     opportunities,

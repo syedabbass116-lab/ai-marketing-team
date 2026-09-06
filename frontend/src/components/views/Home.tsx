@@ -29,6 +29,7 @@ export default function Home({ onViewChange }: HomeProps) {
 
   const {
     todaysPost,
+    todaysPosts,
     readyQueue,
     stats,
     opportunities,
@@ -70,12 +71,13 @@ export default function Home({ onViewChange }: HomeProps) {
         {todaysPost ? (
           <TodaysPostCard
             post={todaysPost}
+            posts={todaysPosts}
             founderName={capitalizedName}
-            onApprove={() => handlePostAction('approve')}
-            onEdit={(text) => handlePostAction('edit', { content: text })}
-            onModifier={(mod, custom) => handlePostAction('edit', { modifier: mod, customInstruction: custom })}
-            onRegenerate={() => handlePostAction('regenerate')}
-            onSchedule={(dateStr) => handlePostAction('schedule', { scheduledAt: dateStr })}
+            onApprove={(target) => handlePostAction('approve', undefined, target)}
+            onEdit={(text, target) => handlePostAction('edit', { content: text }, target)}
+            onModifier={(mod, custom, target) => handlePostAction('edit', { modifier: mod, customInstruction: custom }, target)}
+            onRegenerate={(target) => handlePostAction('regenerate', undefined, target)}
+            onSchedule={(dateStr, target) => handlePostAction('schedule', { scheduledAt: dateStr }, target)}
           />
         ) : (
           /* Polished Empty State */

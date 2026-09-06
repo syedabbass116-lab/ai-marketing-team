@@ -141,51 +141,59 @@ def _process_audio_pipeline(
 
         top_opp = opportunities[0]
 
-        # Step 5: Repetition Check & Angle Selection
+        # Step 5: Determine 3 distinct angles for the 3 posts
         _JOBS[job_id]["status"] = "generating"
-        _JOBS[job_id]["progress_pct"] = 90
-        _JOBS[job_id]["message"] = "Choosing strongest angle & generating Today's Post..."
+        _JOBS[job_id]["progress_pct"] = 85
+        _JOBS[job_id]["message"] = "Crafting 3 distinct perspective posts from your recording..."
 
-        rep_check = check_repetition(
-            workspace_id=workspace_id,
-            proposed_topic=top_opp.get("title", ""),
-            proposed_angle=top_opp.get("recommended_angle", "contrarian"),
-            available_angles=top_opp.get("available_angles", ["contrarian", "story"])
-        )
-        selected_angle = rep_check.get("chosen_angle", top_opp.get("recommended_angle", "contrarian"))
+        # 3 complementary angles for every recording
+        default_angles = ["contrarian", "story", "framework"]
+        avail = top_opp.get("available_angles", [])
+        chosen_angles = []
+        for a in [top_opp.get("recommended_angle", "contrarian"), *avail, *default_angles]:
+            if a not in chosen_angles:
+                chosen_angles.append(a)
+            if len(chosen_angles) >= 3:
+                break
 
-        # Step 6: Post Generation with Grounded Provenance
+        generated_posts_list = []
+
         logger.info(
             f"[{job_id}] Generation input — "
             f"recordingId: {source_id}, "
             f"transcript chars: {len(raw_text)}, "
+            f"angles: {chosen_angles}, "
             f"preview: {raw_text[:120]!r}"
         )
-        generated_post = generate_engine_post(
-            opportunity=top_opp,
-            brand_context=brand_context,
-            angle=selected_angle,
-            platform="linkedin",
-            raw_transcript=raw_text  # Full transcript — source of truth
-        )
-        logger.info(f"[{job_id}] Post generated — {len(generated_post.get('content', ''))} chars.")
 
-        post_id = f"post-{uuid.uuid4().hex[:8]}"
-        final_post = {
-            "id": post_id,
-            "opportunity_id": top_opp.get("id", f"opp-{uuid.uuid4().hex[:8]}"),
-            "source_id": source_id,
-            "title": top_opp.get("title", ""),
-            "content": generated_post.get("content", ""),
-            "platform": "linkedin",
-            "angle": selected_angle,
-            "status": "recommended_today",
-            "provenance": generated_post.get("provenance", {}),
-            "metrics": generated_post.get("metrics", {}),
-            "created_at": datetime.utcnow().isoformat(),
-            # Store the transcript so regenerate/edit can use it as source of truth
-            "transcript": raw_text
-        }
+        # Step 6: Generate all 3 posts in parallel/sequence
+        for idx, ang in enumerate(chosen_angles):
+            gen_res = generate_engine_post(
+                opportunity=top_opp,
+                brand_context=brand_context,
+                angle=ang,
+                platform="linkedin",
+                raw_transcript=raw_text
+            )
+            p_id = f"post-{uuid.uuid4().hex[:8]}"
+            p_item = {
+                "id": p_id,
+                "opportunity_id": top_opp.get("id", f"opp-{uuid.uuid4().hex[:8]}"),
+                "source_id": source_id,
+                "title": f"{top_opp.get('title', title)} ({ang.replace('_', ' ').title()} Angle)",
+                "content": gen_res.get("content", ""),
+                "platform": "linkedin",
+                "angle": ang,
+                "status": "recommended_today" if idx == 0 else "ready",
+                "provenance": gen_res.get("provenance", {}),
+                "metrics": gen_res.get("metrics", {}),
+                "created_at": datetime.utcnow().isoformat(),
+                "transcript": raw_text
+            }
+            generated_posts_list.append(p_item)
+
+        final_post = generated_posts_list[0]
+        logger.info(f"[{job_id}] Generated {len(generated_posts_list)} posts across angles {chosen_angles}.")
 
         # Step 7: Persist results
         source_record = {
@@ -216,7 +224,8 @@ def _process_audio_pipeline(
 
         if workspace_id not in _POSTS:
             _POSTS[workspace_id] = []
-        _POSTS[workspace_id].insert(0, final_post)
+        for p in reversed(generated_posts_list):
+            _POSTS[workspace_id].insert(0, p)
 
         # Store to Content Brain memory
         add_founder_memory(
@@ -230,9 +239,10 @@ def _process_audio_pipeline(
         # Mark Job as Complete
         _JOBS[job_id]["status"] = "ready"
         _JOBS[job_id]["progress_pct"] = 100
-        _JOBS[job_id]["message"] = "Your post is ready."
+        _JOBS[job_id]["message"] = "Your 3 posts are ready."
         _JOBS[job_id]["result"] = {
             "post": final_post,
+            "posts": generated_posts_list,
             "source": source_record,
             "insights_count": len(insights),
             "opportunities_count": len(opportunities),

@@ -112,6 +112,7 @@ export interface EngineJob {
   message: string;
   result?: {
     post?: EnginePost;
+    posts?: EnginePost[];
     source?: SourceItem;
     insights_count?: number;
     opportunities_count?: number;
