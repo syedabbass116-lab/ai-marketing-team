@@ -141,35 +141,57 @@ def _process_audio_pipeline(
 
         top_opp = opportunities[0]
 
-        # Step 5: Determine 3 distinct angles for the 3 posts
+        # Step 5: Determine dynamic post target based on duration + topic density
+        num_opps = len(opportunities)
+        if duration < 120:          # < 2 min  → 1–3 posts
+            target_posts = max(1, min(3, num_opps))
+        elif duration < 900:        # 2–15 min → 3–5 posts
+            target_posts = max(3, min(5, num_opps * 2))
+        else:                       # 15+ min  → 5–10 posts (event / long session)
+            target_posts = max(5, min(10, num_opps * 2))
+
         _JOBS[job_id]["status"] = "generating"
         _JOBS[job_id]["progress_pct"] = 85
-        _JOBS[job_id]["message"] = "Crafting 3 distinct perspective posts from your recording..."
+        _JOBS[job_id]["message"] = (
+            f"Crafting {target_posts} posts from {num_opps} topic(s) in your recording..."
+        )
 
-        # 3 complementary angles for every recording
-        default_angles = ["contrarian", "story", "framework"]
-        avail = top_opp.get("available_angles", [])
-        chosen_angles = []
-        for a in [top_opp.get("recommended_angle", "contrarian"), *avail, *default_angles]:
-            if a not in chosen_angles:
-                chosen_angles.append(a)
-            if len(chosen_angles) >= 3:
-                break
+        # Preferred angle pool; cycle through opportunities to diversify topics
+        default_angles = ["contrarian", "story", "framework", "educational", "personal_lesson"]
+
+        # Build a flat work list: (opportunity, angle) pairs up to target_posts
+        work_list: list[tuple[dict, str]] = []
+        used_angles_per_opp: dict[int, list[str]] = {}
+        round_robin_idx = 0
+        while len(work_list) < target_posts:
+            opp = opportunities[round_robin_idx % num_opps]
+            opp_key = round_robin_idx % num_opps
+            avail = opp.get("available_angles", [])
+            candidate_angles = [
+                opp.get("recommended_angle", "contrarian"),
+                *avail,
+                *default_angles,
+            ]
+            seen = used_angles_per_opp.setdefault(opp_key, [])
+            chosen_angle = next((a for a in candidate_angles if a not in seen), default_angles[len(seen) % len(default_angles)])
+            seen.append(chosen_angle)
+            work_list.append((opp, chosen_angle))
+            round_robin_idx += 1
 
         generated_posts_list = []
 
         logger.info(
             f"[{job_id}] Generation input — "
-            f"recordingId: {source_id}, "
+            f"recordingId: {source_id}, duration: {duration:.0f}s, "
+            f"topics: {num_opps}, target_posts: {target_posts}, "
             f"transcript chars: {len(raw_text)}, "
-            f"angles: {chosen_angles}, "
             f"preview: {raw_text[:120]!r}"
         )
 
-        # Step 6: Generate all 3 posts in parallel/sequence
-        for idx, ang in enumerate(chosen_angles):
+        # Step 6: Generate all posts sequentially
+        for idx, (opp, ang) in enumerate(work_list):
             gen_res = generate_engine_post(
-                opportunity=top_opp,
+                opportunity=opp,
                 brand_context=brand_context,
                 angle=ang,
                 platform="linkedin",
@@ -178,9 +200,9 @@ def _process_audio_pipeline(
             p_id = f"post-{uuid.uuid4().hex[:8]}"
             p_item = {
                 "id": p_id,
-                "opportunity_id": top_opp.get("id", f"opp-{uuid.uuid4().hex[:8]}"),
+                "opportunity_id": opp.get("id", f"opp-{uuid.uuid4().hex[:8]}"),
                 "source_id": source_id,
-                "title": f"{top_opp.get('title', title)} ({ang.replace('_', ' ').title()} Angle)",
+                "title": f"{opp.get('title', title)} ({ang.replace('_', ' ').title()} Angle)",
                 "content": gen_res.get("content", ""),
                 "platform": "linkedin",
                 "angle": ang,
@@ -193,7 +215,7 @@ def _process_audio_pipeline(
             generated_posts_list.append(p_item)
 
         final_post = generated_posts_list[0]
-        logger.info(f"[{job_id}] Generated {len(generated_posts_list)} posts across angles {chosen_angles}.")
+        logger.info(f"[{job_id}] Generated {len(generated_posts_list)} posts for {num_opps} topic(s) (target was {target_posts}).")
 
         # Step 7: Persist results
         source_record = {

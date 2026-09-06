@@ -129,7 +129,7 @@ export default function TodaysPostCard({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-indigo-300">
-                  {totalSlides} Angles Generated
+                  {totalSlides} Post{totalSlides !== 1 ? 's' : ''} Generated
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">
                   Slide {safeIndex + 1} of {totalSlides}
@@ -147,10 +147,10 @@ export default function TodaysPostCard({
               <button
                 key={p.id || idx}
                 onClick={() => setActiveIndex(idx)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize shrink-0 flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all capitalize shrink-0 flex items-center gap-1.5 ${
                   idx === safeIndex
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/30'
-                    : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-[0_4px_16px_rgba(99,102,241,0.45)] border border-indigo-300/40 ring-1 ring-white/20 scale-[1.02]'
+                    : 'bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] border border-white/10 hover:border-white/20 shadow-sm'
                 }`}
               >
                 <span>{p.angle ? p.angle.replace('_', ' ') : `Angle ${idx + 1}`}</span>
@@ -159,20 +159,20 @@ export default function TodaysPostCard({
           </div>
 
           {/* Slide Arrow Controls */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handlePrevSlide}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5 active:scale-95"
+              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10 hover:border-white/20 active:scale-95 shadow-md"
               title="Previous slide"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={handleNextSlide}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5 active:scale-95 flex items-center gap-1 text-xs font-bold px-3"
+              className="p-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 hover:text-white transition-all border border-indigo-500/30 hover:border-indigo-400/50 active:scale-95 flex items-center gap-1 text-xs font-bold px-3 shadow-md shadow-indigo-500/10"
               title="Next slide (Swipe right)"
             >
-              <span>Next Slide</span>
+              <span>Next Card</span>
               <ChevronRight className="w-4 h-4 text-indigo-400" />
             </button>
           </div>
@@ -207,33 +207,57 @@ export default function TodaysPostCard({
         </button>
       </div>
 
-      {/* Hero Post Content Container with Touch Swipe Gesture & 3D Card Stack Visuals */}
+      {/* Hero Post Content Container with Touch Swipe Gesture & 3D Raised Card Stack */}
       <div
         className="py-6 sm:py-8 relative z-10 touch-pan-y cursor-grab active:cursor-grabbing select-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* 3D Stack Effect Background Cards */}
+        {/* 3D Stack Effect Background Cards (Layered & Raised Behind Active Card) */}
         {totalSlides > 1 && (
-          <>
-            <div className="absolute inset-x-4 top-10 bottom-2 bg-indigo-900/20 border border-white/5 rounded-3xl transform scale-95 translate-y-3 opacity-40 pointer-events-none transition-all duration-300" />
-            <div className="absolute inset-x-8 top-12 bottom-0 bg-blue-900/10 border border-white/5 rounded-3xl transform scale-90 translate-y-6 opacity-20 pointer-events-none transition-all duration-300" />
-          </>
+          <div className="absolute inset-0 pointer-events-none overflow-visible">
+            {/* Third layer card (deep background) */}
+            {totalSlides > 2 && (
+              <div
+                className="absolute inset-x-8 top-12 bottom-1 rounded-3xl bg-gradient-to-b from-[#1e1b4b]/40 to-[#0f172a]/20 border border-indigo-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.9)] transform scale-[0.92] translate-y-7 opacity-50 transition-all duration-500 blur-[0.5px]"
+                style={{ transformOrigin: 'top center' }}
+              />
+            )}
+            {/* Second layer card (mid background) */}
+            <div
+              className="absolute inset-x-4 top-8 bottom-3 rounded-3xl bg-gradient-to-b from-[#1e1b4b]/60 to-[#111116]/80 border border-indigo-400/30 shadow-[0_25px_60px_rgba(0,0,0,0.95)] transform scale-[0.96] translate-y-3.5 opacity-80 transition-all duration-500"
+              style={{ transformOrigin: 'top center' }}
+            >
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-300/40 to-transparent" />
+            </div>
+          </div>
         )}
 
-        <div className="bg-black/50 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl relative group transition-all duration-300 hover:border-indigo-500/30">
-          <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
-            <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest flex items-center gap-1.5 capitalize">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              {currentPost.angle ? `${currentPost.angle.replace('_', ' ')} Perspective` : 'Core Perspective'}
-            </span>
+        {/* Foreground Primary Raised & Highlighted Card */}
+        <div className="relative rounded-2xl bg-gradient-to-b from-[#1a1a24]/95 via-[#12121a]/98 to-[#0c0c10] border border-indigo-500/30 ring-1 ring-white/15 p-6 sm:p-8 md:p-9 backdrop-blur-xl shadow-[0_25px_70px_-10px_rgba(0,0,0,0.95),0_0_50px_rgba(99,102,241,0.22)] transition-all duration-300 hover:border-indigo-400/50 hover:shadow-[0_30px_80px_-10px_rgba(0,0,0,0.95),0_0_60px_rgba(99,102,241,0.3)]">
+          {/* Top Edge Gloss Highlight */}
+          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-300/70 to-transparent rounded-t-2xl" />
+          
+          {/* Floating Angle Badge */}
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-white/10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300 animate-pulse" />
+              <span>{currentPost.angle ? `${currentPost.angle.replace('_', ' ')} Perspective` : 'Core Perspective'}</span>
+            </div>
+            
             {totalSlides > 1 && (
-              <span className="text-[10px] text-white/40 font-mono">
-                Swipe left / right to change slide
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-white/50 hidden sm:inline">
+                  Card {safeIndex + 1} of {totalSlides}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 font-mono">
+                  Swipe ← →
+                </span>
+              </div>
             )}
           </div>
 
+          {/* Main Card Content */}
           <p className="text-base sm:text-lg md:text-xl text-white/95 leading-relaxed font-normal whitespace-pre-line tracking-normal select-text">
             {currentPost.content}
           </p>
@@ -241,7 +265,7 @@ export default function TodaysPostCard({
 
         {/* Source of Truth Transcript Disclosure */}
         {(currentPost.transcript || currentPost.provenance?.evidence_quote) && (
-          <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-white/70 space-y-1.5">
+          <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-white/70 space-y-1.5 shadow-inner">
             <div className="flex items-center gap-2 text-indigo-400 font-bold uppercase tracking-wider text-[10px]">
               <Compass className="w-3.5 h-3.5" />
               <span>Grounded in What You Said (Source Transcript)</span>
