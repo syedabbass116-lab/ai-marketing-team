@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
-from services.transcription import transcribe_audio
+from services.transcription import transcribe_audio, clean_and_correct_transcript
 from services.pipeline import chunk_transcript, extract_insights, detect_and_score_opportunities
 from services.memory import (
     get_founder_memories,
@@ -99,8 +99,12 @@ def _process_audio_pipeline(
         if not raw_text:
             raise RuntimeError("Speech-to-text returned empty transcript. Check your microphone and API key.")
 
-        # Step 2: Semantic Chunking
-        chunks = chunk_transcript(raw_text, segments=segments)
+        # Step 1b: Phonetic & Clarity Restoration (Fixes slurred/mumbled words and accents)
+        _JOBS[job_id]["message"] = "Restoring phonetic clarity & polishing spoken thoughts..."
+        clarified_text = clean_and_correct_transcript(raw_text, context_hint=title)
+
+        # Step 2: Semantic Chunking (Using clarified transcript for accurate insights)
+        chunks = chunk_transcript(clarified_text, segments=segments)
 
         # Step 3: Extracting Insights
         _JOBS[job_id]["status"] = "extracting"
@@ -184,8 +188,8 @@ def _process_audio_pipeline(
             f"[{job_id}] Generation input — "
             f"recordingId: {source_id}, duration: {duration:.0f}s, "
             f"topics: {num_opps}, target_posts: {target_posts}, "
-            f"transcript chars: {len(raw_text)}, "
-            f"preview: {raw_text[:120]!r}"
+            f"transcript chars: {len(clarified_text)}, "
+            f"preview: {clarified_text[:120]!r}"
         )
 
         # Step 6: Generate all posts sequentially
@@ -195,7 +199,7 @@ def _process_audio_pipeline(
                 brand_context=brand_context,
                 angle=ang,
                 platform="linkedin",
-                raw_transcript=raw_text
+                raw_transcript=clarified_text
             )
             p_id = f"post-{uuid.uuid4().hex[:8]}"
             p_item = {
@@ -210,7 +214,7 @@ def _process_audio_pipeline(
                 "provenance": gen_res.get("provenance", {}),
                 "metrics": gen_res.get("metrics", {}),
                 "created_at": datetime.utcnow().isoformat(),
-                "transcript": raw_text
+                "transcript": clarified_text
             }
             generated_posts_list.append(p_item)
 
@@ -225,7 +229,8 @@ def _process_audio_pipeline(
             "source_type": source_type,
             "title": title,
             "duration_seconds": int(duration),
-            "transcript": raw_text,
+            "transcript": clarified_text,
+            "raw_transcript": raw_text,
             "insights_count": len(insights),
             "opportunities_count": len(opportunities),
             "created_at": datetime.utcnow().isoformat()

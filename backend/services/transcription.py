@@ -13,15 +13,80 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TRANSCRIPTION_PROVIDER = os.getenv("TRANSCRIPTION_PROVIDER", "groq") # 'groq' | 'openai' | 'fallback'
 
 
+DEFAULT_WHISPER_PROMPT = (
+    "Voice memo by a founder discussing technology, AI, startups, business strategies, "
+    "marketing, software engineering, product architecture, lessons learned, and industry insights. "
+    "Punctuate accurately with proper capitalization and correct technical terms."
+)
+
+
+def clean_and_correct_transcript(
+    raw_text: str,
+    context_hint: Optional[str] = None
+) -> str:
+    """
+    Phonetic & Clarity Reconstruction Step:
+    Restores unclear pronunciations, mumbling, slurred syllables, stuttering, and garbled
+    technical terms into crystal clear, coherent English while strictly preserving 100%
+    of the speaker's true meaning, facts, and intent.
+    """
+    if not raw_text or len(raw_text.strip()) < 5:
+        return raw_text
+
+    system_prompt = (
+        "You are an expert audio transcription restoration and phonetic clarity engine.\n"
+        "The user was speaking into a voice recorder, possibly with unclear pronunciation, "
+        "mumbling, fast speech, background noise, or a strong accent.\n\n"
+        "YOUR TASK:\n"
+        "Take the raw, potentially garbled transcript and output the clean, clarified version.\n\n"
+        "STRICT RESTORATION RULES:\n"
+        "1. Phonetic Correction: Fix mumbled words, phonetic mishearings, or slurred technical terms "
+        "(e.g., 'clawed' -> 'Claude', 'eye in uk' -> 'AI in UK', 'lang chain' -> 'LangChain', "
+        "'in fastructure' -> 'infrastructure', 'chat gpt' -> 'ChatGPT', 'you tube' -> 'YouTube').\n"
+        "2. Disfluency Cleaning: Remove stutters, false starts, and excessive filler sounds ('um', 'uh', 'like', 'you know') "
+        "that obscure the core message.\n"
+        "3. Clear Structure: Fix run-on sentences with proper punctuation, periods, commas, and paragraph breaks.\n"
+        "4. ZERO INVENTIONS: Do NOT add new facts, claims, statistics, or opinions not spoken by the user. "
+        "Preserve the founder's authentic voice, points, and intent exactly.\n"
+        "5. Output ONLY the cleaned transcript text. No preamble, no quotes, no explanations."
+    )
+
+    try:
+        from services.llm import complete_chat
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": (
+                    f"Raw Audio Transcript:\n{raw_text}\n\n"
+                    f"{f'Context Hint: {context_hint}' if context_hint else ''}"
+                )
+            }
+        ]
+        cleaned = complete_chat(messages, temperature=0.1)
+        cleaned_str = cleaned.strip().strip('"').strip("'")
+        if cleaned_str and len(cleaned_str) > 5 and not cleaned_str.startswith("API Error:"):
+            logger.info(
+                f"[Transcript Clarity Engine] Successfully polished unclear speech "
+                f"({len(raw_text)} chars -> {len(cleaned_str)} chars)"
+            )
+            return cleaned_str
+    except Exception as e:
+        logger.warning(f"[Transcript Clarity Engine] Clarity cleanup failed: {e}. Using raw text.")
+
+    return raw_text
+
+
 def transcribe_audio(
     file_bytes: bytes,
     filename: str = "audio.webm",
     mime_type: str = "audio/webm",
     provider: Optional[str] = None,
-    language: Optional[str] = None
+    language: Optional[str] = None,
+    prompt: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Provider-agnostic speech-to-text service abstraction.
+    Provider-agnostic speech-to-text service abstraction with clarity prompting.
     Returns:
         {
             "text": str,
@@ -31,16 +96,17 @@ def transcribe_audio(
         }
     """
     prov = (provider or TRANSCRIPTION_PROVIDER).lower()
+    prompt_to_use = prompt or DEFAULT_WHISPER_PROMPT
 
     if prov == "groq" and GROQ_API_KEY:
         try:
-            return _transcribe_groq(file_bytes, filename, mime_type, language)
+            return _transcribe_groq(file_bytes, filename, mime_type, language, prompt=prompt_to_use)
         except Exception as e:
             logger.error(f"Groq Whisper transcription failed: {e}. Trying fallback.")
 
     if prov == "openai" and OPENAI_API_KEY:
         try:
-            return _transcribe_openai(file_bytes, filename, mime_type, language)
+            return _transcribe_openai(file_bytes, filename, mime_type, language, prompt=prompt_to_use)
         except Exception as e:
             logger.error(f"OpenAI Whisper transcription failed: {e}. Trying fallback.")
 
@@ -52,9 +118,10 @@ def _transcribe_groq(
     file_bytes: bytes,
     filename: str,
     mime_type: str,
-    language: Optional[str] = None
+    language: Optional[str] = None,
+    prompt: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Transcribe audio using Groq Whisper Turbo."""
+    """Transcribe audio using Groq Whisper Turbo with context prompting."""
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}"
@@ -68,6 +135,8 @@ def _transcribe_groq(
     }
     if language:
         data["language"] = language
+    if prompt:
+        data["prompt"] = prompt
 
     response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
     
@@ -104,9 +173,10 @@ def _transcribe_openai(
     file_bytes: bytes,
     filename: str,
     mime_type: str,
-    language: Optional[str] = None
+    language: Optional[str] = None,
+    prompt: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Transcribe audio using OpenAI Whisper."""
+    """Transcribe audio using OpenAI Whisper with context prompting."""
     url = "https://api.openai.com/v1/audio/transcriptions"
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -114,12 +184,14 @@ def _transcribe_openai(
     files = {
         "file": (filename, file_bytes, mime_type)
     }
-    data = {
+    data: Dict[str, Any] = {
         "model": "whisper-1",
         "response_format": "verbose_json"
     }
     if language:
         data["language"] = language
+    if prompt:
+        data["prompt"] = prompt
 
     response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
     if response.status_code != 200:
