@@ -1,6 +1,7 @@
 export type SourceType =
   | 'recording'
   | 'uploaded_audio'
+  | 'video'
   | 'quick_thought'
   | 'event'
   | 'zoom'

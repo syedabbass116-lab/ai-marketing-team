@@ -306,12 +306,14 @@ async def capture_upload(
     """
     file_bytes = await file.read()
     if len(file_bytes) == 0:
-        raise HTTPException(status_code=400, detail="Empty audio file provided.")
+        raise HTTPException(status_code=400, detail="Empty media file provided.")
 
     clean_title = title or (
         "Quick Voice Note" if source_type == "quick_thought"
-        else ("Event Capture" if source_type == "event"
-        else f"Voice Recording — {datetime.utcnow().strftime('%b %d')}")
+        else ("Event Session Capture" if source_type == "event"
+        else ("Video Upload" if source_type == "video"
+        else ("Audio Upload" if source_type == "uploaded_audio"
+        else f"Media Recording — {datetime.utcnow().strftime('%b %d')}")))
     )
 
     job_id = f"job-{uuid.uuid4().hex[:10]}"
@@ -323,12 +325,14 @@ async def capture_upload(
     if target_audience:
         brand_context["targetAudience"] = target_audience
 
+    status_msg = "Analyzing your video and speech..." if source_type == "video" else "Analyzing your media recording..."
+
     _JOBS[job_id] = {
         "job_id": job_id,
         "source_id": source_id,
         "status": "uploaded",
         "progress_pct": 10,
-        "message": "Analyzing your recording...",
+        "message": status_msg,
         "created_at": time.time(),
         "result": None
     }
@@ -338,7 +342,7 @@ async def capture_upload(
         job_id=job_id,
         source_id=source_id,
         file_bytes=file_bytes,
-        filename=file.filename or "audio.webm",
+        filename=file.filename or "media.webm",
         mime_type=file.content_type or "audio/webm",
         workspace_id=workspace_id or "default",
         user_id=user_id or "anonymous",
@@ -351,7 +355,7 @@ async def capture_upload(
         "job_id": job_id,
         "source_id": source_id,
         "status": "uploaded",
-        "message": "Analyzing your recording..."
+        "message": status_msg
     }
 
 

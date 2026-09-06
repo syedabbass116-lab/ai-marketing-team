@@ -77,6 +77,39 @@ def clean_and_correct_transcript(
     return raw_text
 
 
+def _normalize_media_file(filename: str, mime_type: str) -> tuple[str, str]:
+    """
+    Ensure correct filename extension and MIME type for audio and video media files.
+    Groq and OpenAI Whisper accept: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    
+    mime_map = {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".mp3": "audio/mpeg",
+        ".mpeg": "video/mpeg",
+        ".mpga": "audio/mpeg",
+        ".m4a": "audio/m4a",
+        ".wav": "audio/wav",
+        ".webm": "audio/webm",
+        ".ogg": "audio/ogg",
+        ".flac": "audio/flac",
+        ".aac": "audio/aac",
+        ".mkv": "video/x-matroska"
+    }
+
+    normalized_mime = mime_map.get(ext, mime_type or "audio/webm")
+    # If the filename has no extension or generic extension, default to .webm or .mp4
+    if not ext:
+        if "video" in normalized_mime or "mp4" in normalized_mime:
+            filename = f"{filename}.mp4"
+        else:
+            filename = f"{filename}.webm"
+
+    return filename, normalized_mime
+
+
 def transcribe_audio(
     file_bytes: bytes,
     filename: str = "audio.webm",
@@ -87,6 +120,7 @@ def transcribe_audio(
 ) -> Dict[str, Any]:
     """
     Provider-agnostic speech-to-text service abstraction with clarity prompting.
+    Accepts both audio (mp3, wav, m4a, webm, ogg, flac) and video (mp4, mov, mpeg).
     Returns:
         {
             "text": str,
@@ -95,23 +129,24 @@ def transcribe_audio(
             "provider": str
         }
     """
+    clean_filename, clean_mime = _normalize_media_file(filename, mime_type)
     prov = (provider or TRANSCRIPTION_PROVIDER).lower()
     prompt_to_use = prompt or DEFAULT_WHISPER_PROMPT
 
     if prov == "groq" and GROQ_API_KEY:
         try:
-            return _transcribe_groq(file_bytes, filename, mime_type, language, prompt=prompt_to_use)
+            return _transcribe_groq(file_bytes, clean_filename, clean_mime, language, prompt=prompt_to_use)
         except Exception as e:
             logger.error(f"Groq Whisper transcription failed: {e}. Trying fallback.")
 
     if prov == "openai" and OPENAI_API_KEY:
         try:
-            return _transcribe_openai(file_bytes, filename, mime_type, language, prompt=prompt_to_use)
+            return _transcribe_openai(file_bytes, clean_filename, clean_mime, language, prompt=prompt_to_use)
         except Exception as e:
             logger.error(f"OpenAI Whisper transcription failed: {e}. Trying fallback.")
 
     # Fallback / mock transcription if no keys or API error
-    return _transcribe_fallback(filename)
+    return _transcribe_fallback(clean_filename)
 
 
 def _transcribe_groq(
@@ -121,7 +156,7 @@ def _transcribe_groq(
     language: Optional[str] = None,
     prompt: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Transcribe audio using Groq Whisper Turbo with context prompting."""
+    """Transcribe audio/video using Groq Whisper Turbo with context prompting."""
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}"

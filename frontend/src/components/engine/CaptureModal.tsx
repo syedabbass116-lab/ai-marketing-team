@@ -75,8 +75,10 @@ export default function CaptureModal({
     if (!selectedFile) return;
     try {
       setIsSubmitting(true);
+      const isVideo = selectedFile.type.startsWith('video/') || /\.(mp4|mov|mkv|webm|mpeg)$/i.test(selectedFile.name);
+      const type: SourceType = isVideo ? 'video' : 'uploaded_audio';
       const title = recordingTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
-      await onSubmitAudio(selectedFile, title, 'uploaded_audio');
+      await onSubmitAudio(selectedFile, title, type);
       setSelectedFile(null);
       onClose();
     } catch (err) {
@@ -124,7 +126,7 @@ export default function CaptureModal({
                 Capture Content Input
               </h2>
               <p className="text-xs text-white/50">
-                Ghostscribe extracts publishable thoughts directly from your speech.
+                Ghostscribe extracts publishable thoughts directly from your speech, audio, and video.
               </p>
             </div>
             <button
@@ -158,7 +160,7 @@ export default function CaptureModal({
               }`}
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>Upload</span>
+              <span>MP3 / MP4</span>
             </button>
 
             <button
@@ -170,7 +172,7 @@ export default function CaptureModal({
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
-              <span>Quick</span>
+              <span>Thought</span>
             </button>
 
             <button
@@ -187,65 +189,79 @@ export default function CaptureModal({
           </div>
         </div>
 
-        {/* Tab Body */}
-        <div className="p-6 space-y-6">
-          {/* TAB 1: RECORD & TAB 4: EVENT MODE */}
+        {/* Modal Body */}
+        <div className="p-6">
+          {/* TAB 1: RECORD & TAB 4: EVENT */}
           {(activeTab === 'record' || activeTab === 'event') && (
-            <div className="space-y-6 text-center">
-              {/* Optional Title Input */}
+            <div className="space-y-6">
               <input
                 type="text"
                 value={recordingTitle}
                 onChange={(e) => setRecordingTitle(e.target.value)}
-                placeholder={
-                  activeTab === 'event'
-                    ? 'Event/Conference Name (e.g. SaaStr 2026 Day 1)'
-                    : 'Session Title (optional)'
-                }
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500 text-center"
+                placeholder={activeTab === 'event' ? "Event / Meeting Name (optional)" : "Recording Title (optional)"}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500"
               />
 
-              {/* Timer Display */}
-              <div className="py-4">
-                <div className="font-mono text-5xl font-black tracking-wider text-white">
+              {/* Visual Waveform & Timer Container */}
+              <div className="py-8 bg-black/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center">
+                <div className="text-4xl font-mono font-black text-white tracking-wider mb-6">
                   {formattedTime}
                 </div>
-                <p className="text-xs text-white/40 mt-1 uppercase tracking-widest font-semibold">
-                  {recState === 'recording'
-                    ? 'Recording live audio • Up to 60 min'
-                    : recState === 'paused'
-                    ? 'Recording Paused'
-                    : 'Ready to Record'}
-                </p>
-              </div>
 
-              {/* Waveform Animation */}
-              {recState === 'recording' && (
-                <div className="flex items-center justify-center gap-1.5 h-12">
+                {/* Animated Audio Waveform */}
+                <div className="flex items-center gap-1 h-12 mb-4">
                   {waveformLevels.map((lvl, idx) => (
                     <div
                       key={idx}
-                      className="w-1.5 rounded-full bg-gradient-to-t from-indigo-500 to-emerald-400 transition-all duration-100"
-                      style={{ height: `${Math.max(12, lvl * 48)}px` }}
+                      className={`w-1 rounded-full transition-all duration-75 ${
+                        recState === 'recording'
+                          ? 'bg-gradient-to-t from-indigo-500 to-indigo-300'
+                          : 'bg-white/20'
+                      }`}
+                      style={{
+                        height: `${Math.max(4, lvl * 48)}px`,
+                        opacity: recState === 'recording' ? 0.9 : 0.3
+                      }}
                     />
                   ))}
                 </div>
-              )}
 
-              {/* Error Banner if mic denied */}
-              {errorMessage && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center justify-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{errorMessage}</span>
+                {/* State Label */}
+                <div className="flex items-center gap-2 text-xs">
+                  {recState === 'idle' && (
+                    <span className="text-white/40">Ready to record</span>
+                  )}
+                  {recState === 'recording' && (
+                    <span className="flex items-center gap-1.5 text-rose-400 font-bold animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      Listening to your speech...
+                    </span>
+                  )}
+                  {recState === 'paused' && (
+                    <span className="text-amber-400 font-bold">Recording paused</span>
+                  )}
+                  {recState === 'processing' && (
+                    <span className="flex items-center gap-2 text-indigo-400 font-bold">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Processing audio buffer...
+                    </span>
+                  )}
                 </div>
-              )}
 
-              {/* Recording Controls */}
-              <div className="flex items-center justify-center gap-4 pt-2">
+                {errorMessage && (
+                  <div className="mt-4 flex items-center gap-2 text-rose-400 text-xs px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-center gap-3">
                 {recState === 'idle' && (
                   <button
                     onClick={startRecording}
-                    className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
+                    className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
                   >
                     <Mic className="w-5 h-5 animate-pulse" />
                     <span>
@@ -292,14 +308,14 @@ export default function CaptureModal({
             </div>
           )}
 
-          {/* TAB 2: UPLOAD AUDIO */}
+          {/* TAB 2: UPLOAD AUDIO / VIDEO (MP3 / MP4) */}
           {activeTab === 'upload' && (
             <div className="space-y-4">
               <input
                 type="text"
                 value={recordingTitle}
                 onChange={(e) => setRecordingTitle(e.target.value)}
-                placeholder="Recording Title (optional)"
+                placeholder="Media Title (optional)"
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500"
               />
 
@@ -314,7 +330,7 @@ export default function CaptureModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="audio/*,.mp3,.wav,.m4a,.webm,.ogg,.aac,.flac"
+                  accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.webm,.ogg,.aac,.flac,.mov,.mkv,.mpeg"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -328,16 +344,21 @@ export default function CaptureModal({
 
                 {selectedFile ? (
                   <div className="text-center">
-                    <p className="text-sm font-bold text-white">{selectedFile.name}</p>
-                    <p className="text-xs text-white/40 mt-1">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to analyze
+                    <p className="text-sm font-bold text-white flex items-center justify-center gap-1.5">
+                      <span>{selectedFile.name}</span>
+                    </p>
+                    <p className="text-xs text-indigo-300 font-semibold mt-1">
+                      {selectedFile.type.startsWith('video/') || /\.(mp4|mov|mkv|mpeg)$/i.test(selectedFile.name) ? 'Video File' : 'Audio File'} • {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                    <p className="text-[11px] text-white/40 mt-1">
+                      Click to choose another file
                     </p>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <p className="text-sm font-bold text-white">Click or drag audio file here</p>
-                    <p className="text-xs text-white/40 mt-1">
-                      Supports MP3, WAV, M4A, WEBM, OGG, AAC (up to 25MB)
+                    <p className="text-sm font-bold text-white">Click or drag MP3 / MP4 file here</p>
+                    <p className="text-xs text-white/50 mt-1">
+                      Supports MP3, MP4, WAV, M4A, WEBM, MOV (Audio & Video up to 25MB)
                     </p>
                   </div>
                 )}
