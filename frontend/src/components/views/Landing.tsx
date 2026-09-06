@@ -254,14 +254,12 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
               Autonomous Content Engine
             </div>
             <h1 className="font-mono text-[2.5rem] font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              Speak your thoughts.
+              Stop Writing.
               <br />
-              We'll post them.
+              Start Talking.
             </h1>
             <p className="mt-5 max-w-lg text-base text-gray-400 sm:mt-6 sm:text-lg">
-              Record a voice note, upload a meeting, or type a quick thought —
-              AI transcribes, extracts insights, and generates ready-to-publish
-              posts grounded in your actual words.
+              GhostScribe turns your thoughts, conversations, and meetings into LinkedIn posts that sound like you.
             </p>
             <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:items-center justify-center lg:justify-start">
               <button
@@ -449,13 +447,12 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-white px-6 py-16 text-black sm:px-16 sm:py-20">
           <div className="relative mx-auto max-w-2xl text-center">
             <h2 className="font-mono text-3xl font-bold tracking-tight sm:text-5xl">
-              Speak your thoughts.
+              Stop Writing.
               <br />
-              We'll handle the rest.
+              Start Talking.
             </h2>
             <p className="mt-5 text-base text-black/70 sm:text-lg">
-              Stop staring at blank screens. Record your ideas and let AI turn
-              them into ready-to-publish posts grounded in your actual words.
+              GhostScribe turns your thoughts, conversations, and meetings into LinkedIn posts that sound like you.
             </p>
             <div className="mt-10 flex justify-center">
               <button
