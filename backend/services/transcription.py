@@ -85,7 +85,7 @@ def _normalize_media_file(filename: str, mime_type: str) -> tuple[str, str]:
     ext = os.path.splitext(filename)[1].lower()
     
     mime_map = {
-        ".mp4": "video/mp4",
+        ".mp4": "audio/mp4",
         ".mov": "video/quicktime",
         ".mp3": "audio/mpeg",
         ".mpeg": "video/mpeg",
@@ -100,12 +100,8 @@ def _normalize_media_file(filename: str, mime_type: str) -> tuple[str, str]:
     }
 
     normalized_mime = mime_map.get(ext, mime_type or "audio/webm")
-    # If the filename has no extension or generic extension, default to .webm or .mp4
     if not ext:
-        if "video" in normalized_mime or "mp4" in normalized_mime:
-            filename = f"{filename}.mp4"
-        else:
-            filename = f"{filename}.webm"
+        filename = f"{filename}.wav" if "wav" in normalized_mime else f"{filename}.mp4"
 
     return filename, normalized_mime
 
@@ -156,52 +152,53 @@ def _transcribe_groq(
     language: Optional[str] = None,
     prompt: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Transcribe audio/video using Groq Whisper Turbo with context prompting."""
+    """Transcribe audio/video using Groq Whisper Turbo with context prompting and multi-model fallback."""
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}"
     }
-    files = {
-        "file": (filename, file_bytes, mime_type)
-    }
-    data: Dict[str, Any] = {
-        "model": "whisper-large-v3-turbo",
-        "response_format": "verbose_json"
-    }
-    if language:
-        data["language"] = language
-    if prompt:
-        data["prompt"] = prompt
 
-    response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
-    
-    if response.status_code != 200:
-        logger.warning(f"Groq verbose_json returned status {response.status_code}: {response.text}. Retrying with json format.")
-        data["response_format"] = "json"
-        response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
-        if response.status_code != 200:
-            raise RuntimeError(f"Groq Whisper error {response.status_code}: {response.text}")
-        
-        res_json = response.json()
-        return {
-            "text": res_json.get("text", "").strip(),
-            "duration": 0.0,
-            "segments": [],
-            "provider": "groq-whisper-turbo"
+    models_to_try = ["whisper-large-v3-turbo", "whisper-large-v3"]
+
+    for mod in models_to_try:
+        files = {
+            "file": (filename, file_bytes, mime_type)
         }
+        data: Dict[str, Any] = {
+            "model": mod,
+            "response_format": "verbose_json"
+        }
+        if language:
+            data["language"] = language
+        if prompt:
+            data["prompt"] = prompt[:200]  # Whisper prompt limit safety
 
-    res_json = response.json()
-    result_text = res_json.get("text", "").strip()
-    logger.info(
-        f"[Groq Whisper] Transcription complete — {len(result_text)} chars. "
-        f"Preview: {result_text[:120]!r}"
-    )
-    return {
-        "text": result_text,
-        "duration": float(res_json.get("duration", 0.0)),
-        "segments": res_json.get("segments", []),
-        "provider": "groq-whisper-turbo"
-    }
+        try:
+            response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
+            if response.status_code != 200:
+                # Retry with simple json format
+                data["response_format"] = "json"
+                response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
+
+            if response.status_code == 200:
+                res_json = response.json()
+                result_text = res_json.get("text", "").strip()
+                if result_text:
+                    logger.info(
+                        f"[Groq Whisper ({mod})] Transcription complete — {len(result_text)} chars. "
+                        f"Preview: {result_text[:120]!r}"
+                    )
+                    return {
+                        "text": result_text,
+                        "duration": float(res_json.get("duration", 0.0)),
+                        "segments": res_json.get("segments", []),
+                        "provider": f"groq-{mod}"
+                    }
+        except Exception as err:
+            logger.warning(f"[Groq Whisper ({mod})] Error: {err}")
+            continue
+
+    raise RuntimeError("Groq Whisper was unable to transcribe the audio/video media.")
 
 
 def _transcribe_openai(

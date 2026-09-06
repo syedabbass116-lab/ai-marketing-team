@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { SourceType } from '../../types/engine';
+import { extractAudioFromMediaFile } from '../../lib/audioExtractor';
 
 interface CaptureModalProps {
   isOpen: boolean;
@@ -75,10 +76,10 @@ export default function CaptureModal({
     if (!selectedFile) return;
     try {
       setIsSubmitting(true);
-      const isVideo = selectedFile.type.startsWith('video/') || /\.(mp4|mov|mkv|webm|mpeg)$/i.test(selectedFile.name);
-      const type: SourceType = isVideo ? 'video' : 'uploaded_audio';
       const title = recordingTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
-      await onSubmitAudio(selectedFile, title, type);
+      const { blob, isVideo } = await extractAudioFromMediaFile(selectedFile);
+      const type: SourceType = isVideo ? 'video' : 'uploaded_audio';
+      await onSubmitAudio(blob, title, type);
       setSelectedFile(null);
       onClose();
     } catch (err) {
