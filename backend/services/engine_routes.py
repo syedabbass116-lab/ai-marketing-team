@@ -72,6 +72,12 @@ def _process_audio_pipeline(
     brand_context: Optional[Dict[str, Any]] = None
 ):
     try:
+        logger.info(
+            f"[GhostScribe Pipeline] "
+            f"recordingId: {source_id}, jobId: {job_id}, "
+            f"file: {filename}, type: {source_type}"
+        )
+
         # Step 1: Transcribing
         _JOBS[job_id]["status"] = "transcribing"
         _JOBS[job_id]["progress_pct"] = 25
@@ -83,8 +89,15 @@ def _process_audio_pipeline(
         duration = transcription_res.get("duration", 45.0)
         segments = transcription_res.get("segments", [])
 
+        logger.info(
+            f"[{job_id}] Transcription complete — "
+            f"provider: {transcription_res.get('provider', '?')}, "
+            f"chars: {len(raw_text)}, "
+            f"preview: {raw_text[:120]!r}"
+        )
+
         if not raw_text:
-            raise RuntimeError("Speech-to-text returned empty transcript.")
+            raise RuntimeError("Speech-to-text returned empty transcript. Check your microphone and API key.")
 
         # Step 2: Semantic Chunking
         chunks = chunk_transcript(raw_text, segments=segments)
@@ -142,12 +155,20 @@ def _process_audio_pipeline(
         selected_angle = rep_check.get("chosen_angle", top_opp.get("recommended_angle", "contrarian"))
 
         # Step 6: Post Generation with Grounded Provenance
+        logger.info(
+            f"[{job_id}] Generation input — "
+            f"recordingId: {source_id}, "
+            f"transcript chars: {len(raw_text)}, "
+            f"preview: {raw_text[:120]!r}"
+        )
         generated_post = generate_engine_post(
             opportunity=top_opp,
             brand_context=brand_context,
             angle=selected_angle,
-            platform="linkedin"
+            platform="linkedin",
+            raw_transcript=raw_text  # Full transcript — source of truth
         )
+        logger.info(f"[{job_id}] Post generated — {len(generated_post.get('content', ''))} chars.")
 
         post_id = f"post-{uuid.uuid4().hex[:8]}"
         final_post = {
@@ -161,7 +182,9 @@ def _process_audio_pipeline(
             "status": "recommended_today",
             "provenance": generated_post.get("provenance", {}),
             "metrics": generated_post.get("metrics", {}),
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.utcnow().isoformat(),
+            # Store the transcript so regenerate/edit can use it as source of truth
+            "transcript": raw_text
         }
 
         # Step 7: Persist results
@@ -212,7 +235,9 @@ def _process_audio_pipeline(
             "post": final_post,
             "source": source_record,
             "insights_count": len(insights),
-            "opportunities_count": len(opportunities)
+            "opportunities_count": len(opportunities),
+            "transcript_chars": len(raw_text),
+            "transcript_preview": raw_text[:200]
         }
         logger.info(f"[{job_id}] Pipeline completed successfully.")
 
@@ -354,47 +379,16 @@ def get_todays_post(workspace_id: str = "default"):
     """
     posts = _POSTS.get(workspace_id, [])
     
-    # If no posts generated yet, provide high-quality default starter post
+    # If no posts generated yet, return null so frontend shows capture empty state
     if not posts:
-        default_post = {
-            "id": "post-default-1",
-            "title": "Follow-up matters more than lead volume",
-            "content": (
-                "Most companies don't have a lead problem.\n\n"
-                "They have a follow-up problem.\n\n"
-                "In our client sessions this week, the breakdown was identical:\n"
-                "Teams spend $10,000+ driving inbound inquiries, only to abandon leads after 72 hours.\n\n"
-                "When we instituted a mandatory 5-touchpoint cadence, their conversion rate went up 4x in two weeks.\n\n"
-                "Before you buy more leads, ask yourself:\n"
-                "Are you actually working the ones you already have?\n\n"
-                "What is your team's follow-up protocol after day 3?"
-            ),
-            "platform": "linkedin",
-            "angle": "contrarian",
-            "status": "recommended_today",
-            "provenance": {
-                "source_title": "Yesterday's recorded session",
-                "derived_from": "Discussion about sales follow-up retention",
-                "content_angle": "Contrarian insight",
-                "evidence_quote": "Most clients don't have a lead problem, they have a follow-up problem.",
-                "source_timestamp": 124
-            },
-            "metrics": {
-                "icp_relevance": 94,
-                "originality": 89,
-                "confidence": 95,
-                "overall_score": 92
-            },
-            "created_at": datetime.utcnow().isoformat()
-        }
         return {
-            "todays_post": default_post,
+            "todays_post": None,
             "ready_queue": [],
             "stats": {
-                "ready_count": 1,
-                "week_count": 4,
-                "opportunities_count": 9,
-                "sources_count": 3
+                "ready_count": 0,
+                "week_count": 0,
+                "opportunities_count": 0,
+                "sources_count": 0
             }
         }
 
@@ -452,7 +446,9 @@ def post_action(post_id: str, payload: PostActionRequest, workspace_id: str = "d
 
     elif act == "edit":
         if payload.modifier:
-            # Re-run writing agent with specific modifier pill
+            # Re-run writing agent with specific modifier pill.
+            # Use stored transcript so we stay grounded in the user's actual words.
+            stored_transcript = target.get("transcript", "")
             revised = generate_engine_post(
                 opportunity={
                     "title": target.get("title", "Core thought"),
@@ -462,7 +458,8 @@ def post_action(post_id: str, payload: PostActionRequest, workspace_id: str = "d
                 },
                 angle=target.get("angle", "contrarian"),
                 modifier=payload.modifier,
-                custom_instruction=payload.custom_instruction
+                custom_instruction=payload.custom_instruction,
+                raw_transcript=stored_transcript
             )
             target["content"] = revised["content"]
         elif payload.content:
@@ -471,11 +468,12 @@ def post_action(post_id: str, payload: PostActionRequest, workspace_id: str = "d
         return {"success": True, "status": target["status"], "post": target}
 
     elif act == "regenerate":
-        # Switch angle or regenerate fresh variation
+        # Switch angle but stay grounded in the same transcript
         current_angle = target.get("angle", "contrarian")
         alt_angles = ["story", "framework", "educational", "personal_lesson", "contrarian"]
         next_angle = next((a for a in alt_angles if a != current_angle), "story")
-        
+
+        stored_transcript = target.get("transcript", "")
         revised = generate_engine_post(
             opportunity={
                 "title": target.get("title", "Core thought"),
@@ -484,7 +482,8 @@ def post_action(post_id: str, payload: PostActionRequest, workspace_id: str = "d
                 "source_title": target.get("provenance", {}).get("source_title", "Voice recording")
             },
             angle=next_angle,
-            custom_instruction=payload.custom_instruction
+            custom_instruction=payload.custom_instruction,
+            raw_transcript=stored_transcript
         )
         target["content"] = revised["content"]
         target["angle"] = next_angle

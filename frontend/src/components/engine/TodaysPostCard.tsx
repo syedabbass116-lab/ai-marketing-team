@@ -120,6 +120,19 @@ export default function TodaysPostCard({
             {post.content}
           </p>
         </div>
+
+        {/* Source of Truth Transcript Disclosure */}
+        {(post.transcript || post.provenance?.evidence_quote) && (
+          <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-white/70 space-y-1.5">
+            <div className="flex items-center gap-2 text-indigo-400 font-bold uppercase tracking-wider text-[10px]">
+              <Compass className="w-3.5 h-3.5" />
+              <span>Grounded in What You Said (Source Transcript)</span>
+            </div>
+            <p className="italic text-white/60 line-clamp-3 leading-relaxed">
+              "{post.transcript || post.provenance?.evidence_quote}"
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Metadata Metrics Row */}

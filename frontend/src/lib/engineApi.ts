@@ -9,42 +9,7 @@ import {
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
-// Default sample data for instant offline/fallback operation
-const DEFAULT_POST: EnginePost = {
-  id: 'post-init-1',
-  title: "Most companies don't have a lead problem",
-  content: `Most companies don't have a lead problem.
-
-They have a follow-up problem.
-
-In our client sessions this week, the breakdown was identical:
-Teams spend $10,000+ driving inbound inquiries, only to abandon leads after 72 hours.
-
-When we instituted a mandatory 5-touchpoint cadence, their conversion rate went up 4x in two weeks.
-
-Before you buy more leads, ask yourself:
-Are you actually working the ones you already have?
-
-What is your team's follow-up protocol after day 3?`,
-  platform: 'linkedin',
-  angle: 'contrarian',
-  status: 'recommended_today',
-  provenance: {
-    source_title: "Yesterday's recorded session",
-    derived_from: "Discussion about sales follow-up retention",
-    content_angle: "Contrarian insight",
-    evidence_quote: "Most clients don't have a lead problem, they have a follow-up problem.",
-    source_timestamp: 124
-  },
-  metrics: {
-    icp_relevance: 94,
-    originality: 89,
-    confidence: 95,
-    overall_score: 92
-  },
-  created_at: new Date().toISOString()
-};
-
+// Default sample opportunities
 const DEFAULT_OPPORTUNITIES: ContentOpportunity[] = [
   {
     id: 'opp-1',
@@ -91,7 +56,7 @@ const DEFAULT_OPPORTUNITIES: ContentOpportunity[] = [
 ];
 
 export async function fetchTodaysPost(workspaceId = 'default'): Promise<{
-  todays_post: EnginePost;
+  todays_post: EnginePost | null;
   ready_queue: EnginePost[];
   stats: { ready_count: number; week_count: number; opportunities_count: number; sources_count: number };
 }> {
@@ -103,31 +68,27 @@ export async function fetchTodaysPost(workspaceId = 'default'): Promise<{
     const data = await res.json();
     return data;
   } catch (err) {
-    console.warn('Using fallback todays post:', err);
+    // Do NOT return demo content — return null so the UI shows the empty "record your idea" state.
+    // This prevents the user from ever seeing a hardcoded post that wasn't generated from their recording.
+    console.warn('[GhostScribe] fetchTodaysPost failed — backend may be offline:', err);
     return {
-      todays_post: DEFAULT_POST,
+      todays_post: null,
       ready_queue: [],
-      stats: { ready_count: 1, week_count: 4, opportunities_count: 8, sources_count: 2 }
+      stats: { ready_count: 0, week_count: 0, opportunities_count: 0, sources_count: 0 }
     };
   }
 }
 
 export async function uploadAudioCapture(formData: FormData): Promise<{ job_id: string; message: string }> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/engine/capture/upload`, {
-      method: 'POST',
-      body: formData
-    });
-    if (!res.ok) throw new Error(`Upload failed: HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error('Audio upload API error:', err);
-    // Return simulated job for offline resilience
-    return {
-      job_id: `job-mock-${Date.now()}`,
-      message: 'Processing recording in offline fallback mode...'
-    };
+  const res = await fetch(`${API_BASE_URL}/api/engine/capture/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Upload failed: HTTP ${res.status} ${errText}`);
   }
+  return await res.json();
 }
 
 export async function submitQuickThought(payload: {
@@ -136,43 +97,24 @@ export async function submitQuickThought(payload: {
   user_id?: string;
   title?: string;
 }): Promise<{ job_id: string; message: string }> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/engine/capture/quick-thought`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(`Quick thought failed: HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error('Quick thought API error:', err);
-    return {
-      job_id: `job-mock-${Date.now()}`,
-      message: 'Processing thought...'
-    };
+  const res = await fetch(`${API_BASE_URL}/api/engine/capture/quick-thought`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Quick thought failed: HTTP ${res.status} ${errText}`);
   }
+  return await res.json();
 }
 
 export async function pollJobStatus(jobId: string): Promise<EngineJob> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/engine/jobs/${jobId}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch {
-    // Simulated progressive offline fallback if mock job
-    return {
-      job_id: jobId,
-      source_id: 'src-mock',
-      status: 'ready',
-      progress_pct: 100,
-      message: 'Your post is ready.',
-      result: {
-        post: DEFAULT_POST,
-        insights_count: 5,
-        opportunities_count: 3
-      }
-    };
+  const res = await fetch(`${API_BASE_URL}/api/engine/jobs/${jobId}`);
+  if (!res.ok) {
+    throw new Error(`Poll failed: HTTP ${res.status}`);
   }
+  return await res.json();
 }
 
 export async function executePostAction(
@@ -215,21 +157,13 @@ export async function generateFromOpportunity(
   payload: { angle?: string; modifier?: string; custom_instruction?: string },
   workspaceId = 'default'
 ): Promise<EnginePost> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/engine/opportunities/${oppId}/generate?workspace_id=${workspaceId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch {
-    return {
-      ...DEFAULT_POST,
-      id: `post-${Date.now()}`,
-      angle: payload.angle || 'contrarian'
-    };
-  }
+  const res = await fetch(`${API_BASE_URL}/api/engine/opportunities/${oppId}/generate?workspace_id=${workspaceId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`Generate from opportunity failed: HTTP ${res.status}`);
+  return await res.json();
 }
 
 export async function fetchSources(workspaceId = 'default'): Promise<SourceItem[]> {

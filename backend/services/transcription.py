@@ -87,8 +87,13 @@ def _transcribe_groq(
         }
 
     res_json = response.json()
+    result_text = res_json.get("text", "").strip()
+    logger.info(
+        f"[Groq Whisper] Transcription complete — {len(result_text)} chars. "
+        f"Preview: {result_text[:120]!r}"
+    )
     return {
-        "text": res_json.get("text", "").strip(),
+        "text": result_text,
         "duration": float(res_json.get("duration", 0.0)),
         "segments": res_json.get("segments", []),
         "provider": "groq-whisper-turbo"
@@ -130,22 +135,19 @@ def _transcribe_openai(
 
 
 def _transcribe_fallback(filename: str) -> Dict[str, Any]:
-    """Clean fallback transcription when API is unavailable or input is synthetic."""
-    logger.warning("Using fallback simulated transcription.")
-    sample_text = (
-        "In our sales call yesterday, we realized most clients don't actually have a lead generation problem. "
-        "They have a massive follow-up problem. They're spending thousands on outbound and inbound ads, "
-        "getting 40 inquiries a week, and then dropping the ball because nobody touches base again after day three. "
-        "When we instituted a simple 5-touchpoint follow-up cadence, their conversion rate went up 4x in two weeks. "
-        "If you want to grow revenue without increasing ad spend, stop buying more leads and fix your follow-up retention."
+    """
+    Called when ALL transcription providers fail.
+    Returns EMPTY transcript — never fake/demo content.
+    The pipeline will detect the empty text and block post generation.
+    """
+    logger.error(
+        f"[Transcription] ALL providers failed for '{filename}'. "
+        "Returning empty transcript — post generation will be blocked. "
+        "Check GROQ_API_KEY and network connectivity."
     )
     return {
-        "text": sample_text,
-        "duration": 45.0,
-        "segments": [
-            {"id": 0, "start": 0.0, "end": 15.0, "text": "In our sales call yesterday, we realized most clients don't have a lead problem."},
-            {"id": 1, "start": 15.0, "end": 30.0, "text": "They have a massive follow-up problem. Dropping the ball after day three."},
-            {"id": 2, "start": 30.0, "end": 45.0, "text": "When we instituted a 5-touchpoint follow-up, conversion went up 4x."}
-        ],
-        "provider": "fallback-demo"
+        "text": "",
+        "duration": 0.0,
+        "segments": [],
+        "provider": "failed"
     }

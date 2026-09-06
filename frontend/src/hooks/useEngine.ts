@@ -22,10 +22,10 @@ export function useEngine(workspaceId = 'default') {
   const [todaysPost, setTodaysPost] = useState<EnginePost | null>(null);
   const [readyQueue, setReadyQueue] = useState<EnginePost[]>([]);
   const [stats, setStats] = useState({
-    ready_count: 1,
-    week_count: 4,
-    opportunities_count: 8,
-    sources_count: 2
+    ready_count: 0,
+    week_count: 0,
+    opportunities_count: 0,
+    sources_count: 0
   });
   const [opportunities, setOpportunities] = useState<ContentOpportunity[]>([]);
   const [sources, setSources] = useState<SourceItem[]>([]);
@@ -34,6 +34,8 @@ export function useEngine(workspaceId = 'default') {
   const [loading, setLoading] = useState(true);
 
   const pollIntervalRef = useRef<number | null>(null);
+  // Track the active recording so we never apply results from a stale job
+  const currentJobIdRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -45,11 +47,11 @@ export function useEngine(workspaceId = 'default') {
       ]);
       setTodaysPost(todayData.todays_post);
       setReadyQueue(todayData.ready_queue || []);
-      setStats(todayData.stats || { ready_count: 1, week_count: 4, opportunities_count: 8, sources_count: 2 });
+      setStats(todayData.stats || { ready_count: 0, week_count: 0, opportunities_count: 0, sources_count: 0 });
       setOpportunities(oppsData);
       setSources(sourcesData);
     } catch (err) {
-      console.error('Error loading engine data:', err);
+      console.error('[GhostScribe] Error loading engine data:', err);
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,13 @@ export function useEngine(workspaceId = 'default') {
 
   // Start polling a background job
   const startJobPolling = (jobId: string) => {
+    // Record which job is active — ignore results from any older job
+    currentJobIdRef.current = jobId;
     setIsProcessing(true);
+
+    // Reset stale post state so the user never sees content from a previous recording
+    setTodaysPost(null);
+
     setActiveJob({
       job_id: jobId,
       source_id: '',
@@ -75,10 +83,31 @@ export function useEngine(workspaceId = 'default') {
 
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
+    if (import.meta.env.DEV) {
+      console.log(`[GhostScribe] Polling started — jobId: ${jobId}`);
+    }
+
     pollIntervalRef.current = window.setInterval(async () => {
+      // Abort if this is no longer the active job
+      if (currentJobIdRef.current !== jobId) {
+        clearInterval(pollIntervalRef.current!);
+        pollIntervalRef.current = null;
+        return;
+      }
+
       try {
         const job = await pollJobStatus(jobId);
         setActiveJob(job);
+
+        if (import.meta.env.DEV) {
+          console.log(
+            `[GhostScribe] Poll — jobId: ${jobId}, status: ${job.status}, ` +
+            `progress: ${job.progress_pct}%` +
+            (job.result?.transcript_chars != null
+              ? `, transcript_chars: ${job.result.transcript_chars}`
+              : '')
+          );
+        }
 
         if (job.status === 'ready' || job.status === 'failed') {
           if (pollIntervalRef.current) {
@@ -88,12 +117,25 @@ export function useEngine(workspaceId = 'default') {
           setIsProcessing(false);
 
           if (job.status === 'ready' && job.result?.post) {
-            setTodaysPost(job.result.post);
-            loadData();
+            // Only apply if this is still the current job
+            if (currentJobIdRef.current === jobId) {
+              if (import.meta.env.DEV) {
+                console.log(
+                  `[GhostScribe] Post ready — jobId: ${jobId}, ` +
+                  `post chars: ${job.result.post.content?.length ?? 0}, ` +
+                  `transcript chars: ${(job.result as any).transcript_chars ?? 'n/a'}`
+                );
+              }
+              setTodaysPost(job.result.post);
+              loadData();
+            }
+          } else if (job.status === 'failed') {
+            console.error(`[GhostScribe] Job failed — jobId: ${jobId}, message: ${job.message}`);
           }
         }
       } catch (e) {
-        console.warn('Poll error:', e);
+        // Poll error — backend might be starting up. Log but keep polling.
+        console.warn(`[GhostScribe] Poll error for jobId ${jobId}:`, e);
       }
     }, 1800);
   };

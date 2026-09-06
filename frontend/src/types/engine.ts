@@ -64,6 +64,8 @@ export interface EnginePost {
   provenance: Provenance;
   metrics: PostMetrics;
   created_at: string;
+  /** Raw transcript used to generate this post — stored for grounded regeneration */
+  transcript?: string;
 }
 
 export interface ContentOpportunity {
@@ -113,5 +115,9 @@ export interface EngineJob {
     source?: SourceItem;
     insights_count?: number;
     opportunities_count?: number;
+    /** Dev: number of chars in the transcript used for generation */
+    transcript_chars?: number;
+    /** Dev: first 200 chars of transcript for verification */
+    transcript_preview?: string;
   };
 }

@@ -12,7 +12,8 @@ def generate_engine_post(
     angle: Optional[str] = None,
     modifier: Optional[str] = None,
     custom_instruction: Optional[str] = None,
-    platform: str = "linkedin"
+    platform: str = "linkedin",
+    raw_transcript: str = ""
 ) -> Dict[str, Any]:
     """
     Requirement 5 & 11 — Grounded Writing Engine with Provenance.
@@ -25,6 +26,10 @@ def generate_engine_post(
     evidence = opportunity.get("evidence", "")
     source_title = opportunity.get("source_title", "Voice recording")
     source_timestamp = opportunity.get("source_timestamp", 0)
+
+    # Use the full raw transcript as primary source of truth.
+    # Fall back to the evidence snippet only if no transcript was provided.
+    transcript_section = raw_transcript.strip() if raw_transcript.strip() else evidence
 
     # Brand identity infusion
     voice_rules = []
@@ -57,45 +62,83 @@ def generate_engine_post(
     if custom_instruction:
         modifier_section += f"\nADDITIONAL INSTRUCTION: {custom_instruction}"
 
-    prompt = f"""You are the Ghostscribe Autonomous Content Engine.
-Your task is to write a ready-to-publish LinkedIn post grounded STRICTLY in real source material.
+    prompt = f"""You are GhostScribe, an AI ghostwriter for founders.
 
---- SOURCE GROUND TRUTH ---
-Source: {source_title} (around timestamp {source_timestamp}s)
-Core Opportunity: {title}
-Original Context/Evidence: {evidence}
-Summary: {summary}
-Selected Angle: {chosen_angle.upper()}
+Your ONLY job is to transform the founder's actual spoken words into a high-quality {platform} post
+while keeping the founder's real idea, voice, experience, and perspective.
 
---- FOUNDER VOICE & BRAND DNA ---
+=== THE TRANSCRIPT — SOURCE OF TRUTH ===
+{transcript_section}
+
+=== POST REQUIREMENTS ===
+Angle: {chosen_angle.upper()}
+Source: {source_title}
+Platform: {platform.upper()}
+
+=== FOUNDER VOICE & BRAND ===
 {voice_section}
 
 {modifier_section}
 
---- STRICT COPYWRITING RULES ---
-1. ABSOLUTE SOURCE FIDELITY: Never invent facts, company achievements, client numbers, or statistics that are not present in the source ground truth or brand DNA.
-2. HOOK FIRST: Line 1 must stop the scroll with an arresting observation or counterintuitive truth. Never open with "I'm excited to share" or "In today's fast-paced world".
-3. PACING: One clear idea per line. Use generous white space and 1-2 sentence paragraphs.
-4. NO CORPORATE FLUFF: Eliminate buzzwords like "synergy", "paradigm shift", "game-changer", "unleash".
-5. SUBSTANTIVE TAKEAWAY: End with an actionable realization or thoughtful question that invites high-caliber founder discussion.
+=== STRICT RULES — YOU MUST FOLLOW ALL OF THEM ===
+1. The transcript above is the ONLY source of truth. Generate ONLY from what the founder actually said.
+2. DO NOT invent facts, numbers, experiences, customers, companies, results, or statistics not in the transcript.
+3. DO NOT change the founder's core argument or central claim.
+4. DO NOT replace the founder's specific insight with a generic version of the same topic.
+5. Preserve exact examples, numbers, names, and specific events mentioned in the transcript.
+6. Preserve first-person perspective when appropriate.
+7. Keep the founder's underlying opinion and voice intact.
+8. You MAY improve grammar, structure, pacing, and readability.
+9. You MAY remove filler words (um, uh, like, you know) and repetition.
+10. You MAY reorganize spoken thoughts into a compelling post structure.
+11. You MUST NOT introduce any new substantive claims or invented details.
+12. If something is unclear in the transcript, do NOT make up an answer — omit it.
+13. The post should feel like the founder said it — just clearer and better structured.
+14. AVOID these generic LinkedIn patterns UNLESS the founder actually used them:
+    - "Here's the thing...", "Let me tell you...", "In today's fast-paced world..."
+    - Generic motivational statements, fake storytelling, unnecessary hooks, corporate language
+    - "Most founders...", "The truth is...", exaggerated claims
+15. HOOK FIRST: The first line must be the most compelling observation or truth from the transcript.
+16. PACING: One idea per line. Use white space. Short paragraphs (1-2 sentences).
+17. SUBSTANTIVE TAKEAWAY: End with the founder's actual conclusion, lesson, or question.
 
-Write ONLY the final post text. Do not include introductory notes or quotation marks around the post."""
+=== BEFORE WRITING, IDENTIFY INTERNALLY (DO NOT OUTPUT THIS): ===
+- Core idea the founder is expressing
+- Their actual opinion or stance  
+- Any personal story or experience mentioned
+- Any specific examples, numbers, names, companies, dollar amounts
+- The main takeaway or lesson
+Then write the post using ONLY those identified elements.
+
+Write ONLY the final post text. No introductory notes. No quotation marks around the post."""
 
     messages = [
-        {"role": "system", "content": "You are a ghostwriter for top founders. You write with deep conviction, crisp brevity, and absolute authenticity to source truth."},
+        {"role": "system", "content": (
+            "You are a ghostwriter for top founders. "
+            "You write with absolute fidelity to what the founder actually said. "
+            "You never invent facts, experiences, or statistics. "
+            "Your job is to make the founder's real ideas more readable, not to replace them with generic content."
+        )},
         {"role": "user", "content": prompt}
     ]
 
     try:
+        logger.info(
+            f"[GhostScribe] Generating post — "
+            f"transcript_chars={len(transcript_section)}, "
+            f"preview={transcript_section[:120]!r}, "
+            f"angle={chosen_angle}, modifier={modifier}"
+        )
         raw_post = complete_chat(messages, temperature=0.5).strip()
         if raw_post.startswith("API Error:") or not raw_post:
-            logger.warning(f"complete_chat returned error or empty: {raw_post}. Using fallback.")
-            clean_post = _fallback_post(title, summary, evidence, chosen_angle)
+            logger.warning(f"complete_chat returned error or empty: {raw_post!r}. Using transcript-based fallback.")
+            clean_post = _fallback_post(title, summary, evidence, chosen_angle, transcript_section)
         else:
             clean_post = _clean_post_text(raw_post)
+            logger.info(f"[GhostScribe] Post generated — {len(clean_post)} chars.")
     except Exception as e:
         logger.error(f"Error generating engine post: {e}")
-        clean_post = _fallback_post(title, summary, evidence, chosen_angle)
+        clean_post = _fallback_post(title, summary, evidence, chosen_angle, transcript_section)
 
     provenance = {
         "source_title": source_title,
@@ -130,14 +173,17 @@ def _clean_post_text(text: str) -> str:
     return cleaned
 
 
-def _fallback_post(title: str, summary: str, evidence: str, angle: str) -> str:
-    return (
-        f"Most people think they have an acquisition problem.\n\n"
-        f"They don't. They have a follow-up problem.\n\n"
-        f"In our customer calls this week, the pattern became undeniable:\n"
-        f"Teams spend thousands driving inbound interest, only to abandon deals after 72 hours.\n\n"
-        f"When we instituted a simple 5-touchpoint cadence, conversion doubled without a single extra dollar spent on ads.\n\n"
-        f"Before you buy more leads, ask yourself:\n"
-        f"Are you actually working the ones you already have?\n\n"
-        f"What is your team's follow-up protocol after day 3?"
-    )
+def _fallback_post(title: str, summary: str, evidence: str, angle: str, transcript: str = "") -> str:
+    """
+    Emergency fallback that uses the actual transcript/evidence — never hardcoded demo content.
+    If the LLM fails, we return the raw transcript content so the user at least sees their real words.
+    """
+    # Prefer the full transcript, then evidence snippet, then summary, then title
+    content = transcript.strip() or evidence.strip() or summary.strip() or title.strip()
+    if not content:
+        return ""
+    # Minimal cleanup: truncate to reasonable post length
+    if len(content) > 2000:
+        content = content[:2000].rsplit(" ", 1)[0] + "..."
+    return content
+
