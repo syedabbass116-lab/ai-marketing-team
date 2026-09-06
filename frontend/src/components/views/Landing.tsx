@@ -5,9 +5,7 @@ import {
   Twitter,
   Linkedin,
   Check,
-  Fingerprint,
   LayoutDashboard,
-  Share2,
   FolderOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -22,7 +20,7 @@ import FAQ from "./FAQ";
 
 function TypewriterPost() {
   const fullText =
-    "Stop guessing what to post. The best creators build a system. Here is how I scaled my personal brand using AI to automate my thought leadership... 🚀";
+    "Most founders think they have a lead problem. They don't. They have a follow-up problem. When we instituted a 5-touchpoint cadence, conversion went up 4x. Fix your retention before buying more leads...";
   const [text, setText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
 
@@ -80,18 +78,18 @@ function GoogleIcon({ className }: { className?: string }) {
 const FEATURES = [
   {
     icon: Mic,
-    title: "Trained on your voice",
-    desc: "Paste a few past posts and our AI captures your tone, vocabulary, and style.",
+    title: "Voice to Post in 60 Seconds",
+    desc: "Record a quick voice note and watch AI transcribe, extract insights, and generate a ready-to-publish post automatically.",
   },
   {
     icon: TrendingUp,
-    title: "Built to perform",
-    desc: "Every post is optimized against patterns from high-engagement posts.",
+    title: "Today's Post Dashboard",
+    desc: "Wake up to a recommended post grounded in your actual conversations, meetings, and ideas with full provenance.",
   },
   {
     icon: Calendar,
-    title: "Always consistent",
-    desc: "A full week of on-brand content, scheduled in minutes.",
+    title: "Content Opportunities",
+    desc: "AI scores your insights and surfaces the highest-impact content opportunities you might have missed.",
   },
 ];
 
@@ -253,16 +251,17 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-gray-400">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              AI trained on your brand voice
+              Autonomous Content Engine
             </div>
             <h1 className="font-mono text-[2.5rem] font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-              Post like you.
+              Speak your thoughts.
               <br />
-              Every single day.
+              We'll post them.
             </h1>
             <p className="mt-5 max-w-lg text-base text-gray-400 sm:mt-6 sm:text-lg">
-              AI that writes high-performing social posts in your own voice — so
-              you stay consistent without the burnout.
+              Record a voice note, upload a meeting, or type a quick thought — AI
+              transcribes, extracts insights, and generates ready-to-publish posts
+              grounded in your actual words.
             </p>
             <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:w-auto sm:flex-row sm:items-center justify-center lg:justify-start">
               <button
@@ -388,15 +387,15 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
             <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
               <div className="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center mb-6">
-                <Fingerprint className="w-5 h-5" />
+                <Mic className="w-5 h-5" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
-                Multi-Brand Identities
+                Voice Capture & Upload
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Manage multiple brands or clients from one dashboard. Train a
-                unique AI model for each identity by providing its core values,
-                target audience, and specific writing samples.
+                Record 60-second voice notes or upload meeting recordings. AI
+                transcribes everything automatically with speaker segmentation
+                and timestamp tracking.
               </p>
             </div>
 
@@ -405,27 +404,26 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
                 <LayoutDashboard className="w-5 h-5" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
-                Premium Command Center
+                Today's Post Dashboard
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Track your monthly output, manage your subscription limits, and
-                quickly jump between drafting new posts and reviewing your
-                library of high-converting content.
+                Wake up to a recommended post grounded in your actual
+                conversations. See full provenance, edit with one click, or
+                regenerate with different angles.
               </p>
             </div>
 
             <div className="bg-white/5 border border-white/10 p-8 rounded-2xl">
               <div className="w-10 h-10 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center mb-6">
-                <Share2 className="w-5 h-5" />
+                <TrendingUp className="w-5 h-5" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
-                Platform Native Output
+                Content Opportunity Scoring
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Stop cross-posting the exact same text. GhostScribe
-                automatically formats your ideas into algorithm-friendly
-                LinkedIn posts, punchy X (Twitter) threads, and engaging
-                Threads.
+                AI scores your insights across 9 factors: ICP relevance,
+                originality, story potential, credibility, and more. Surface
+                the highest-impact content you might have missed.
               </p>
             </div>
 
@@ -434,12 +432,12 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
                 <FolderOpen className="w-5 h-5" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
-                Persistent Content Library
+                Source Management
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Never lose a good idea. Save your favorite generated posts
-                directly to your secure cloud library, ready to be reviewed,
-                edited, and published whenever you need them.
+                All your voice notes, meetings, and thoughts organized in one
+                place. Delete sources, view transcripts, and track which posts
+                came from which conversations.
               </p>
             </div>
           </div>
@@ -451,13 +449,13 @@ export default function Landing({ onSignIn }: { onSignIn: () => void }) {
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-white px-6 py-16 text-black sm:px-16 sm:py-20">
           <div className="relative mx-auto max-w-2xl text-center">
             <h2 className="font-mono text-3xl font-bold tracking-tight sm:text-5xl">
-              Stay consistent.
+              Speak your thoughts.
               <br />
-              Sound like yourself.
+              We'll handle the rest.
             </h2>
             <p className="mt-5 text-base text-black/70 sm:text-lg">
-              Join creators and founders who post every day — without burning
-              out.
+              Stop staring at blank screens. Record your ideas and let AI turn
+              them into ready-to-publish posts grounded in your actual words.
             </p>
             <div className="mt-10 flex justify-center">
               <button
