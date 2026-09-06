@@ -143,19 +143,33 @@ export default function TodaysPostCard({
 
           {/* Slide Deck Tabs */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            {postsList.map((p, idx) => (
-              <button
-                key={p.id || idx}
-                onClick={() => setActiveIndex(idx)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all capitalize shrink-0 flex items-center gap-1.5 ${
-                  idx === safeIndex
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-[0_4px_16px_rgba(99,102,241,0.45)] border border-indigo-300/40 ring-1 ring-white/20 scale-[1.02]'
-                    : 'bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] border border-white/10 hover:border-white/20 shadow-sm'
-                }`}
-              >
-                <span>{p.angle ? p.angle.replace('_', ' ') : `Angle ${idx + 1}`}</span>
-              </button>
-            ))}
+            {postsList.map((p, idx) => {
+              const plt = (p.platform || 'linkedin').toLowerCase();
+              return (
+                <button
+                  key={p.id || idx}
+                  onClick={() => setActiveIndex(idx)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all capitalize shrink-0 flex items-center gap-1.5 ${
+                    idx === safeIndex
+                      ? plt === 'twitter'
+                        ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-[0_4px_16px_rgba(2,132,199,0.45)] border border-sky-300/40 ring-1 ring-white/20 scale-[1.02]'
+                        : plt === 'threads'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_4px_16px_rgba(168,85,247,0.45)] border border-pink-300/40 ring-1 ring-white/20 scale-[1.02]'
+                        : 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-[0_4px_16px_rgba(99,102,241,0.45)] border border-indigo-300/40 ring-1 ring-white/20 scale-[1.02]'
+                      : 'bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] border border-white/10 hover:border-white/20 shadow-sm'
+                  }`}
+                >
+                  {plt === 'twitter' ? (
+                    <span className="font-mono text-xs font-black">𝕏</span>
+                  ) : plt === 'threads' ? (
+                    <span className="font-bold text-xs">@</span>
+                  ) : (
+                    <Linkedin className="w-3.5 h-3.5" />
+                  )}
+                  <span>{plt.charAt(0).toUpperCase() + plt.slice(1)} ({p.angle ? p.angle.replace('_', ' ') : `Post ${idx + 1}`})</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Slide Arrow Controls */}
@@ -184,7 +198,8 @@ export default function TodaysPostCard({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400">
-              {totalSlides > 1 ? `Post Angle ${safeIndex + 1} of ${totalSlides}` : "Today's Post"}
+              {currentPost.platform ? `${currentPost.platform.toUpperCase()} Draft • ` : ''}
+              {totalSlides > 1 ? `Card ${safeIndex + 1} of ${totalSlides}` : "Today's Post"}
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-[11px] font-medium text-emerald-400/90 uppercase tracking-widest">
@@ -238,11 +253,30 @@ export default function TodaysPostCard({
           {/* Top Edge Gloss Highlight */}
           <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-300/70 to-transparent rounded-t-2xl" />
           
-          {/* Floating Angle Badge */}
+          {/* Floating Platform & Angle Badge */}
           <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-white/10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-300 animate-pulse" />
-              <span>{currentPost.angle ? `${currentPost.angle.replace('_', ' ')} Perspective` : 'Core Perspective'}</span>
+            <div className="flex items-center gap-2">
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider ${
+                (currentPost.platform || 'linkedin') === 'twitter'
+                  ? 'bg-sky-500/20 border border-sky-400/40 text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.25)]'
+                  : (currentPost.platform || 'linkedin') === 'threads'
+                  ? 'bg-pink-500/20 border border-pink-400/40 text-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.25)]'
+                  : 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.3)]'
+              }`}>
+                {(currentPost.platform || 'linkedin') === 'twitter' ? (
+                  <span className="font-mono text-xs font-black">𝕏</span>
+                ) : (currentPost.platform || 'linkedin') === 'threads' ? (
+                  <span className="font-bold text-xs">@</span>
+                ) : (
+                  <Linkedin className="w-3.5 h-3.5" />
+                )}
+                <span>{(currentPost.platform || 'linkedin').toUpperCase()}</span>
+              </div>
+
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-white/70 text-xs font-medium capitalize">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>{currentPost.angle ? `${currentPost.angle.replace('_', ' ')} Angle` : 'Contrarian Angle'}</span>
+              </div>
             </div>
             
             {totalSlides > 1 && (
@@ -383,14 +417,26 @@ export default function TodaysPostCard({
             <span>Schedule</span>
           </button>
 
-          {/* Direct LinkedIn Publish if approved */}
+          {/* Direct Platform Publish if approved */}
           {isApproved && (
             <button
               onClick={() => (onPublish ? onPublish(currentPost) : handleCopy())}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0077b5] hover:bg-[#006097] text-white text-sm font-bold transition-all shadow-lg shadow-[#0077b5]/20 active:scale-95"
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold transition-all shadow-lg active:scale-95 ${
+                (currentPost.platform || 'linkedin') === 'twitter'
+                  ? 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/30'
+                  : (currentPost.platform || 'linkedin') === 'threads'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-purple-600/30'
+                  : 'bg-[#0077b5] hover:bg-[#006097] shadow-[#0077b5]/20'
+              }`}
             >
-              <Linkedin className="w-4 h-4 fill-current" />
-              <span>Copy to LinkedIn</span>
+              {(currentPost.platform || 'linkedin') === 'twitter' ? (
+                <span className="font-mono text-sm font-black">𝕏</span>
+              ) : (currentPost.platform || 'linkedin') === 'threads' ? (
+                <span className="font-bold text-sm">@</span>
+              ) : (
+                <Linkedin className="w-4 h-4 fill-current" />
+              )}
+              <span>Copy to {(currentPost.platform || 'linkedin') === 'twitter' ? 'X (Twitter)' : (currentPost.platform || 'linkedin') === 'threads' ? 'Threads' : 'LinkedIn'}</span>
             </button>
           )}
         </div>

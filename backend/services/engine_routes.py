@@ -183,6 +183,7 @@ def _process_audio_pipeline(
             round_robin_idx += 1
 
         generated_posts_list = []
+        platform_cycle = ["linkedin", "twitter", "threads"]
 
         logger.info(
             f"[{job_id}] Generation input — "
@@ -192,13 +193,14 @@ def _process_audio_pipeline(
             f"preview: {clarified_text[:120]!r}"
         )
 
-        # Step 6: Generate all posts sequentially
+        # Step 6: Generate all posts sequentially across platforms (LinkedIn, Twitter, Threads)
         for idx, (opp, ang) in enumerate(work_list):
+            platform_for_post = platform_cycle[idx % len(platform_cycle)]
             gen_res = generate_engine_post(
                 opportunity=opp,
                 brand_context=brand_context,
                 angle=ang,
-                platform="linkedin",
+                platform=platform_for_post,
                 raw_transcript=clarified_text
             )
             p_id = f"post-{uuid.uuid4().hex[:8]}"
@@ -206,9 +208,9 @@ def _process_audio_pipeline(
                 "id": p_id,
                 "opportunity_id": opp.get("id", f"opp-{uuid.uuid4().hex[:8]}"),
                 "source_id": source_id,
-                "title": f"{opp.get('title', title)} ({ang.replace('_', ' ').title()} Angle)",
+                "title": f"{opp.get('title', title)} ({platform_for_post.title()} • {ang.replace('_', ' ').title()})",
                 "content": gen_res.get("content", ""),
-                "platform": "linkedin",
+                "platform": platform_for_post,
                 "angle": ang,
                 "status": "recommended_today" if idx == 0 else "ready",
                 "provenance": gen_res.get("provenance", {}),
@@ -505,26 +507,32 @@ def post_action(post_id: str, payload: PostActionRequest, workspace_id: str = "d
         return {"success": True, "status": target["status"], "post": target}
 
     elif act == "regenerate":
-        # Switch angle but stay grounded in the same transcript
+        # Switch angle but stay grounded in the same transcript and platform
         current_angle = target.get("angle", "contrarian")
-        alt_angles = ["story", "framework", "educational", "personal_lesson", "contrarian"]
+        platform = target.get("platform", "linkedin")
+        alt_angles = ["story", "framework", "educational", "personal_lesson", "contrarian", "behind_the_scenes"]
         next_angle = next((a for a in alt_angles if a != current_angle), "story")
 
         stored_transcript = target.get("transcript", "")
+        base_title = target.get("title", "Thought").split("(")[0].strip()
+
         revised = generate_engine_post(
             opportunity={
-                "title": target.get("title", "Core thought"),
+                "title": base_title,
                 "summary": target.get("content", "")[:120],
                 "evidence": target.get("provenance", {}).get("evidence_quote", ""),
                 "source_title": target.get("provenance", {}).get("source_title", "Voice recording")
             },
             angle=next_angle,
+            platform=platform,
             custom_instruction=payload.custom_instruction,
             raw_transcript=stored_transcript
         )
         target["content"] = revised["content"]
         target["angle"] = next_angle
-        target["provenance"]["content_angle"] = next_angle
+        target["title"] = f"{base_title} ({platform.title()} • {next_angle.replace('_', ' ').title()})"
+        if "provenance" in target and isinstance(target["provenance"], dict):
+            target["provenance"]["content_angle"] = next_angle
         return {"success": True, "status": target["status"], "post": target}
 
     elif act == "schedule":
